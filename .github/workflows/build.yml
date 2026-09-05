@@ -1,0 +1,104 @@
+name: Build and push
+
+# On every push to main: run the checks against a PostgreSQL service,
+# build the Docker image, and push it to Amazon ECR. The push authenticates
+# through GitHub OIDC by assuming the role in the AWS_ROLE_ARN repository
+# variable; there are no long-lived keys. Without AWS_ROLE_ARN the image is
+# built and not pushed, so the checks run anywhere.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ca-central-1
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shop_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.20.2'
+          otp-version: '29.0'
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+
+      - run: mix deps.get
+      - run: mix precommit
+
+  build-and-push:
+    needs: quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t shop:${{ github.sha }} .
+
+      - name: Skip push (no AWS_ROLE_ARN)
+        if: vars.AWS_ROLE_ARN == ''
+        run: |
+          echo "Image built and not pushed: the AWS_ROLE_ARN repository variable is not set." >> "$GITHUB_STEP_SUMMARY"
+          echo "Set AWS_ROLE_ARN (an IAM role GitHub may assume through OIDC) and ECR_REPOSITORY to push to Amazon ECR." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check ECR_REPOSITORY
+        if: vars.AWS_ROLE_ARN != '' && vars.ECR_REPOSITORY == ''
+        run: |
+          echo "::error::AWS_ROLE_ARN is set but ECR_REPOSITORY is not; set it to the name of the ECR repository to push to."
+          exit 1
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        if: vars.AWS_ROLE_ARN != ''
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        if: vars.AWS_ROLE_ARN != ''
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push image
+        if: vars.AWS_ROLE_ARN != ''
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+        run: |
+          for tag in "${{ github.sha }}" latest; do
+            docker tag "shop:${{ github.sha }}" "$REGISTRY/$REPOSITORY:$tag"
+            docker push "$REGISTRY/$REPOSITORY:$tag"
+            echo "Pushed $REGISTRY/$REPOSITORY:$tag" >> "$GITHUB_STEP_SUMMARY"
+          done

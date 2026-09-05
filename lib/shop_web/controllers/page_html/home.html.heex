@@ -1,0 +1,18 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <section id="home" class="space-y-4">
+    <.header>
+      {Shop.name()}
+      <:subtitle>
+        <%= if @current_scope do %>
+          You are signed in as {@current_scope.user.email}.
+        <% else %>
+          Sign in with the email on your account. A link is sent to it; there is no password.
+        <% end %>
+      </:subtitle>
+    </.header>
+
+    <.link :if={!@current_scope} navigate={~p"/users/log-in"} class="btn btn-primary">
+      Log in
+    </.link>
+  </section>
+</Layouts.app>

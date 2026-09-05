@@ -1,0 +1,620 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'This system on its own: VPC, RDS PostgreSQL, ECR, and one EC2 instance running the container behind Caddy, in ca-central-1'
+
+# The standalone rendering of the deployment recipe (see infra/README.md).
+# Everything the system needs, in one account, sharing nothing:
+#
+#   aws cloudformation deploy --region ca-central-1 --stack-name shop \
+#     --template-file infra/standalone.yaml --capabilities CAPABILITY_NAMED_IAM \
+#     --parameter-overrides DomainName=app.example.ca SecretKeyBase=...
+#
+# Shape: a t3.small in a VPC of its own, Caddy terminating TLS with Let's
+# Encrypt for the one hostname, the app running as a Docker container pulled
+# from the stack's ECR repository, the database a db.t4g.micro RDS instance
+# in the same VPC. Secrets in Secrets Manager. No SSH; use SSM Session
+# Manager.
+
+Parameters:
+  DomainName:
+    Type: String
+    Description: Hostname the system is served at (for example app.example.ca)
+    AllowedPattern: '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$'
+
+  HostedZoneId:
+    Type: String
+    Default: ''
+    Description: Optional Route 53 hosted zone for DomainName; when given, the A record (and SES DKIM records) are created in it
+
+  SecretKeyBase:
+    Type: String
+    NoEcho: true
+    MinLength: 64
+    Description: Phoenix SECRET_KEY_BASE (mix phx.gen.secret)
+
+  ImageTag:
+    Type: String
+    Default: latest
+    Description: ECR image tag the instance runs
+
+  ImageRepositoryName:
+    Type: String
+    Default: shop
+    Description: Name of the ECR repository to create; the workflow's ECR_REPOSITORY variable must match
+    AllowedPattern: '^[a-z0-9]+(?:[._-][a-z0-9]+)*$'
+
+  InstanceType:
+    Type: String
+    Default: t3.small
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t3.medium
+    Description: EC2 instance type
+
+  CreateSesIdentity:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Verify DomainName with Amazon SES so the system can send email
+
+  GitHubRepository:
+    Type: String
+    Default: ''
+    Description: Optional owner/name of the GitHub repository; when given, an IAM role its Actions workflow can assume to push images is created
+    AllowedPattern: '^$|^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'
+
+  GitHubOidcProviderArn:
+    Type: String
+    Default: ''
+    Description: Optional ARN of an existing GitHub OIDC provider in this account; leave empty to create one
+
+Conditions:
+  HasHostedZone: !Not [!Equals [!Ref HostedZoneId, '']]
+  WantsSesIdentity: !Equals [!Ref CreateSesIdentity, 'true']
+  SesDkimInZone: !And [!Condition WantsSesIdentity, !Condition HasHostedZone]
+  WantsGitHubRole: !Not [!Equals [!Ref GitHubRepository, '']]
+  CreateOidcProvider: !And [!Condition WantsGitHubRole, !Equals [!Ref GitHubOidcProviderArn, '']]
+
+Resources:
+  # ---------------------------------------------------------------- Network
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-vpc'
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-igw'
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-public-a'
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-public-b'
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-public'
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTable
+
+  # --------------------------------------------------------------- Database
+
+  DatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${AWS::StackName}/database'
+      Description: !Sub '${AWS::StackName} database master credentials'
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "shop"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludePunctuation: true
+
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub '${AWS::StackName} database subnets'
+      SubnetIds:
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${AWS::StackName} database: PostgreSQL from the app instance only'
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref InstanceSecurityGroup
+          Description: App instance
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-db-sg'
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub '${AWS::StackName}-db'
+      Engine: postgres
+      EngineVersion: '18.3'
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: '20'
+      MaxAllocatedStorage: 100
+      StorageType: gp3
+      StorageEncrypted: true
+      DBName: shop
+      MasterUsername: !Sub '{{resolve:secretsmanager:${DatabaseSecret}::username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DatabaseSecret}::password}}'
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      VPCSecurityGroups:
+        - !Ref DatabaseSecurityGroup
+      PubliclyAccessible: false
+      MultiAZ: false
+      BackupRetentionPeriod: 7
+      DeleteAutomatedBackups: false
+      AutoMinorVersionUpgrade: true
+      CopyTagsToSnapshot: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-db'
+
+  # --------------------------------------------------------- Image registry
+
+  ImageRepository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      RepositoryName: !Ref ImageRepositoryName
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep the last 20 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 20
+                },
+                "action": { "type": "expire" }
+              }
+            ]
+          }
+
+  # ------------------------------------------------ GitHub Actions push role
+
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOidcProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Condition: WantsGitHubRole
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-github-actions'
+      Description: !Sub 'Lets ${GitHubRepository} push images to ${ImageRepositoryName} through GitHub OIDC'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - CreateOidcProvider
+                - !Ref GitHubOidcProvider
+                - !Ref GitHubOidcProviderArn
+            Action: 'sts:AssumeRoleWithWebIdentity'
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': sts.amazonaws.com
+              StringLike:
+                'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubRepository}:*'
+      Policies:
+        - PolicyName: PushImages
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 'ecr:GetAuthorizationToken'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'ecr:BatchGetImage'
+                  - 'ecr:CompleteLayerUpload'
+                  - 'ecr:DescribeImages'
+                  - 'ecr:GetDownloadUrlForLayer'
+                  - 'ecr:InitiateLayerUpload'
+                  - 'ecr:PutImage'
+                  - 'ecr:UploadLayerPart'
+                Resource: !GetAtt ImageRepository.Arn
+
+  # ------------------------------------------------------------- Email (SES)
+
+  SesIdentity:
+    Type: AWS::SES::EmailIdentity
+    Condition: WantsSesIdentity
+    Properties:
+      EmailIdentity: !Ref DomainName
+      DkimAttributes:
+        SigningEnabled: true
+
+  SesDkimRecord1:
+    Type: AWS::Route53::RecordSet
+    Condition: SesDkimInZone
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !GetAtt SesIdentity.DkimDNSTokenName1
+      Type: CNAME
+      TTL: '300'
+      ResourceRecords:
+        - !GetAtt SesIdentity.DkimDNSTokenValue1
+
+  SesDkimRecord2:
+    Type: AWS::Route53::RecordSet
+    Condition: SesDkimInZone
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !GetAtt SesIdentity.DkimDNSTokenName2
+      Type: CNAME
+      TTL: '300'
+      ResourceRecords:
+        - !GetAtt SesIdentity.DkimDNSTokenValue2
+
+  SesDkimRecord3:
+    Type: AWS::Route53::RecordSet
+    Condition: SesDkimInZone
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !GetAtt SesIdentity.DkimDNSTokenName3
+      Type: CNAME
+      TTL: '300'
+      ResourceRecords:
+        - !GetAtt SesIdentity.DkimDNSTokenValue3
+
+  # ----------------------------------------------------------- App instance
+
+  ApplicationSecrets:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${AWS::StackName}/app'
+      Description: !Sub '${AWS::StackName} runtime secrets'
+      SecretString: !Sub |
+        {
+          "secret_key_base": "${SecretKeyBase}"
+        }
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${AWS::StackName} web instance'
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP (ACME challenge and redirect to HTTPS)
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-web-sg'
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-instance'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+      Policies:
+        - PolicyName: PullImages
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 'ecr:GetAuthorizationToken'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'ecr:BatchGetImage'
+                  - 'ecr:GetDownloadUrlForLayer'
+                Resource: !GetAtt ImageRepository.Arn
+        - PolicyName: ReadSecrets
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 'secretsmanager:GetSecretValue'
+                Resource:
+                  - !Ref ApplicationSecrets
+                  - !Ref DatabaseSecret
+        - PolicyName: SendEmail
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ses:SendEmail'
+                  - 'ses:SendRawEmail'
+                # SES authorizes against the recipient's identity as well as
+                # the sender's when the recipient is a verified address, so
+                # the resource covers every identity; the condition pins the
+                # sender to this domain.
+                Resource: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*'
+                Condition:
+                  StringLike:
+                    'ses:FromAddress': !Sub '*@${DomainName}'
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-eip'
+
+  DnsRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasHostedZone
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      TTL: '300'
+      ResourceRecords:
+        - !Ref ElasticIP
+
+  Instance:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - PublicRoute
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}'
+      SubnetId: !Ref PublicSubnetA
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      IamInstanceProfile: !Ref InstanceProfile
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 20
+            VolumeType: gp3
+            Encrypted: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -e
+          exec > >(tee /var/log/user-data.log) 2>&1
+          echo "Setting up ${AWS::StackName}..."
+
+          dnf update -y
+          dnf install -y docker jq
+          systemctl enable docker
+          systemctl start docker
+
+          curl -o /etc/yum.repos.d/caddy.repo https://copr.fedorainfracloud.org/coprs/g/caddy/caddy/repo/epel-9/group_caddy-caddy-epel-9.repo
+          dnf install -y caddy
+
+          APP_DIR=/opt/shop
+          mkdir -p $APP_DIR
+
+          APP_SECRETS=$(aws secretsmanager get-secret-value \
+            --secret-id "${ApplicationSecrets}" \
+            --region ${AWS::Region} \
+            --query SecretString --output text)
+          DB_SECRETS=$(aws secretsmanager get-secret-value \
+            --secret-id "${DatabaseSecret}" \
+            --region ${AWS::Region} \
+            --query SecretString --output text)
+          DB_USER=$(echo "$DB_SECRETS" | jq -r '.username')
+          DB_PASSWORD=$(echo "$DB_SECRETS" | jq -r '.password')
+
+          cat > $APP_DIR/.env << ENVFILE
+          PHX_SERVER=true
+          DATABASE_URL=ecto://$DB_USER:$DB_PASSWORD@${Database.Endpoint.Address}:${Database.Endpoint.Port}/shop
+          SECRET_KEY_BASE=$(echo "$APP_SECRETS" | jq -r '.secret_key_base')
+          PHX_HOST=${DomainName}
+          PORT=4000
+          POOL_SIZE=10
+          AWS_REGION=${AWS::Region}
+          MAIL_FROM=noreply@${DomainName}
+          ENVFILE
+          chmod 600 $APP_DIR/.env
+
+          # One hostname, one certificate, issued at first request. No
+          # on-demand TLS: nothing else is served here.
+          cat > /etc/caddy/Caddyfile << 'CADDYFILE'
+          ${DomainName} {
+              encode gzip
+              reverse_proxy localhost:4000
+          }
+          CADDYFILE
+
+          ECR_REGISTRY=${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+          ECR_IMAGE=$ECR_REGISTRY/${ImageRepositoryName}:${ImageTag}
+
+          # Pulls the image on every start, so a restart is a deploy. Until
+          # the workflow has pushed a first image the pull fails and systemd
+          # retries every 30 seconds.
+          cat > /etc/systemd/system/shop.service << SERVICE
+          [Unit]
+          Description=${AWS::StackName} Phoenix application
+          After=docker.service
+          Requires=docker.service
+
+          [Service]
+          Type=simple
+          Restart=always
+          RestartSec=30
+          EnvironmentFile=$APP_DIR/.env
+          ExecStartPre=-/usr/bin/docker stop shop
+          ExecStartPre=-/usr/bin/docker rm shop
+          ExecStartPre=/bin/bash -c 'aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin $ECR_REGISTRY'
+          ExecStartPre=/usr/bin/docker pull $ECR_IMAGE
+          ExecStart=/usr/bin/docker run --rm --name shop \
+            --env-file $APP_DIR/.env \
+            --network host \
+            $ECR_IMAGE
+          ExecStop=/usr/bin/docker stop shop
+
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE
+
+          systemctl daemon-reload
+          systemctl enable caddy
+          systemctl start caddy
+          systemctl enable shop
+          systemctl start shop
+
+          echo "Setup complete."
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-instance'
+
+  EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt ElasticIP.AllocationId
+      InstanceId: !Ref Instance
+
+Outputs:
+  AccessUrl:
+    Description: Where the system is served
+    Value: !Sub 'https://${DomainName}'
+
+  PublicIP:
+    Description: Elastic IP of the instance; point DomainName here if no hosted zone was given
+    Value: !Ref ElasticIP
+
+  InstanceId:
+    Description: EC2 instance ID
+    Value: !Ref Instance
+
+  ImageRepository:
+    Description: ECR repository name; set the ECR_REPOSITORY variable in GitHub to this
+    Value: !Ref ImageRepository
+
+  ImageRepositoryUri:
+    Description: ECR repository URI the instance pulls from
+    Value: !GetAtt ImageRepository.RepositoryUri
+
+  GitHubActionsRoleArn:
+    Condition: WantsGitHubRole
+    Description: Role for the workflow; set the AWS_ROLE_ARN variable in GitHub to this
+    Value: !GetAtt GitHubActionsRole.Arn
+
+  DatabaseEndpoint:
+    Description: PostgreSQL endpoint, reachable from the instance only
+    Value: !Sub '${Database.Endpoint.Address}:${Database.Endpoint.Port}'
+
+  DatabaseSecretArn:
+    Description: Secrets Manager ARN holding the database master credentials
+    Value: !Ref DatabaseSecret
+
+  ApplicationSecretsArn:
+    Description: Secrets Manager ARN holding SECRET_KEY_BASE
+    Value: !Ref ApplicationSecrets
+
+  ShellCommand:
+    Description: Open a shell on the instance
+    Value: !Sub 'aws ssm start-session --target ${Instance} --region ${AWS::Region}'
+
+  RestartCommand:
+    Description: Pull the current image tag and restart the system
+    Value: !Sub "aws ssm send-command --region ${AWS::Region} --document-name AWS-RunShellScript --instance-ids ${Instance} --parameters 'commands=[\"systemctl restart shop\"]'"
+
+  EstimatedMonthlyCost:
+    Description: Rough monthly cost
+    Value: 'about $35/month (t3.small, db.t4g.micro, 40 GB gp3, EIP)'
