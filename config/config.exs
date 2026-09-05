@@ -26,7 +26,7 @@ config :shop,
 
 # The shop this system belongs to. The forge substitutes the placeholder
 # when it creates the repository; SHOP_NAME overrides it at runtime.
-config :shop, :shop_name, "{{SHOP_NAME}}"
+config :shop, :shop_name, "TestShop"
 
 # Sender of every email the system sends. Production reads MAIL_FROM.
 config :shop, :mail_from, "noreply@localhost"
