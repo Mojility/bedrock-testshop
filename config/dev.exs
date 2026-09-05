@@ -1,10 +1,13 @@
 import Config
 
 # Configure your database
+# The standard Postgres variables override the defaults. Homebrew on macOS
+# makes a superuser named after your account with no password: either
+# `createuser -s postgres` once, or `export PGUSER=$USER PGPASSWORD=`.
 config :shop, Shop.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
+  username: System.get_env("PGUSER") || "postgres",
+  password: System.get_env("PGPASSWORD") || "postgres",
+  hostname: System.get_env("PGHOST") || "localhost",
   database: "shop_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,

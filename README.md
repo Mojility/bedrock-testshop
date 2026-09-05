@@ -38,6 +38,11 @@ mix setup          # deps, database, assets
 mix phx.server     # http://localhost:4000
 ```
 
+The dev and test config expect a Postgres role `postgres` with password
+`postgres` on localhost, or whatever `PGUSER`, `PGPASSWORD`, and `PGHOST`
+say. Postgres from Homebrew on macOS has no `postgres` role; run
+`createuser -s postgres` once, or `export PGUSER=$USER PGPASSWORD=`.
+
 Sign-in is passwordless. Register with an email address at
 `/users/register`, then open the link the system sends. In development
 the email lands in the local mailbox at `/dev/mailbox`.
