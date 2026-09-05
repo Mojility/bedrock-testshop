@@ -39,7 +39,13 @@ if config_env() == :prod do
   config :shop, Shop.Repo,
     # RDS requires TLS and its CA is not in the runner image's trust store,
     # so encrypt the connection without verifying the chain.
-    ssl: [verify: :verify_none],
+    # Hosted databases (RDS) require TLS; a laptop's Postgres in
+    # docker-compose.yml has none. DATABASE_SSL=false turns it off.
+    ssl:
+      if(System.get_env("DATABASE_SSL", "true") == "false",
+        do: false,
+        else: [verify: :verify_none]
+      ),
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     # For machines with several cores, consider starting multiple pools of `pool_size`
@@ -59,12 +65,24 @@ if config_env() == :prod do
       """
 
   host = System.get_env("PHX_HOST") || "example.com"
+
+  # Links in emails and redirects. Hosting sits behind TLS on 443; a laptop
+  # (docker-compose.yml) is plain http on the app's own port.
+  url_config =
+    case System.get_env("PHX_SCHEME") do
+      "http" ->
+        [host: host, port: String.to_integer(System.get_env("PORT") || "4000"), scheme: "http"]
+
+      _ ->
+        [host: host, port: 443, scheme: "https"]
+    end
+
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :shop, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :shop, ShopWeb.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    url: url_config,
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
@@ -111,7 +129,12 @@ if config_env() == :prod do
   # with the instance role's credentials: ExAws fetches them from instance
   # metadata, so no access key is configured anywhere. AWS_REGION is the
   # region SES is used in; ca-central-1 unless told otherwise.
-  config :shop, Shop.Mailer, adapter: Swoosh.Adapters.ExAwsAmazonSES
+  # MAIL_ADAPTER=logger prints outgoing mail (sign-in links included) to the
+  # log instead of sending it: what docker-compose.yml uses on a laptop.
+  case System.get_env("MAIL_ADAPTER") do
+    "logger" -> config :shop, Shop.Mailer, adapter: Swoosh.Adapters.Logger, level: :info
+    _ -> config :shop, Shop.Mailer, adapter: Swoosh.Adapters.ExAwsAmazonSES
+  end
 
   config :shop, :mail_from, System.get_env("MAIL_FROM") || "noreply@#{host}"
 

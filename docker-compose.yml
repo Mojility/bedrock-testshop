@@ -1,0 +1,50 @@
+# Run this system on your own machine with one command:
+#
+#   docker compose up --build
+#
+# Then open http://localhost:4000 (set APP_PORT to use another port).
+# Sign-in is by emailed link; here the "email" is printed in the logs:
+#
+#   docker compose logs -f app
+#
+# The database keeps its data in the `db-data` volume between runs. To
+# start from scratch: docker compose down -v
+#
+# This file is for running locally. Hosting uses infra/standalone.yaml (or
+# Bedrock's hosted infrastructure); the code is the same either way.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: shop
+      POSTGRES_PASSWORD: shop
+      POSTGRES_DB: shop
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shop -d shop"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ecto://shop:shop@db/shop
+      DATABASE_SSL: "false"
+      # A fixed key is fine on your own machine. Hosting generates its own.
+      SECRET_KEY_BASE: local-only-not-a-secret-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+      PHX_HOST: localhost
+      PHX_SCHEME: http
+      PORT: "4000"
+      MAIL_ADAPTER: logger
+      MAIL_FROM: "TestShop <noreply@localhost>"
+    ports:
+      - "${APP_PORT:-4000}:4000"
+
+volumes:
+  db-data:

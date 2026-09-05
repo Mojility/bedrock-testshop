@@ -24,6 +24,15 @@ kept current by the same generators that change the code.
 
 ## Run it locally
 
+The quickest way, with Docker and no Elixir installed:
+
+```sh
+docker compose up --build   # http://localhost:4000 (APP_PORT=4001 to change)
+docker compose logs -f app  # sign-in links are printed here
+```
+
+With Elixir installed, for development:
+
 ```sh
 mix setup          # deps, database, assets
 mix phx.server     # http://localhost:4000
@@ -59,6 +68,7 @@ The release reads these at start (`config/runtime.exs`):
 | Variable          | Required | Meaning                                                                             |
 | ----------------- | -------- | ----------------------------------------------------------------------------------- |
 | `DATABASE_URL`    | yes      | `ecto://user:password@host:5432/database`. The connection uses TLS.                 |
+- `DATABASE_SSL` — `false` to connect without TLS (a local Postgres); hosted databases keep the default.
 | `SECRET_KEY_BASE` | yes      | Signs cookies and tokens. Generate one with `mix phx.gen.secret`.                    |
 | `PHX_HOST`        | yes      | The hostname the system is served at, for links in pages and email.                 |
 | `PORT`            | no       | HTTP port the server listens on. Default `4000`.                                    |
