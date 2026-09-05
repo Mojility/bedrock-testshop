@@ -1,4 +1,4 @@
-# {{SHOP_NAME}}'s system
+# TestShop's system
 
 This document describes the system as it is now. Bedrock's generators keep
 it current: every change that adds, removes, or moves something updates
@@ -7,7 +7,7 @@ the sections below in the same commit.
 ## What it is
 
 A Phoenix 1.8 application (Elixir, LiveView, Ecto on PostgreSQL) in this
-repository, built to how {{SHOP_NAME}} works. It runs as one container
+repository, built to how TestShop works. It runs as one container
 from the `Dockerfile` here, in front of one PostgreSQL database.
 
 ## What it contains
@@ -33,7 +33,7 @@ Two renderings of the same deployment exist, with identical code:
 - **Hosted by Bedrock**: the container runs on Bedrock's infrastructure
   in ca-central-1, with its own database on a shared PostgreSQL instance.
 - **Standalone**: `infra/standalone.yaml` stands everything up in an AWS
-  account of {{SHOP_NAME}}'s own, in ca-central-1.
+  account of TestShop's own, in ca-central-1.
 
 ## Where its data lives
 

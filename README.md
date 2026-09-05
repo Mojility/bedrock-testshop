@@ -1,12 +1,12 @@
-# {{SHOP_NAME}}
+# TestShop
 
-The business system for {{SHOP_NAME}}: a Phoenix application in its own
+The business system for TestShop: a Phoenix application in its own
 repository, with its own database, deployable on its own.
 
 This repository was generated and is maintained by
 [Bedrock](https://mybedrock.ca), a product of Mojility Inc. Bedrock's
 generators belong to Mojility; everything they produced here belongs to
-{{SHOP_NAME}} (see `LICENSE`). Nothing in this repository depends on
+TestShop (see `LICENSE`). Nothing in this repository depends on
 Bedrock at build time or at run time. A competent Elixir shop can pick it
 up cold, and this README is written for one.
 
