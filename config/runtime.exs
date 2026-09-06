@@ -158,3 +158,5 @@ config :shop,
 if System.get_env("AWS_CREDENTIALS_FILE") do
   config :shop, Shop.Mailer, adapter: Shop.MailAdapter
 end
+
+config :shop, :lead_notifications, System.get_env("LEAD_NOTIFICATIONS") != "false"
