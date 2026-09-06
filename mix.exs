@@ -115,7 +115,7 @@ defmodule Shop.MixProject do
         "dialyzer",
         "docs --warnings-as-errors"
       ],
-      "quality.security": ["deps.audit", "hex.audit", "sobelow --config"]
+      "quality.security": ["hex.audit", "deps.audit", "sobelow --config"]
     ]
   end
 end
