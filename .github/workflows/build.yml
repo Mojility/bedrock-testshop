@@ -98,7 +98,7 @@ jobs:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
           REPOSITORY: ${{ vars.ECR_REPOSITORY }}
         run: |
-          for tag in "${{ github.sha }}" latest; do
+          for tag in "${{ github.sha }}"; do
             docker tag "shop:${{ github.sha }}" "$REGISTRY/$REPOSITORY:$tag"
             docker push "$REGISTRY/$REPOSITORY:$tag"
             echo "Pushed $REGISTRY/$REPOSITORY:$tag" >> "$GITHUB_STEP_SUMMARY"
