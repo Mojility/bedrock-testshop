@@ -1,6 +1,9 @@
 defmodule ShopWeb.MediaController do
   use ShopWeb, :controller
 
+  # Only four raster MIME types are allowed, with nosniff; SVG and HTML are never served.
+  # Tests cover hostile manifest MIME types and rejected object keys/preview signatures.
+  # sobelow_skip ["XSS.ContentType", "XSS.SendResp"]
   def show(conn, %{"id" => id, "variant" => variant} = params) do
     with %{"key" => key} = entry <- media_entry(id, variant, params),
          true <- variant in ["thumb", "medium", "large"],

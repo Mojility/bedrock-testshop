@@ -1,4 +1,6 @@
 defmodule Shop.Release do
+  alias Shop.Accounts.Staff
+
   @moduledoc """
   Used for executing DB release tasks when run in production without Mix
   installed.
@@ -17,11 +19,13 @@ defmodule Shop.Release do
     load_app()
 
     {:ok, result, _} =
-      Ecto.Migrator.with_repo(Shop.Repo, fn _ -> Shop.Accounts.Staff.bootstrap_owner(email) end)
+      Ecto.Migrator.with_repo(Shop.Repo, fn _ -> Staff.bootstrap_owner(email) end)
 
     result
   end
 
+  # Trusted release CLI only, no route accepts this path; operator chooses the import file.
+  # sobelow_skip ["Traversal.FileModule"]
   def import_legacy_leads(path) do
     load_app()
     rows = path |> File.read!() |> Jason.decode!()

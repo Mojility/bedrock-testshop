@@ -17,6 +17,9 @@ defmodule ShopWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
+  alias Shop.Accounts.Scope
+  alias Shop.AccountsFixtures
+
   using do
     quote do
       # The default endpoint for testing
@@ -45,8 +48,8 @@ defmodule ShopWeb.ConnCase do
   test context.
   """
   def register_and_log_in_user(%{conn: conn} = context) do
-    user = Shop.AccountsFixtures.user_fixture()
-    scope = Shop.Accounts.Scope.for_user(user)
+    user = AccountsFixtures.user_fixture()
+    scope = Scope.for_user(user)
 
     opts =
       context
@@ -74,6 +77,6 @@ defmodule ShopWeb.ConnCase do
   defp maybe_set_token_authenticated_at(_token, nil), do: nil
 
   defp maybe_set_token_authenticated_at(token, authenticated_at) do
-    Shop.AccountsFixtures.override_token_authenticated_at(token, authenticated_at)
+    AccountsFixtures.override_token_authenticated_at(token, authenticated_at)
   end
 end

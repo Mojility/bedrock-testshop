@@ -1,6 +1,9 @@
 defmodule ShopWeb.PageController do
   use ShopWeb, :controller
 
+  # Only the validated HEEx renderer can produce this response; no raw request HTML.
+  # Hostile scene text and incompatible scenes are covered by controller tests.
+  # sobelow_skip ["XSS.HTML"]
   def home(conn, params) do
     case Shop.Website.read_scene() do
       {:ok, scene} ->

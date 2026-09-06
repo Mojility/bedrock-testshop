@@ -24,14 +24,18 @@ defmodule Shop.Website.ComponentModel do
     if name in ancestors or length(ancestors) > 12,
       do: raise(ArgumentError, "recursive component model")
 
-    if entry = entries[name] do
-      Enum.each(references(entry.template), fn child ->
-        unless Registry.get(child, entries),
-          do: raise(ArgumentError, "unknown template component")
+    case entries[name] do
+      nil ->
+        :ok
 
-        check_dependencies(child, entries, [name | ancestors])
-      end)
+      entry ->
+        Enum.each(references(entry.template), &check_reference(&1, entries, [name | ancestors]))
     end
+  end
+
+  defp check_reference(child, entries, ancestors) do
+    unless Registry.get(child, entries), do: raise(ArgumentError, "unknown template component")
+    check_dependencies(child, entries, ancestors)
   end
 
   defp references(map) when is_map(map),
@@ -100,16 +104,14 @@ defmodule Shop.Website.ComponentModel do
         else: result
 
     if spec["of"] do
-      of =
-        if spec["of"] == "string",
-          do: :string,
-          else: Map.new(spec["of"], fn {key, value} -> {key, schema(value)} end)
-
-      Map.put(result, :of, of)
+      Map.put(result, :of, element_schema(spec["of"]))
     else
       result
     end
   end
+
+  defp element_schema("string"), do: :string
+  defp element_schema(fields), do: Map.new(fields, fn {key, value} -> {key, schema(value)} end)
 
   defp template(%{"$expr" => [op | args]}),
     do: List.to_tuple([enum(op, @ops) | Enum.map(args, &template/1)])

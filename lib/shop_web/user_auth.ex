@@ -1,4 +1,5 @@
 defmodule ShopWeb.UserAuth do
+  @moduledoc "Passwordless browser authentication and current staff scope."
   use ShopWeb, :verified_routes
 
   import Plug.Conn

@@ -180,17 +180,16 @@ defmodule Shop.Website.Tree do
       not is_binary(node.type) or is_nil(Registry.get(node.type, extensions)) ->
         {:error, ["node #{node.id} has an unknown type #{inspect(node.type)}"]}
 
-      not is_nil(node.parent_id) and not Map.has_key?(tree, node.parent_id) and
-          node.parent_id != node.id ->
+      missing_parent?(tree, node) ->
         {:error, ["node #{node.id} names a parent that does not exist: #{node.parent_id}"]}
 
-      node.parent_id == node.id or node.parent_id in descendant_ids(tree, node.id) ->
+      own_ancestor?(tree, node) ->
         {:error, ["node #{node.id} cannot be its own ancestor"]}
 
       not is_map(node.props) ->
         {:error, ["node #{node.id} needs props as an object"]}
 
-      not (is_integer(node.index) and node.index >= 0) ->
+      not valid_index?(node.index) ->
         {:error, ["node #{node.id}: index must be a whole number from 0"]}
 
       true ->
@@ -278,6 +277,16 @@ defmodule Shop.Website.Tree do
 
   defp apply_op(_tree, %{"op" => "replace_children"}, _extensions),
     do: {:error, ["replace_children needs an id and a list of children"]}
+
+  defp missing_parent?(tree, node),
+    do:
+      not is_nil(node.parent_id) and not Map.has_key?(tree, node.parent_id) and
+        node.parent_id != node.id
+
+  defp own_ancestor?(tree, node),
+    do: node.parent_id == node.id or node.parent_id in descendant_ids(tree, node.id)
+
+  defp valid_index?(index), do: is_integer(index) and index >= 0
 
   defp id_reason(id) do
     "#{inspect(id)} is not a usable id: use lowercase letters, digits, - and _, up to 32 characters"

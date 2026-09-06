@@ -23,9 +23,9 @@ defmodule ShopWeb.WebsiteHTML do
   import Plug.CSRFProtection, only: [get_csrf_token: 0]
   import ShopWeb.CoreComponents, only: [translate_error: 1]
 
+  alias Shop.Website.Document
   alias Shop.Website.Media
   alias Shop.Website.Media, as: Photo
-  alias Shop.Website.Document
   alias Shop.Website.Tokens
   alias Shop.Website.Tree
 
@@ -221,33 +221,30 @@ defmodule ShopWeb.WebsiteHTML do
     end
   end
 
-  defp builtin_node(%{node: %{type: type}} = assigns) do
-    case type do
-      "band" -> band(assigns)
-      "container" -> container(assigns)
-      "stack" -> stack(assigns)
-      "cluster" -> cluster(assigns)
-      "grid" -> grid(assigns)
-      "split" -> split(assigns)
-      "card" -> card(assigns)
-      "center" -> center(assigns)
-      "form" -> lead_form(assigns)
-      "text" -> text(assigns)
-      "heading" -> heading(assigns)
-      "button" -> button_atom(assigns)
-      "link" -> link_atom(assigns)
-      "icon" -> icon_atom(assigns)
-      "image" -> image(assigns)
-      "badge" -> badge(assigns)
-      "divider" -> divider(assigns)
-      "input" -> input_atom(assigns)
-      "textarea" -> textarea_atom(assigns)
-      "select" -> select_atom(assigns)
-      "numeral" -> numeral(assigns)
-      "quote_mark" -> quote_mark(assigns)
-      _unknown -> raise ArgumentError, "unregistered website component"
-    end
-  end
+  defp builtin_node(%{node: %{type: "band"}} = assigns), do: band(assigns)
+  defp builtin_node(%{node: %{type: "container"}} = assigns), do: container(assigns)
+  defp builtin_node(%{node: %{type: "stack"}} = assigns), do: stack(assigns)
+  defp builtin_node(%{node: %{type: "cluster"}} = assigns), do: cluster(assigns)
+  defp builtin_node(%{node: %{type: "grid"}} = assigns), do: grid(assigns)
+  defp builtin_node(%{node: %{type: "split"}} = assigns), do: split(assigns)
+  defp builtin_node(%{node: %{type: "card"}} = assigns), do: card(assigns)
+  defp builtin_node(%{node: %{type: "center"}} = assigns), do: center(assigns)
+  defp builtin_node(%{node: %{type: "form"}} = assigns), do: lead_form(assigns)
+  defp builtin_node(%{node: %{type: "text"}} = assigns), do: text(assigns)
+  defp builtin_node(%{node: %{type: "heading"}} = assigns), do: heading(assigns)
+  defp builtin_node(%{node: %{type: "button"}} = assigns), do: button_atom(assigns)
+  defp builtin_node(%{node: %{type: "link"}} = assigns), do: link_atom(assigns)
+  defp builtin_node(%{node: %{type: "icon"}} = assigns), do: icon_atom(assigns)
+  defp builtin_node(%{node: %{type: "image"}} = assigns), do: image(assigns)
+  defp builtin_node(%{node: %{type: "badge"}} = assigns), do: badge(assigns)
+  defp builtin_node(%{node: %{type: "divider"}} = assigns), do: divider(assigns)
+  defp builtin_node(%{node: %{type: "input"}} = assigns), do: input_atom(assigns)
+  defp builtin_node(%{node: %{type: "textarea"}} = assigns), do: textarea_atom(assigns)
+  defp builtin_node(%{node: %{type: "select"}} = assigns), do: select_atom(assigns)
+  defp builtin_node(%{node: %{type: "numeral"}} = assigns), do: numeral(assigns)
+  defp builtin_node(%{node: %{type: "quote_mark"}} = assigns), do: quote_mark(assigns)
+
+  defp builtin_node(_assigns), do: raise(ArgumentError, "unregistered website component")
 
   attr :nodes, :list, required: true
   attr :state, :map, required: true

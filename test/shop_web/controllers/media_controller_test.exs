@@ -1,6 +1,8 @@
 defmodule ShopWeb.MediaControllerTest do
   use ShopWeb.ConnCase, async: false
 
+  alias Shop.Website.Media
+
   test "serves only published variants with renewable, Canadian credentials", %{conn: conn} do
     dir = Application.app_dir(:shop, "priv/published_site")
     File.mkdir_p!(dir)
@@ -60,13 +62,38 @@ defmodule ShopWeb.MediaControllerTest do
     assert get(conn, "/media/photo/original").status == 404
     assert get(conn, "/media/unpublished/large").status == 404
 
+    for mime <- ["text/html", "image/svg+xml", "application/javascript", "image/png"] do
+      File.write!(
+        manifest,
+        Jason.encode!(%{
+          "photos" => %{
+            "photo" => %{"large" => %{"key" => "media/photo/large.webp", "content_type" => mime}}
+          }
+        })
+      )
+
+      response = get(conn, "/media/photo/large")
+      expected = if mime == "image/png", do: "image/png", else: "image/webp"
+      assert get_resp_header(response, "content-type") == [expected <> "; charset=utf-8"]
+      assert get_resp_header(response, "x-content-type-options") == ["nosniff"]
+    end
+
+    for key <- ["../secret", "media/../secret", "media/photo?secret", "media/\\secret"] do
+      File.write!(
+        manifest,
+        Jason.encode!(%{"photos" => %{"photo" => %{"large" => %{"key" => key}}}})
+      )
+
+      assert get(conn, "/media/photo/large").status == 404
+    end
+
     photo = %{
       id: "unpublished",
       variants: %{"large" => %{"key" => "media/photo/large.webp"}},
       preview: true
     }
 
-    preview = Shop.Website.Media.url(photo, :large)
+    preview = Media.url(photo, :large)
     preview_conn = get(conn, preview)
     assert response(preview_conn, 200) == "synthetic-image"
     assert get_resp_header(preview_conn, "cache-control") == ["private, no-store"]

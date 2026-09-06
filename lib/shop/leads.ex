@@ -1,8 +1,9 @@
 defmodule Shop.Leads do
   @moduledoc "Enquiries and follow-up owned by this business database."
   import Ecto.Query
-  alias Shop.{Repo, Accounts.Staff}
+  alias Shop.Accounts.Staff
   alias Shop.Leads.Lead
+  alias Shop.Repo
 
   def submit(attrs) do
     result = %Lead{} |> Lead.changeset(attrs) |> Repo.insert()
@@ -47,38 +48,40 @@ defmodule Shop.Leads do
   # Trusted cutover input only. Replays preserve ids/times and never replace follow-up.
   def import_legacy(rows) when is_list(rows) do
     Repo.transact(fn ->
-      Enum.each(rows, fn row ->
-        {:ok, id} = Ecto.UUID.cast(row["id"])
-        {:ok, inserted, _} = DateTime.from_iso8601(row["inserted_at"])
-
-        seen =
-          case row["seen_at"] do
-            nil ->
-              nil
-
-            value ->
-              {:ok, at, _} = DateTime.from_iso8601(value)
-              at
-          end
-
-        changeset =
-          %Lead{
-            legacy_id: id,
-            source: row["source"] || "site",
-            inserted_at: inserted,
-            seen_at: seen,
-            notified_at: DateTime.utc_now()
-          }
-          |> Lead.changeset(row)
-
-        case Repo.insert(changeset, on_conflict: :nothing, conflict_target: :legacy_id) do
-          {:ok, _} -> :ok
-          {:error, reason} -> Repo.rollback(reason)
-        end
-      end)
+      Enum.each(rows, &import_row/1)
 
       {:ok, length(rows)}
     end)
+  end
+
+  defp import_row(row) do
+    {:ok, id} = Ecto.UUID.cast(row["id"])
+    {:ok, inserted, _} = DateTime.from_iso8601(row["inserted_at"])
+
+    seen =
+      case row["seen_at"] do
+        nil ->
+          nil
+
+        value ->
+          {:ok, at, _} = DateTime.from_iso8601(value)
+          at
+      end
+
+    changeset =
+      %Lead{
+        legacy_id: id,
+        source: row["source"] || "site",
+        inserted_at: inserted,
+        seen_at: seen,
+        notified_at: DateTime.utc_now()
+      }
+      |> Lead.changeset(row)
+
+    case Repo.insert(changeset, on_conflict: :nothing, conflict_target: :legacy_id) do
+      {:ok, _} -> :ok
+      {:error, reason} -> Repo.rollback(reason)
+    end
   end
 
   defp broadcast, do: Phoenix.PubSub.broadcast(Shop.PubSub, "leads", :leads_updated)

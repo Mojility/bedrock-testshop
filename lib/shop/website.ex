@@ -1,4 +1,6 @@
 defmodule Shop.Website do
+  alias Phoenix.HTML.Safe
+
   @moduledoc "The customer's scene renderer. No management application is required."
   alias Shop.Website.{
     ComponentModel,
@@ -61,7 +63,7 @@ defmodule Shop.Website do
           native_components: native,
           content: Keyword.get_lazy(opts, :content, &Content.load/0)
         })
-        |> Phoenix.HTML.Safe.to_iodata()
+        |> Safe.to_iodata()
         |> IO.iodata_to_binary()
 
       {:ok, html}
@@ -82,6 +84,8 @@ defmodule Shop.Website do
     end
   end
 
+  # All callers supply fixed application-owned paths; scene input cannot select a filesystem path.
+  # sobelow_skip ["Traversal.FileModule"]
   defp read_json(path) do
     with {:ok, bytes} <- File.read(Application.app_dir(:shop, path)), do: Jason.decode(bytes)
   end

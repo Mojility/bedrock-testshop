@@ -10,7 +10,7 @@ defmodule Shop.Accounts do
   import Ecto.Query, warn: false
   alias Shop.Repo
 
-  alias Shop.Accounts.{User, UserToken, UserNotifier}
+  alias Shop.Accounts.{User, UserNotifier, UserToken}
 
   ## Database getters
 

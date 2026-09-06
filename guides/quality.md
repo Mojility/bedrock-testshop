@@ -4,6 +4,7 @@ Run `mix deps.get` to install development tools.
 Run `mix precommit` before committing changes.
 Use the exact Elixir and OTP versions in `.github/workflows/build.yml`.
 
+Security checks run before compilation so Hex tasks remain available.
 The checks stop on the first failure:
 
 - Formatting must match `mix format --check-formatted`.
@@ -34,3 +35,23 @@ Review changed interfaces in both light and dark modes.
 
 Do not suppress findings or lower the coverage threshold to pass a check.
 Resolve findings before treating the application as ready for release.
+
+## Reviewed security boundaries
+
+Sobelow scans all source files. Function-level comments identify these reviewed
+boundaries; the scanner honours those comments with `skip: true`.
+
+- The website reader uses fixed application paths.
+- The credential reader uses an operator-configured path and rejects invalid or
+  expired credentials. No browser request selects that path.
+- The legacy import reads a file selected through trusted release access.
+- Page and enquiry responses come from the validated HEEx renderer. Tests check
+  escaping and rejection of incompatible scenes.
+- Media responses allow raster image MIME types only and set `nosniff`. Tests
+  reject traversal keys, executable MIME types, and invalid preview signatures.
+
+Browser responses forbid inline scripts and external executable resources.
+Theme preferences run in the compiled JavaScript bundle. Inline styles remain
+allowed for generated theme tokens and LiveView styling. Production redirects
+HTTP browser requests to HTTPS behind the trusted TLS edge. Private localhost
+readiness checks remain available without a redirect.

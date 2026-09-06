@@ -40,7 +40,7 @@ defmodule Shop.Website.Node do
   the document stores one. Props are stringified a level deep; an absent
   `index` is 0.
   """
-  @spec from_map(map()) :: t()
+  @spec from_map(map()) :: %__MODULE__{}
   def from_map(map) when is_map(map) do
     map = stringify(map)
 

@@ -106,13 +106,13 @@ defmodule Shop.MixProject do
       ],
       precommit: ["quality"],
       quality: [
+        "quality.security",
         "format --check-formatted",
         "compile --warnings-as-errors",
         "deps.unlock --check-unused",
         "test --cover",
         "credo --strict",
         "dialyzer",
-        "quality.security",
         "docs --warnings-as-errors"
       ],
       "quality.security": ["deps.audit", "hex.audit", "sobelow --config"]

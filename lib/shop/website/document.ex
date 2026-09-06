@@ -3,7 +3,7 @@ defmodule Shop.Website.Document do
 
   @type t :: %{optional(String.t()) => term()}
 
-  alias Shop.Website.{Tree, ComponentModel}
+  alias Shop.Website.{ComponentModel, Tree}
   def tree(document), do: Tree.from_stored(get_in(document, ["page", "nodes"]))
   def components(document), do: ComponentModel.entries(document["component_model"])
 

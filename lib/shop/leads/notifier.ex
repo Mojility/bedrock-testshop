@@ -3,9 +3,10 @@ defmodule Shop.Leads.Notifier do
   use GenServer
   import Ecto.Query
   import Swoosh.Email, except: [from: 2]
-  alias Shop.{Repo, Mailer}
-  alias Shop.Leads.Lead
   alias Shop.Accounts.User
+  alias Shop.Leads.Lead
+  alias Shop.Mailer
+  alias Shop.Repo
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
@@ -41,29 +42,31 @@ defmodule Shop.Leads.Notifier do
               lock: "FOR UPDATE SKIP LOCKED"
           )
 
-        Enum.each(leads, fn lead ->
-          email =
-            new()
-            |> Swoosh.Email.from(Mailer.from_address())
-            |> to(recipients)
-            |> subject("New enquiry for #{Shop.name()}")
-            |> text_body(
-              "A new enquiry is waiting in your business system. Sign in to read it and record your follow-up.\n\n#{ShopWeb.Endpoint.url()}/app/leads#leads-#{lead.id}"
-            )
-
-          case deliver.(email) do
-            {:ok, _} ->
-              lead |> Ecto.Changeset.change(notified_at: DateTime.utc_now()) |> Repo.update!()
-
-            _ ->
-              :retry_later
-          end
-        end)
+        Enum.each(leads, &deliver_lead(&1, recipients, deliver))
       end
 
       {:ok, :checked}
     end)
   rescue
     _ -> {:error, :delivery_unavailable}
+  end
+
+  defp deliver_lead(lead, recipients, deliver) do
+    email =
+      new()
+      |> Swoosh.Email.from(Mailer.from_address())
+      |> to(recipients)
+      |> subject("New enquiry for #{Shop.name()}")
+      |> text_body(
+        "A new enquiry is waiting in your business system. Sign in to read it and record your follow-up.\n\n#{ShopWeb.Endpoint.url()}/app/leads#leads-#{lead.id}"
+      )
+
+    case deliver.(email) do
+      {:ok, _} ->
+        lead |> Ecto.Changeset.change(notified_at: DateTime.utc_now()) |> Repo.update!()
+
+      _ ->
+        :retry_later
+    end
   end
 end

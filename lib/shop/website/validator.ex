@@ -389,7 +389,7 @@ defmodule Shop.Website.Validator do
   defp result([]), do: :ok
   defp result(problems), do: {:error, problems}
 
-  defp ids(nodes), do: nodes |> Enum.map(&where/1) |> Enum.join(", ")
+  defp ids(nodes), do: Enum.map_join(nodes, ", ", &where/1)
 
   # An expanded node is named for the model by the node the agent wrote.
   defp where(%{type: type, id: id}) do

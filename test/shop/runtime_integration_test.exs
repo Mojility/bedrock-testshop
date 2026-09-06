@@ -1,6 +1,11 @@
 defmodule Shop.RuntimeIntegrationTest do
   use ShopWeb.ConnCase, async: false
 
+  alias Plug.Conn
+  alias Plug.SSL
+  alias Shop.Leads.RateLimiter
+  alias ShopWeb.Plugs.TrustedProxy
+
   test "rehearsal mail cannot be re-enabled by a credentials file" do
     names = ~w(MAIL_ADAPTER AWS_CREDENTIALS_FILE DATABASE_URL SECRET_KEY_BASE)
     old = Map.new(names, &{&1, System.get_env(&1)})
@@ -31,20 +36,20 @@ defmodule Shop.RuntimeIntegrationTest do
 
     address = fn value ->
       Plug.Test.conn(:post, "/leads")
-      |> Plug.Conn.put_req_header("x-forwarded-for", value)
-      |> ShopWeb.Plugs.TrustedProxy.call([])
+      |> Conn.put_req_header("x-forwarded-for", value)
+      |> TrustedProxy.call([])
       |> Map.fetch!(:remote_ip)
     end
 
     one = address.("192.0.2.201")
     two = address.("192.0.2.202")
 
-    Enum.each(1..Shop.Leads.RateLimiter.limit(), fn _ ->
-      assert Shop.Leads.RateLimiter.allow?(one)
+    Enum.each(1..RateLimiter.limit(), fn _ ->
+      assert RateLimiter.allow?(one)
     end)
 
-    refute Shop.Leads.RateLimiter.allow?(one)
-    assert Shop.Leads.RateLimiter.allow?(two)
+    refute RateLimiter.allow?(one)
+    assert RateLimiter.allow?(two)
   end
 
   test "runtime configuration refuses a non-Canadian AWS region" do
@@ -62,13 +67,13 @@ defmodule Shop.RuntimeIntegrationTest do
   end
 
   test "untrusted forwarding headers do not change the client address" do
-    conn = Plug.Test.conn(:get, "/") |> Plug.Conn.put_req_header("x-forwarded-for", "1.2.3.4")
-    assert ShopWeb.Plugs.TrustedProxy.call(conn, []).remote_ip == conn.remote_ip
+    conn = Plug.Test.conn(:get, "/") |> Conn.put_req_header("x-forwarded-for", "1.2.3.4")
+    assert TrustedProxy.call(conn, []).remote_ip == conn.remote_ip
     old = Application.get_env(:shop, :trusted_proxy_ips, [])
     on_exit(fn -> Application.put_env(:shop, :trusted_proxy_ips, old) end)
     Application.put_env(:shop, :trusted_proxy_ips, ["127.0.0.1"])
-    conn = Plug.Conn.put_req_header(conn, "x-forwarded-for", "9.9.9.9, 1.2.3.4")
-    assert ShopWeb.Plugs.TrustedProxy.call(conn, []).remote_ip == {1, 2, 3, 4}
+    conn = Conn.put_req_header(conn, "x-forwarded-for", "9.9.9.9, 1.2.3.4")
+    assert TrustedProxy.call(conn, []).remote_ip == {1, 2, 3, 4}
   end
 
   test "readiness checks the database", %{conn: conn} do
@@ -107,5 +112,24 @@ defmodule Shop.RuntimeIntegrationTest do
 
     assert {:ok, values} = Shop.RuntimeCredentials.read()
     assert values[:region] == "ca-central-1"
+  end
+
+  test "production redirects browser HTTP but accepts trusted TLS termination and private readiness" do
+    config = Config.Reader.read!(Path.expand("../../config/prod.exs", __DIR__), env: :prod)
+    ssl = SSL.init(config[:shop][ShopWeb.Endpoint][:force_ssl])
+    plain = Plug.Test.conn(:get, "http://shop.example.ca/") |> SSL.call(ssl)
+    assert plain.status == 301
+    assert Conn.get_resp_header(plain, "location") == ["https://shop.example.ca/"]
+
+    terminated =
+      Plug.Test.conn(:get, "http://shop.example.ca/")
+      |> Conn.put_req_header("x-forwarded-proto", "https")
+      |> SSL.call(ssl)
+
+    refute terminated.halted
+    assert terminated.scheme == :https
+
+    health = Plug.Test.conn(:get, "http://localhost/health/ready") |> SSL.call(ssl)
+    refute health.halted
   end
 end

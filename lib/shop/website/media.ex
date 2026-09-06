@@ -1,4 +1,5 @@
 defmodule Shop.Website.Media do
+  @moduledoc "Published image URLs and expiring signed preview URLs."
   def url(%{id: id, variants: variants, preview: true}, variant) do
     name = to_string(variant)
     entry = Map.fetch!(variants, name)

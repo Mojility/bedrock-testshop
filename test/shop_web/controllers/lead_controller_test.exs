@@ -1,6 +1,9 @@
 defmodule ShopWeb.LeadControllerTest do
   use ShopWeb.ConnCase, async: false
 
+  alias Shop.Leads.Lead
+  alias Shop.Leads.RateLimiter
+
   setup do
     dir = Application.app_dir(:shop, "priv/published_site")
     File.mkdir_p!(dir)
@@ -22,24 +25,24 @@ defmodule ShopWeb.LeadControllerTest do
   test "visitor enquiry stays in customer database and returns to thank you", %{conn: conn} do
     conn = post(conn, "/leads", %{lead: %{name: "Jo", phone: "555"}})
     assert redirected_to(conn) == "/?sent=1#lead-sent"
-    assert [%{name: "Jo"}] = Shop.Repo.all(Shop.Leads.Lead)
+    assert [%{name: "Jo"}] = Shop.Repo.all(Lead)
     assert get(recycle(conn), "/?sent=1").resp_body =~ "lead-sent"
   end
 
   test "invalid input renders errors without creating a lead", %{conn: conn} do
     assert post(conn, "/leads", %{lead: %{name: "Jo"}}).status == 422
-    assert Shop.Repo.aggregate(Shop.Leads.Lead, :count) == 0
+    assert Shop.Repo.aggregate(Lead, :count) == 0
   end
 
   test "rate limiting refuses excess submissions without storing them", %{conn: conn} do
     conn = %{conn | remote_ip: {10, 20, 30, 40}}
 
-    for _ <- 1..Shop.Leads.RateLimiter.limit() do
+    for _ <- 1..RateLimiter.limit() do
       assert post(conn, "/leads", %{lead: %{name: "Jo", phone: "555"}}).status == 302
     end
 
     assert post(conn, "/leads", %{lead: %{name: "Jo", phone: "555"}}).status == 429
-    assert Shop.Repo.aggregate(Shop.Leads.Lead, :count) == Shop.Leads.RateLimiter.limit()
+    assert Shop.Repo.aggregate(Lead, :count) == RateLimiter.limit()
   end
 
   test "CSRF is required on public submissions", %{conn: conn} do
@@ -49,6 +52,6 @@ defmodule ShopWeb.LeadControllerTest do
       post(conn, "/leads", %{lead: %{name: "Jo", phone: "555"}})
     end
 
-    assert Shop.Repo.aggregate(Shop.Leads.Lead, :count) == 0
+    assert Shop.Repo.aggregate(Lead, :count) == 0
   end
 end
