@@ -13,6 +13,9 @@ up cold, and this README is written for one.
 `SYSTEM.md` says what the system contains and where its data lives. It is
 kept current by the same generators that change the code.
 
+For product, architecture, independent operation, and evidence gaps, read the
+[documentation index](docs/README.md).
+
 ## What you need
 
 - Elixir 1.20 on Erlang/OTP 29 (`.github/workflows/build.yml` pins the
@@ -56,7 +59,8 @@ mix test
 
 Run `mix precommit` before every commit. It checks formatting, compilation,
 coverage, Credo, types, security, and documentation. CI runs the same checks
-as separate steps so each result remains visible. See [quality checks](guides/quality.md).
+as separate steps so each result remains visible. See [quality
+checks](guides/quality.md).
 
 ## Build the image
 

@@ -16,7 +16,20 @@ defmodule Shop.MixProject do
         plt_core_path: "priv/plts",
         plt_add_apps: [:ex_unit]
       ],
-      docs: [main: "quality", extras: ["guides/quality.md"]],
+      docs: [
+        main: "documentation",
+        extras: [
+          {"docs/README.md", filename: "documentation"},
+          "docs/product.md",
+          "docs/architecture.md",
+          "docs/self-hosting.md",
+          "docs/security-and-accessibility.md",
+          "guides/quality.md",
+          "SYSTEM.md",
+          "BUSINESS.md",
+          "WEBSITE.md"
+        ]
+      ],
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader]
     ]
