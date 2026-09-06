@@ -71,20 +71,28 @@ container, so a broken schema is never served.
 
 The release reads these at start (`config/runtime.exs`):
 
-| Variable          | Required | Meaning                                                                             |
-| ----------------- | -------- | ----------------------------------------------------------------------------------- |
-| `DATABASE_URL`    | yes      | `ecto://user:password@host:5432/database`. The connection uses TLS.                 |
-| `DATABASE_SSL`    | no       | `false` disables TLS for local Postgres; hosted databases keep the default.         |
-| `SECRET_KEY_BASE` | yes      | Signs cookies and tokens. Generate one with `mix phx.gen.secret`.                   |
-| `PHX_HOST`        | yes      | The hostname the system is served at, for links in pages and email.                 |
-| `PORT`            | no       | HTTP port the server listens on. Default `4000`.                                    |
-| `MAIL_FROM`       | no       | Sender address for email, optionally `Name <address>`. Default `noreply@$PHX_HOST`. |
-| `AWS_REGION`      | no       | Region for Amazon SES. Default `ca-central-1`.                                      |
-| `SHOP_NAME`       | no       | Overrides the shop's name from `config/config.exs`.                                 |
-| `POOL_SIZE`       | no       | Database connection pool size. Default `10`.                                        |
+| Variable                 | Required           | Meaning                                                                             |
+| ------------------------ | ------------------ | ----------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | yes                | `ecto://user:password@host:5432/database`. The connection uses TLS.                 |
+| `DATABASE_SSL`           | no                 | `false` disables TLS for local Postgres; hosted databases keep the default.         |
+| `SECRET_KEY_BASE`        | yes                | Signs cookies and tokens. Generate one with `mix phx.gen.secret`.                   |
+| `PHX_HOST`               | yes                | The hostname the system is served at, for links in pages and email.                 |
+| `PORT`                   | no                 | HTTP port the server listens on. Default `4000`.                                    |
+| `MAIL_FROM`              | no                 | Sender address for email, optionally `Name <address>`. Default `noreply@$PHX_HOST`. |
+| `AWS_REGION`             | no                 | Region for Amazon SES. Default `ca-central-1`.                                      |
+| `SHOP_NAME`              | no                 | Overrides the shop's name from `config/config.exs`.                                 |
+| `MEDIA_BUCKET`           | for photos         | This customer's private Canadian S3 bucket.                                         |
+| `AWS_CREDENTIALS_FILE`   | hosted             | Read-only, atomically renewed customer AWS credentials.                             |
+| `TRUSTED_PROXY_IPS`      | behind a proxy     | Comma-separated trusted proxy peer addresses.                                       |
+| `WEBSITE_PREVIEW_SECRET` | for remote preview | Separate machine credential, at least 32 bytes.                                     |
+| `LEAD_NOTIFICATIONS`     | no                 | Set `false` for isolated rehearsals.                                                |
+| `POOL_SIZE`              | no                 | Database connection pool size. Default `10`.                                        |
 
-Email is sent through Amazon SES using the credentials of the instance
-role the container runs under; no access key is configured anywhere.
+Hosted media and mail read renewable customer-scoped credentials from
+`AWS_CREDENTIALS_FILE`. The host renews that read-only file. Standalone mail can
+use the application's instance role; hosted containers receive no host metadata
+or fleet permissions. Runtime configuration refuses any AWS region other than
+ca-central-1. SES sandbox restrictions must be resolved in Canada.
 
 ## Deploy it on your own
 
@@ -98,7 +106,8 @@ hosted one Bedrock runs. The code is identical in both.
 ## Continuous integration
 
 `.github/workflows/build.yml` runs `mix precommit` against a PostgreSQL
-service on every push to `main`, builds the Docker image, and pushes it to
+service on every push to `main`, builds an ARM64 Docker image, and pushes its
+immutable commit tag to
 an Amazon ECR repository. Pushing needs two repository variables:
 
 - `AWS_ROLE_ARN`: an IAM role GitHub assumes through OIDC (no long-lived

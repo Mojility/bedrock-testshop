@@ -44,7 +44,9 @@ Canada. Roost runs `/app/bin/migrate` before `/app/bin/server`; the server does
 not repeat migrations on restart. Caddy terminates TLS.
 
 The standalone CloudFormation recipe uses an ARM instance in ca-central-1 and
-requires an explicit commit image tag. Its container entrypoint runs migrations
+requires an explicit commit image tag and exact main-branch CI identity. Both
+the runtime and infrastructure reject a non-Canadian AWS region. Its container
+entrypoint runs migrations
 before starting. A trusted deployment operator establishes the first owner with
 `Shop.Release.bootstrap_owner/1`; no public account bootstrap endpoint exists.
 

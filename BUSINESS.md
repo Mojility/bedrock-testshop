@@ -35,8 +35,9 @@ at the delivery boundary can send a duplicate notification. Historical imports
 are marked as already notified.
 
 The initial rate limiter allows ten attempts per network peer each hour. It
-uses the connection address, never an untrusted forwarding header. Configure
-trusted proxy address resolution before production use behind a shared proxy;
+uses the connection address, never an untrusted forwarding header. Set
+`TRUSTED_PROXY_IPS` to the exact proxy peer addresses before use behind
+a shared proxy;
 otherwise visitors behind that proxy share the limit. Counters are per node
 and reset when the application restarts.
 

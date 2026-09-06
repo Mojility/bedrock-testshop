@@ -1,6 +1,20 @@
 defmodule Shop.RuntimeIntegrationTest do
   use ShopWeb.ConnCase, async: false
 
+  test "runtime configuration refuses a non-Canadian AWS region" do
+    old = System.get_env("AWS_REGION")
+
+    on_exit(fn ->
+      if old, do: System.put_env("AWS_REGION", old), else: System.delete_env("AWS_REGION")
+    end)
+
+    System.put_env("AWS_REGION", "us-east-1")
+
+    assert_raise RuntimeError, "Customer infrastructure must use ca-central-1", fn ->
+      Config.Reader.read!(Path.expand("../../config/runtime.exs", __DIR__), env: :test)
+    end
+  end
+
   test "untrusted forwarding headers do not change the client address" do
     conn = Plug.Test.conn(:get, "/") |> Plug.Conn.put_req_header("x-forwarded-for", "1.2.3.4")
     assert ShopWeb.Plugs.TrustedProxy.call(conn, []).remote_ip == conn.remote_ip

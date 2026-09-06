@@ -1,123 +1,84 @@
-# Deploying this system
+# Deploying this customer system
 
-The system is one container (built from the `Dockerfile` at the root of
-this repository) in front of one PostgreSQL database, behind a reverse
-proxy that terminates TLS. That recipe is rendered in two forms. The code,
-the image, and the workflow that builds it are identical in both; only the
-infrastructure underneath differs.
+This repository owns its application, business database, and website renderer.
+Hosted and standalone deployments use the same ARM64 image. Read SYSTEM.md
+and BUSINESS.md before transferring a live system.
 
-## Hosted by Bedrock
+## Hosted by Roost
 
-Bedrock runs the container on its own infrastructure in AWS ca-central-1
-(Montréal): the system gets its own database and database role on
-Bedrock's shared PostgreSQL instance, its own ECR repository, its own
-hostname behind Bedrock's Caddy, and shares the instance fleet, mail
-sending, and monitoring. Nothing to do here; every push to `main` builds
-and deploys.
+Bedrock updates the customer's repository. CI runs the tests and pushes an
+immutable commit image to the customer's Canadian ECR repository. Bedrock
+verifies the exact build and rehearses it against a private database copy in
+Canada, then asks Roost to deploy the image by digest. A source push alone does
+not authorize a hosted restart.
 
-Moving from hosted to standalone is a redeploy plus a data move (`pg_dump`
-from the hosted database, `pg_restore` into the standalone one), never a
-rewrite.
+The isolated pilot gives each customer a database container and credentials,
+private S3 storage with separate editor/runtime roles, and a Caddy hostname.
+The host renews the read-only AWS credential file every ten minutes. Roost runs
+migrations separately from the server and checks public `/health/ready` before
+success. General hosting and off-host backup qualification remain outstanding.
 
-## Standalone: `standalone.yaml`
+## Standalone recipe
 
-A CloudFormation template that stands the whole system up in a fresh AWS
-account, in ca-central-1, with nothing shared:
+`standalone.yaml` provisions a VPC, encrypted private RDS database, ECR,
+an ARM `t4g.small` instance, Caddy, an Elastic IP, and optional DNS/SES
+resources
+in ca-central-1. The instance uses SSM instead of SSH. Secrets Manager holds
+its database and session secrets. This recipe has not received the hosted
+pilot's full operational qualification.
 
-- A VPC with two public subnets in two availability zones.
-- An RDS PostgreSQL instance (`db.t4g.micro`, encrypted, inside the VPC,
-  not publicly reachable), with a generated master password kept in
-  Secrets Manager.
-- An ECR repository the CI workflow pushes the image to.
-- One EC2 instance (`t3.small`, Amazon Linux 2023) running Docker and
-  Caddy. Caddy serves the single hostname with a Let's Encrypt certificate
-  and proxies to the container; a systemd unit pulls the image from ECR
-  and runs it with the secrets from Secrets Manager. No SSH; use SSM
-  Session Manager.
-- An Elastic IP, and a Route 53 A record for it when you give a hosted
-  zone.
-- Optionally, an SES identity for the domain, with its DKIM records in
-  the hosted zone, so the system can send its sign-in emails.
-- Optionally, the IAM role and OIDC provider that let this repository's
-  GitHub Actions workflow push images without long-lived keys.
+Required inputs are `DomainName`, `SecretKeyBase`, and an explicit 40-character
+commit SHA in `ImageTag`. `ImageRepositoryName` defaults to `shop` and must
+match the CI repository variable. `HostedZoneId` and `CreateSesIdentity` control
+DNS and SES setup. `InstanceType` must be an ARM type accepted by the template.
 
-### Parameters
+For GitHub CI, set `GitHubRepository` to `owner/name`. For an immutable subject,
+also provide both `GitHubOwnerId` and `GitHubRepositoryId`. Obtain those numeric
+IDs from the repository API and check its actual OIDC subject configuration.
+Older name-based subjects omit both IDs. Both forms trust only `main`; neither
+uses wildcard branches. `GitHubOidcProviderArn` can reuse an existing account
+provider. The returned role may push images and cannot restart the runtime.
 
-| Parameter                | Meaning                                                                                     |
-| ------------------------ | ------------------------------------------------------------------------------------------- |
-| `DomainName`             | The hostname the system is served at, for example `app.example.ca`.                         |
-| `HostedZoneId`           | Optional. The Route 53 hosted zone of the domain; the A record (and DKIM records) go here.   |
-| `SecretKeyBase`          | Phoenix `SECRET_KEY_BASE`; generate with `mix phx.gen.secret`. Kept in Secrets Manager.      |
-| `ImageTag`               | The image tag the instance runs. Default `latest`.                                           |
-| `ImageRepositoryName`    | Name of the ECR repository to create. Default `shop`. Set `ECR_REPOSITORY` in GitHub to it.  |
-| `InstanceType`           | Default `t3.small`.                                                                          |
-| `CreateSesIdentity`      | `true` to verify the domain with SES for sending email. Default `true`.                      |
-| `GitHubRepository`       | Optional, `owner/name`. Creates the role GitHub Actions assumes to push images.              |
-| `GitHubOidcProviderArn`  | Optional. An existing GitHub OIDC provider in the account, if one already exists.            |
-
-### Steps
-
-1. Validate, then create the stack (about 15 minutes, mostly the database):
-
-   ```sh
-   aws cloudformation validate-template --region ca-central-1 \
-     --template-body file://infra/standalone.yaml
-
-   aws cloudformation deploy --region ca-central-1 \
-     --stack-name shop \
-     --template-file infra/standalone.yaml \
-     --capabilities CAPABILITY_NAMED_IAM \
-     --parameter-overrides \
-       DomainName=app.example.ca \
-       HostedZoneId=Z0123456789ABCDEFGHIJ \
-       SecretKeyBase="$(mix phx.gen.secret)" \
-       GitHubRepository=your-org/your-repo
-   ```
-
-2. Read the outputs:
-
-   ```sh
-   aws cloudformation describe-stacks --region ca-central-1 \
-     --stack-name shop --query 'Stacks[0].Outputs'
-   ```
-
-3. In the GitHub repository's settings, under Variables, set
-   `AWS_ROLE_ARN` to the `GitHubActionsRoleArn` output and
-   `ECR_REPOSITORY` to the `ImageRepository` output. Push to `main`, or
-   run the workflow by hand. The first push builds and pushes the image;
-   the instance, which has been retrying the pull, starts the system
-   within a minute of it landing.
-
-4. Point the domain at the `PublicIP` output if you did not give a
-   hosted zone. Caddy obtains the certificate on the first request.
-
-5. If `CreateSesIdentity` is on and the account's SES is still in the
-   sandbox, request production access in the SES console; until then SES
-   only delivers to verified addresses.
-
-### After a new image
-
-The workflow pushes every commit to `main`. To run a new image, restart
-the service on the instance; the `RestartCommand` output has the exact
-command, which uses SSM and needs no SSH:
+Validate the template before creating or updating resources:
 
 ```sh
-aws ssm send-command --region ca-central-1 \
-  --document-name AWS-RunShellScript \
-  --instance-ids <InstanceId> \
-  --parameters 'commands=["systemctl restart shop"]'
+aws cloudformation validate-template --region ca-central-1 \
+  --template-body file://infra/standalone.yaml
 ```
 
-To roll back, set `ImageTag` to the previous commit's SHA and update the
-stack, or edit `/opt/shop/.env` on the instance and restart.
+Create the stack with the explicit parameters through a protected deployment
+configuration. Do not put secrets in shell history or commit them. Set the
+repository's `AWS_ROLE_ARN` and `ECR_REPOSITORY` from the stack outputs, then
+run
+the build for the exact `ImageTag` commit. The instance retries its first pull
+until that image exists. Point the domain at the `PublicIP` output if DNS is
+managed separately. Check SES identity verification and Canadian sending access.
 
-### Backups and export
+For subsequent releases, qualify the image and migrations, then update the
+protected service image reference to the new immutable commit and restart it
+through trusted SSM access. Restarting a service with the old image reference
+does not deploy a new image. The current bootstrap uses the stack image setting
+on first boot; a stack parameter update alone does not re-run user data on an
+existing host. Do not roll application code back across incompatible database
+migrations. Rehearse restore as a separate operation.
 
-RDS keeps seven days of automated backups, and deleting the stack takes a
-final snapshot of the database. `pg_dump` from the instance (over SSM)
-against the `DatabaseEndpoint` output is a complete, plain export.
+## Media, owner access, and recovery
 
-### Cost
+The standalone recipe's database and compute resources are not a complete
+customer exit procedure. Preserve or migrate the customer's private S3 bucket,
+and configure `MEDIA_BUCKET` plus a renewed, application-scoped
+`AWS_CREDENTIALS_FILE` for media reads. The current standalone template does not
+automatically create that bucket or renewer. Do not silently lose photographs
+or grant fleet permissions to make them load.
 
-Roughly $35 a month in ca-central-1: the instance, the database, storage,
-and the Elastic IP. Free-tier eligible accounts pay less in the first year.
+Establish the intended owner through `Shop.Release.bootstrap_owner/1` and check
+sign-in before switching traffic. Configure exact trusted proxy peers. When
+moving leads, freeze old submissions, transfer records only within Canada,
+compare all source fields, retain source records, and remove temporary exports.
+Historical imports must not resend notifications.
+
+RDS retains seven days of automated backups and takes a final snapshot on
+stack deletion. Database export and S3 protection are separate responsibilities.
+The hosted pilot's local recovery points do not provide off-host backups.
+Email remains subject to the deploying account's Canadian SES sandbox and
+identity permissions; there is no cross-region fallback.

@@ -65,12 +65,37 @@ Parameters:
     Description: Optional owner/name of the GitHub repository; when given, an IAM role its Actions workflow can assume to push images is created
     AllowedPattern: '^$|^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'
 
+  GitHubOwnerId:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^[0-9]+$'
+    Description: Immutable GitHub owner ID; supply together with GitHubRepositoryId for new repositories
+
+  GitHubRepositoryId:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^[0-9]+$'
+    Description: Immutable GitHub repository ID; supply together with GitHubOwnerId
+
   GitHubOidcProviderArn:
     Type: String
     Default: ''
     Description: Optional ARN of an existing GitHub OIDC provider in this account; leave empty to create one
 
+Rules:
+  CanadaOnly:
+    Assertions:
+      - Assert: !Equals [!Ref 'AWS::Region', ca-central-1]
+        AssertDescription: Deploy customer infrastructure only in ca-central-1
+  IdentityPair:
+    Assertions:
+      - Assert: !Or
+          - !And [!Equals [!Ref GitHubOwnerId, ''], !Equals [!Ref GitHubRepositoryId, '']]
+          - !And [!Not [!Equals [!Ref GitHubOwnerId, '']], !Not [!Equals [!Ref GitHubRepositoryId, '']]]
+        AssertDescription: Supply both immutable GitHub IDs or neither
+
 Conditions:
+  HasImmutableIdentity: !Not [!Equals [!Ref GitHubOwnerId, '']]
   HasHostedZone: !Not [!Equals [!Ref HostedZoneId, '']]
   WantsSesIdentity: !Equals [!Ref CreateSesIdentity, 'true']
   SesDkimInZone: !And [!Condition WantsSesIdentity, !Condition HasHostedZone]
@@ -276,8 +301,13 @@ Resources:
             Condition:
               StringEquals:
                 'token.actions.githubusercontent.com:aud': sts.amazonaws.com
-              StringLike:
-                'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubRepository}:*'
+                'token.actions.githubusercontent.com:sub': !If
+                  - HasImmutableIdentity
+                  - !Sub
+                    - 'repo:${Owner}@${GitHubOwnerId}/${Repository}@${GitHubRepositoryId}:ref:refs/heads/main'
+                    - Owner: !Select [0, !Split ['/', !Ref GitHubRepository]]
+                      Repository: !Select [1, !Split ['/', !Ref GitHubRepository]]
+                  - !Sub 'repo:${GitHubRepository}:ref:refs/heads/main'
       Policies:
         - PolicyName: PushImages
           PolicyDocument:

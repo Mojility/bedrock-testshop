@@ -2,7 +2,8 @@
 
 The website is rendered by this application from a versioned scene. It runs
 without Bedrock or Roost. The repository owns the renderer, component model,
-and native component code. A publication changes `priv/published_site/scene.json`,
+and native component code. A publication changes
+`priv/published_site/scene.json`,
 the media manifest, and public assets; it does not replace application source.
 
 ## Extending the model
@@ -40,7 +41,8 @@ loads a module, or executes a query. Recursive definitions are rejected.
 For application-backed behavior, add `"native": true` to the declaration and
 register an explicit function in `Shop.Website.Components.native/0`, for example
 `%{"shop_notice" => &ShopWeb.ShopNotice.render/1}`. Its Phoenix assigns include
-`node` (ID, props, children) and `state.content`. Use normal escaped HEEx output.
+`node` (ID, props, children) and `state.content`. Use normal escaped HEEx
+output.
 The declared template supports structural checks. A native registration is
 required for rendering and preview; no static substitute is silently served.
 
@@ -63,13 +65,17 @@ Bedrock editor before publishing a scene using new types. Incompatible models,
 missing native registrations, and unsupported scene versions fail explicitly.
 
 `POST /api/website/preview` renders through the same code as the public page.
-It requires a bearer credential from `WEBSITE_PREVIEW_SECRET` (at least 32 bytes).
+It requires a bearer credential from `WEBSITE_PREVIEW_SECRET` (at least 32
+bytes).
 This credential is separate from customer login and belongs in runtime secret
 configuration. Bedrock uses `WEBSITE_PREVIEW_SECRETS`, a JSON map from tenant ID
 to its corresponding credential, and the mapped customer application's HTTPS
 address. Neither credential belongs in this repository or the scene.
 
-The preview has no browser session and does not persist changes. Bedrock embeds
+Authenticated previews produce signed, 15-minute links for draft photographs,
+including photographs absent from the published manifest. Unsigned unpublished
+variants remain inaccessible. The preview has no browser session and does not
+persist changes. Bedrock embeds
 its result in a sandboxed frame. The public homepage generates a fresh CSRF
 token per request. The runtime exposes no scene-writing HTTP endpoint.
 
