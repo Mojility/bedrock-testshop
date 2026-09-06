@@ -1,9 +1,8 @@
 defmodule ShopWeb.MediaController do
   use ShopWeb, :controller
 
-  def show(conn, %{"id" => id, "variant" => variant}) do
-    with {:ok, manifest} <- Shop.Website.media(),
-         %{"key" => key} = entry <- get_in(manifest, ["photos", id, variant]),
+  def show(conn, %{"id" => id, "variant" => variant} = params) do
+    with %{"key" => key} = entry <- media_entry(id, variant, params),
          true <- variant in ["thumb", "medium", "large"],
          true <-
            is_binary(key) and String.starts_with?(key, "media/") and
@@ -14,7 +13,10 @@ defmodule ShopWeb.MediaController do
          {:ok, %{status: 200, body: bytes}} <- request(bucket, key, credentials) do
       conn
       |> put_resp_content_type(content_type(entry))
-      |> put_resp_header("cache-control", "public, max-age=3600")
+      |> put_resp_header(
+        "cache-control",
+        if(params["preview"], do: "private, no-store", else: "public, max-age=3600")
+      )
       |> put_resp_header("x-content-type-options", "nosniff")
       |> send_resp(200, bytes)
     else
@@ -22,6 +24,20 @@ defmodule ShopWeb.MediaController do
       false -> send_resp(conn, 404, "Not found")
       {:ok, %{status: 404}} -> send_resp(conn, 404, "Not found")
       _ -> send_resp(conn, 503, "Photo temporarily unavailable")
+    end
+  end
+
+  defp media_entry(id, variant, %{"preview" => token}) do
+    case Phoenix.Token.verify(ShopWeb.Endpoint, "website-media-preview", token, max_age: 900) do
+      {:ok, %{id: ^id, variant: ^variant, entry: entry}} -> entry
+      _ -> nil
+    end
+  end
+
+  defp media_entry(id, variant, _) do
+    case Shop.Website.media() do
+      {:ok, manifest} -> get_in(manifest, ["photos", id, variant])
+      _ -> nil
     end
   end
 

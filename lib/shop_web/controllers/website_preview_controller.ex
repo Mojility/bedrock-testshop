@@ -21,7 +21,11 @@ defmodule ShopWeb.WebsitePreviewController do
         conn |> put_status(413) |> json(%{error: "too_large"})
 
       true ->
-        case Shop.Website.render(scene, media: {:ok, media}, csrf_token: false) do
+        case Shop.Website.render(scene,
+               media: {:ok, media},
+               csrf_token: false,
+               preview_media: true
+             ) do
           {:ok, html} ->
             conn |> put_resp_header("cache-control", "no-store") |> json(%{html: html})
 

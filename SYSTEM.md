@@ -27,34 +27,38 @@ from the `Dockerfile` here, in front of one PostgreSQL database.
   follow-up at `/app/leads`. Pending email notifications retry independently.
   `/app/team` lets the owner invite staff and revoke access. Tables: `leads`.
 
-Private-media delivery, trusted proxy address resolution, initial owner
-provisioning, and release validation remain deployment integrations.
+Private photographs are served from this application's Canadian S3 bucket.
+The runtime reads short-lived credentials from `AWS_CREDENTIALS_FILE` on each
+request. The host renews that file. Only explicitly configured proxy addresses
+may supply the visitor address used by submission rate limits. The health
+endpoint checks both the application and its database. Authenticated previews
+use short-lived, signed photograph links so a draft can include photographs
+that have not yet been published.
 
 ## How it is deployed
 
-Every push to `main` runs the test suite (`mix precommit`), builds the
-image, and pushes it to an Amazon ECR repository tagged `latest` and with
-the commit SHA (`.github/workflows/build.yml`). An instance running
-Docker pulls that image and runs it behind Caddy, which terminates TLS
-with a Let's Encrypt certificate. On start, the container runs pending
-migrations and then serves.
+Every push to `main` runs `mix precommit`, builds an ARM64 container, and pushes
+an immutable commit SHA tag to ECR. Roost deploys the image by digest after
+Bedrock verifies the build and rehearses it against a private database copy in
+Canada. Roost runs `/app/bin/migrate` before `/app/bin/server`; the server does
+not repeat migrations on restart. Caddy terminates TLS.
 
-Two renderings of the same deployment exist, with identical code:
-
-- **Hosted by Bedrock**: the container runs on Bedrock's infrastructure
-  in ca-central-1, with its own database on a shared PostgreSQL instance.
-- **Standalone**: `infra/standalone.yaml` stands everything up in an AWS
-  account of TestShop's own, in ca-central-1.
+The standalone CloudFormation recipe uses an ARM instance in ca-central-1 and
+requires an explicit commit image tag. Its container entrypoint runs migrations
+before starting. A trusted deployment operator establishes the first owner with
+`Shop.Release.bootstrap_owner/1`; no public account bootstrap endpoint exists.
 
 ## Where its data lives
 
-All business data is in the system's PostgreSQL database, and only there.
-Hosted, that is a database of its own on Bedrock's RDS instance in
-ca-central-1 (Montréal); standalone, it is the RDS instance the template
-creates. Nothing is replicated outside Canada. The schema is the
-migrations under `priv/repo/migrations/`, and `pg_dump` of the database is
-a complete export.
+All business records live in this system's PostgreSQL database. Roost's isolated
+pilot uses a dedicated database container on a Canadian host; standalone uses
+the RDS instance created by `infra/standalone.yaml`. Photographs live in the
+customer's Canadian S3 bucket. Back up both the database and photographs.
+Customer records and runtime secrets are never committed to this repository.
 
-Secrets (database credentials, `SECRET_KEY_BASE`) live in AWS Secrets
-Manager in the deploying account. No secret and no customer data is in
-this repository.
+Hosted secrets are protected host files. Runtime containers receive their own
+database credentials, session secret, optional preview credential, and scoped
+short-lived AWS credentials; they receive no fleet management credentials.
+Standalone secrets are owned by the deploying account. SES delivery remains
+subject to that account's Canadian-region sending permissions. Set
+`LEAD_NOTIFICATIONS=false` for an isolated rehearsal to prevent notifications.

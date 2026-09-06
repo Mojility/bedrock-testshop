@@ -8,7 +8,7 @@ Description: 'This system on its own: VPC, RDS PostgreSQL, ECR, and one EC2 inst
 #     --template-file infra/standalone.yaml --capabilities CAPABILITY_NAMED_IAM \
 #     --parameter-overrides DomainName=app.example.ca SecretKeyBase=...
 #
-# Shape: a t3.small in a VPC of its own, Caddy terminating TLS with Let's
+# Shape: a t4g.small in a VPC of its own, Caddy terminating TLS with Let's
 # Encrypt for the one hostname, the app running as a Docker container pulled
 # from the stack's ECR repository, the database a db.t4g.micro RDS instance
 # in the same VPC. Secrets in Secrets Manager. No SSH; use SSM Session
@@ -33,8 +33,8 @@ Parameters:
 
   ImageTag:
     Type: String
-    Default: latest
-    Description: ECR image tag the instance runs
+    AllowedPattern: "^[a-f0-9]{40}$"
+    Description: Immutable commit SHA tag produced by the repository build
 
   ImageRepositoryName:
     Type: String
@@ -44,11 +44,11 @@ Parameters:
 
   InstanceType:
     Type: String
-    Default: t3.small
+    Default: t4g.small
     AllowedValues:
-      - t3.micro
-      - t3.small
-      - t3.medium
+      - t4g.micro
+      - t4g.small
+      - t4g.medium
     Description: EC2 instance type
 
   CreateSesIdentity:
@@ -460,7 +460,7 @@ Resources:
       - PublicRoute
     Properties:
       InstanceType: !Ref InstanceType
-      ImageId: '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}'
+      ImageId: '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64}}'
       SubnetId: !Ref PublicSubnetA
       SecurityGroupIds:
         - !Ref InstanceSecurityGroup
@@ -617,4 +617,4 @@ Outputs:
 
   EstimatedMonthlyCost:
     Description: Rough monthly cost
-    Value: 'about $35/month (t3.small, db.t4g.micro, 40 GB gp3, EIP)'
+    Value: 'about $35/month (t4g.small, db.t4g.micro, 40 GB gp3, EIP)'

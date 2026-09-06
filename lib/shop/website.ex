@@ -53,7 +53,7 @@ defmodule Shop.Website do
         ShopWeb.WebsiteHTML.show(%{
           document: document,
           theme: theme,
-          photos: Media.photos(manifest),
+          photos: Media.photos(manifest, Keyword.get(opts, :preview_media, false)),
           lead_form: Keyword.get(opts, :lead_form, Phoenix.Component.to_form(%{}, as: :lead)),
           csrf_token: Keyword.get(opts, :csrf_token, false),
           sent: Keyword.get(opts, :sent, false),
