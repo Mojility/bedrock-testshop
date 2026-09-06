@@ -40,16 +40,26 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
+  database_host = URI.parse(database_url).host || raise("DATABASE_URL must include a hostname")
+
+  database_tls =
+    if System.get_env("DATABASE_SSL", "true") == "false" do
+      false
+    else
+      ca_path =
+        System.get_env("DATABASE_CA_CERT_PATH") ||
+          Application.app_dir(:shop, "priv/cert/ca-central-1-bundle.pem")
+
+      [
+        verify: :verify_peer,
+        server_name_indication: String.to_charlist(database_host),
+        customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)],
+        cacertfile: ca_path
+      ]
+    end
+
   config :shop, Shop.Repo,
-    # RDS requires TLS and its CA is not in the runner image's trust store,
-    # so encrypt the connection without verifying the chain.
-    # Hosted databases (RDS) require TLS; a laptop's Postgres in
-    # docker-compose.yml has none. DATABASE_SSL=false turns it off.
-    ssl:
-      if(System.get_env("DATABASE_SSL", "true") == "false",
-        do: false,
-        else: [verify: :verify_none]
-      ),
+    ssl: database_tls,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     # For machines with several cores, consider starting multiple pools of `pool_size`

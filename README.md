@@ -79,6 +79,7 @@ The release reads these at start (`config/runtime.exs`):
 | Variable                 | Required           | Meaning                                                                             |
 | ------------------------ | ------------------ | ----------------------------------------------------------------------------------- |
 | `DATABASE_URL`           | yes                | `ecto://user:password@host:5432/database`. The connection uses TLS.                 |
+| `DATABASE_CA_CERT_PATH`  | no                 | Optional trusted CA PEM; the bundled Canadian RDS roots are the default.            |
 | `DATABASE_SSL`           | no                 | `false` disables TLS for local Postgres; hosted databases keep the default.         |
 | `SECRET_KEY_BASE`        | yes                | Signs cookies and tokens. Generate one with `mix phx.gen.secret`.                   |
 | `PHX_HOST`               | yes                | The hostname the system is served at, for links in pages and email.                 |

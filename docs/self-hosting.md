@@ -39,9 +39,12 @@ history, commits, screenshots, or shared logs.
 
 The environment-variable table in the repository-root `README.md` lists more
 settings. The authoritative behavior is in [runtime.exs](../config/runtime.exs).
-Database TLS is enabled by default, but its current setting does not verify the
-server certificate chain. Address this documented gap before relying on TLS
-for database server identity. `DATABASE_SSL=false` is for controlled local use.
+Database TLS verifies the certificate chain and the hostname in `DATABASE_URL`.
+The release bundles the Canadian RDS CA roots for standalone deployments.
+`DATABASE_CA_CERT_PATH` selects an operator-provided PEM trust bundle when needed.
+Maintain that bundle as database certificates rotate. `DATABASE_SSL=false` is
+for controlled local use. These source changes do not prove a deployed release
+uses verified TLS; retain connection and configuration evidence.
 
 The standalone template does not create the media bucket or credential renewer.
 Provide both explicitly. The runtime rereads renewed credentials and rejects

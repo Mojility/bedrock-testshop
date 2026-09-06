@@ -132,4 +132,39 @@ defmodule Shop.RuntimeIntegrationTest do
     health = Plug.Test.conn(:get, "http://localhost/health/ready") |> SSL.call(ssl)
     refute health.halted
   end
+
+  test "database TLS verifies the configured server and supports an operator CA bundle" do
+    names = ~w(DATABASE_URL DATABASE_SSL DATABASE_CA_CERT_PATH SECRET_KEY_BASE AWS_REGION)
+    original = Map.new(names, &{&1, System.get_env(&1)})
+
+    on_exit(fn ->
+      Enum.each(original, fn {key, value} ->
+        if value, do: System.put_env(key, value), else: System.delete_env(key)
+      end)
+    end)
+
+    System.put_env("DATABASE_URL", "ecto://runtime:synthetic@db.example.ca/customer")
+    System.put_env("SECRET_KEY_BASE", String.duplicate("synthetic", 8))
+    System.put_env("AWS_REGION", "ca-central-1")
+    System.delete_env("DATABASE_SSL")
+    System.delete_env("DATABASE_CA_CERT_PATH")
+    path = Path.expand("../../config/runtime.exs", __DIR__)
+    config = Config.Reader.read!(path, env: :prod)
+    ssl = config[:shop][Shop.Repo][:ssl]
+    assert ssl[:verify] == :verify_peer
+    assert ssl[:server_name_indication] == ~c"db.example.ca"
+    assert is_function(ssl[:customize_hostname_check][:match_fun], 2)
+    assert ssl[:cacertfile] == Application.app_dir(:shop, "priv/cert/ca-central-1-bundle.pem")
+    assert ssl[:cacertfile] |> File.read!() |> :public_key.pem_decode() |> length() == 3
+    refute Keyword.has_key?(ssl, :cacerts)
+
+    System.put_env("DATABASE_CA_CERT_PATH", "/run/database/ca.pem")
+    ssl = Config.Reader.read!(path, env: :prod)[:shop][Shop.Repo][:ssl]
+    assert ssl[:verify] == :verify_peer
+    assert ssl[:cacertfile] == "/run/database/ca.pem"
+    refute Keyword.has_key?(ssl, :cacerts)
+
+    System.put_env("DATABASE_SSL", "false")
+    assert Config.Reader.read!(path, env: :prod)[:shop][Shop.Repo][:ssl] == false
+  end
 end
