@@ -7,12 +7,15 @@ defmodule ShopWeb.PageControllerTest do
     conn = get(conn, ~p"/")
     html = html_response(conn, 200)
     assert html =~ Shop.name()
-    assert html =~ ~p"/users/log-in"
+
+    if match?({:ok, _}, Shop.Website.read_scene()),
+      do: assert(html =~ "lead-form"),
+      else: assert(html =~ ~p"/users/log-in")
   end
 
-  test "GET / greets a signed-in user", %{conn: conn} do
+  test "GET /app/leads greets a signed-in user", %{conn: conn} do
     user = user_fixture()
-    conn = conn |> log_in_user(user) |> get(~p"/")
+    conn = conn |> log_in_user(user) |> get(~p"/app/leads")
     html = html_response(conn, 200)
     assert html =~ user.email
     assert html =~ ~p"/users/log-out"
