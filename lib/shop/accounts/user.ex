@@ -11,6 +11,8 @@ defmodule Shop.Accounts.User do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "users" do
+    field :role, :string, default: "staff"
+    field :disabled_at, :utc_datetime_usec
     field :email, :string
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true

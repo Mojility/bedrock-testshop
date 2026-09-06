@@ -15,9 +15,20 @@ from the `Dockerfile` here, in front of one PostgreSQL database.
 - **Accounts** (`lib/shop/accounts/`): who can sign in. Sign-in is by
   magic link sent to the account's email; there are no passwords. A user
   may change their own email from Settings. Tables: `users`,
-  `users_tokens`.
+  `users_tokens`. Owner and staff access is invitation-only; see `BUSINESS.md`.
 
-Nothing else yet. Operations modules are added here as they are built.
+- **Website** (`lib/shop/website/`, `lib/shop_web/website_html.ex`): renders a
+  versioned scene from `priv/published_site/scene.json`. The renderer and
+  component model belong to this repository. Public content can come from this
+  application's database through `Shop.Website.Content`. See `WEBSITE.md`.
+  Publishing updates scene/assets; it never replaces component implementations.
+
+- **Leads** (`lib/shop/leads/`): public enquiry submission and authenticated
+  follow-up at `/app/leads`. Pending email notifications retry independently.
+  `/app/team` lets the owner invite staff and revoke access. Tables: `leads`.
+
+Private-media delivery, trusted proxy address resolution, initial owner
+provisioning, and release validation remain deployment integrations.
 
 ## How it is deployed
 

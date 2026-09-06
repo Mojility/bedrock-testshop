@@ -42,11 +42,14 @@ defmodule ShopWeb.Layouts do
       <nav class="flex-none">
         <ul class="menu menu-horizontal items-center gap-1 px-1">
           <%= if @current_scope do %>
+            <li><.link navigate={~p"/app/leads"}>Leads</.link></li>
+            <li :if={@current_scope.user.role == "owner"}>
+              <.link navigate={~p"/app/team"}>Team</.link>
+            </li>
             <li class="hidden sm:block opacity-70">{@current_scope.user.email}</li>
             <li><.link href={~p"/users/settings"}>Settings</.link></li>
             <li><.link href={~p"/users/log-out"} method="delete">Log out</.link></li>
           <% else %>
-            <li><.link href={~p"/users/register"}>Register</.link></li>
             <li><.link href={~p"/users/log-in"}>Log in</.link></li>
           <% end %>
           <li><.theme_toggle /></li>

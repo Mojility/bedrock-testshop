@@ -13,6 +13,25 @@ defmodule Shop.Release do
     end
   end
 
+  def bootstrap_owner(email) do
+    load_app()
+
+    {:ok, result, _} =
+      Ecto.Migrator.with_repo(Shop.Repo, fn _ -> Shop.Accounts.Staff.bootstrap_owner(email) end)
+
+    result
+  end
+
+  def import_legacy_leads(path) do
+    load_app()
+    rows = path |> File.read!() |> Jason.decode!()
+
+    {:ok, result, _} =
+      Ecto.Migrator.with_repo(Shop.Repo, fn _ -> Shop.Leads.import_legacy(rows) end)
+
+    result
+  end
+
   def rollback(repo, version) do
     load_app()
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))

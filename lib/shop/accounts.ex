@@ -27,7 +27,7 @@ defmodule Shop.Accounts do
 
   """
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+    Repo.one(from u in User, where: u.email == ^email and is_nil(u.disabled_at))
   end
 
   @doc """
@@ -136,7 +136,11 @@ defmodule Shop.Accounts do
   """
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
-    Repo.one(query)
+
+    case Repo.one(query) do
+      {%User{disabled_at: nil}, _} = result -> result
+      _ -> nil
+    end
   end
 
   @doc """
@@ -144,7 +148,7 @@ defmodule Shop.Accounts do
   """
   def get_user_by_magic_link_token(token) do
     with {:ok, query} <- UserToken.verify_magic_link_token_query(token),
-         {user, _token} <- Repo.one(query) do
+         {%User{disabled_at: nil} = user, _token} <- Repo.one(query) do
       user
     else
       _ -> nil
@@ -163,6 +167,9 @@ defmodule Shop.Accounts do
     {:ok, query} = UserToken.verify_magic_link_token_query(token)
 
     case Repo.one(query) do
+      {%User{disabled_at: disabled}, _} when not is_nil(disabled) ->
+        {:error, :not_found}
+
       {%User{confirmed_at: nil} = user, _token} ->
         user
         |> User.confirm_changeset()

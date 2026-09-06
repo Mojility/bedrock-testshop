@@ -145,3 +145,16 @@ if config_env() == :prod do
     secret_access_key: [:instance_role],
     region: System.get_env("AWS_REGION") || "ca-central-1"
 end
+
+config :shop, :website_preview_secret, System.get_env("WEBSITE_PREVIEW_SECRET")
+
+config :shop, :media_bucket, System.get_env("MEDIA_BUCKET")
+config :shop, :aws_credentials_file, System.get_env("AWS_CREDENTIALS_FILE")
+
+config :shop,
+       :trusted_proxy_ips,
+       String.split(System.get_env("TRUSTED_PROXY_IPS") || "", ",", trim: true)
+
+if System.get_env("AWS_CREDENTIALS_FILE") do
+  config :shop, Shop.Mailer, adapter: Shop.MailAdapter
+end

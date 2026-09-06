@@ -9,7 +9,7 @@ defmodule ShopWeb.UserLive.LoginTest do
       {:ok, _lv, html} = live(conn, ~p"/users/log-in")
 
       assert html =~ "Log in"
-      assert html =~ "Sign up"
+      assert html =~ "Ask the business owner"
       assert html =~ "Log in with email"
     end
   end
@@ -44,16 +44,9 @@ defmodule ShopWeb.UserLive.LoginTest do
   end
 
   describe "login navigation" do
-    test "redirects to registration page when the Register button is clicked", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/log-in")
-
-      {:ok, _login_live, login_html} =
-        lv
-        |> element("main a", "Sign up")
-        |> render_click()
-        |> follow_redirect(conn, ~p"/users/register")
-
-      assert login_html =~ "Register"
+    test "offers no public registration", %{conn: conn} do
+      {:ok, view, _} = live(conn, ~p"/users/log-in")
+      refute has_element?(view, "a[href='/users/register']")
     end
   end
 

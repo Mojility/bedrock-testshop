@@ -43,9 +43,10 @@ The dev and test config expect a Postgres role `postgres` with password
 say. Postgres from Homebrew on macOS has no `postgres` role; run
 `createuser -s postgres` once, or `export PGUSER=$USER PGPASSWORD=`.
 
-Sign-in is passwordless. Register with an email address at
-`/users/register`, then open the link the system sends. In development
-the email lands in the local mailbox at `/dev/mailbox`.
+Sign-in is passwordless and staff access is invitation-only. For local
+setup, call `Shop.Accounts.Staff.bootstrap_owner("owner@example.com")` in
+`iex -S mix`. Request a login link at `/users/log-in`. Development email
+lands in `/dev/mailbox`. See `BUSINESS.md` for deployment and lead transfer.
 
 ## Run the tests
 
@@ -73,8 +74,8 @@ The release reads these at start (`config/runtime.exs`):
 | Variable          | Required | Meaning                                                                             |
 | ----------------- | -------- | ----------------------------------------------------------------------------------- |
 | `DATABASE_URL`    | yes      | `ecto://user:password@host:5432/database`. The connection uses TLS.                 |
-- `DATABASE_SSL` — `false` to connect without TLS (a local Postgres); hosted databases keep the default.
-| `SECRET_KEY_BASE` | yes      | Signs cookies and tokens. Generate one with `mix phx.gen.secret`.                    |
+| `DATABASE_SSL`    | no       | `false` disables TLS for local Postgres; hosted databases keep the default.         |
+| `SECRET_KEY_BASE` | yes      | Signs cookies and tokens. Generate one with `mix phx.gen.secret`.                   |
 | `PHX_HOST`        | yes      | The hostname the system is served at, for links in pages and email.                 |
 | `PORT`            | no       | HTTP port the server listens on. Default `4000`.                                    |
 | `MAIL_FROM`       | no       | Sender address for email, optionally `Name <address>`. Default `noreply@$PHX_HOST`. |
@@ -109,7 +110,7 @@ push and says so in the run summary.
 
 ## Layout
 
-```
+```text
 lib/shop/          business logic (contexts, schemas), no web dependencies
 lib/shop_web/      the web layer: router, LiveViews, controllers, components
 config/            compile-time and runtime configuration

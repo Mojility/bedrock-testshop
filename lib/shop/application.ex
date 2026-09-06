@@ -10,6 +10,8 @@ defmodule Shop.Application do
     children = [
       ShopWeb.Telemetry,
       Shop.Repo,
+      Shop.Leads.RateLimiter,
+      Shop.Leads.Notifier,
       {DNSCluster, query: Application.get_env(:shop, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Shop.PubSub},
       # Start a worker by calling: Shop.Worker.start_link(arg)
