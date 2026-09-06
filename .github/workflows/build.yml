@@ -53,11 +53,52 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
-          restore-keys: ${{ runner.os }}-mix-
+          key: ${{ runner.os }}-elixir-1.20.2-otp-29.0-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-elixir-1.20.2-otp-29.0-mix-
+
+      - name: Restore Dialyzer PLTs
+        id: plt-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-elixir-1.20.2-otp-29.0-plt-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-elixir-1.20.2-otp-29.0-plt-
 
       - run: mix deps.get
-      - run: mix precommit
+      - name: Dependency upgrade visibility
+        run: mix hex.outdated --all
+        continue-on-error: true
+      - run: mix format --check-formatted
+      - run: mix compile --warnings-as-errors
+      - run: mix deps.unlock --check-unused
+      - name: Tests with coverage
+        if: ${{ !cancelled() }}
+        run: mix test --cover
+      - name: Strict Credo
+        if: ${{ !cancelled() }}
+        run: mix credo --strict
+      - name: Dialyzer
+        id: dialyzer
+        if: ${{ !cancelled() }}
+        run: mix dialyzer
+      - name: Save Dialyzer PLTs
+        if: ${{ !cancelled() && steps.plt-cache.outputs.cache-hit != 'true' && steps.dialyzer.outcome != 'skipped' }}
+        uses: actions/cache/save@v4
+        with:
+          path: priv/plts
+          key: ${{ steps.plt-cache.outputs.cache-primary-key }}
+      - name: Dependency vulnerabilities
+        if: ${{ !cancelled() }}
+        run: mix deps.audit
+      - name: Retired packages
+        if: ${{ !cancelled() }}
+        run: mix hex.audit
+      - name: Phoenix security
+        if: ${{ !cancelled() }}
+        run: mix sobelow --config
+      - name: Documentation
+        if: ${{ !cancelled() }}
+        run: mix docs --warnings-as-errors
 
   build-and-push:
     needs: quality

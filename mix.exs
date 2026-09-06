@@ -10,6 +10,13 @@ defmodule Shop.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      test_coverage: [summary: [threshold: 90]],
+      dialyzer: [
+        plt_local_path: "priv/plts",
+        plt_core_path: "priv/plts",
+        plt_add_apps: [:ex_unit]
+      ],
+      docs: [main: "quality", extras: ["guides/quality.md"]],
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader]
     ]
@@ -27,7 +34,7 @@ defmodule Shop.MixProject do
 
   def cli do
     [
-      preferred_envs: [precommit: :test]
+      preferred_envs: [precommit: :test, quality: :test, "quality.security": :test]
     ]
   end
 
@@ -68,7 +75,13 @@ defmodule Shop.MixProject do
       {:gettext, "~> 0.26"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.15", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.40", only: [:dev, :test], runtime: false},
+      {:mox, "~> 1.2", only: :test, runtime: false}
     ]
   end
 
@@ -91,7 +104,18 @@ defmodule Shop.MixProject do
         "esbuild shop --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: ["quality"],
+      quality: [
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "deps.unlock --check-unused",
+        "test --cover",
+        "credo --strict",
+        "dialyzer",
+        "quality.security",
+        "docs --warnings-as-errors"
+      ],
+      "quality.security": ["deps.audit", "hex.audit", "sobelow --config"]
     ]
   end
 end

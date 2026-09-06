@@ -37,7 +37,8 @@ that have not yet been published.
 
 ## How it is deployed
 
-Every push to `main` runs `mix precommit`, builds an ARM64 container, and pushes
+Every push to `main` runs the [quality checks](guides/quality.md),
+builds an ARM64 container, and pushes
 an immutable commit SHA tag to ECR. Roost deploys the image by digest after
 Bedrock verifies the build and rehearses it against a private database copy in
 Canada. Roost runs `/app/bin/migrate` before `/app/bin/server`; the server does

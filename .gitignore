@@ -35,3 +35,6 @@ shop-*.tar
 npm-debug.log
 /assets/node_modules/
 
+
+# Dialyzer caches are specific to the Elixir/OTP toolchain.
+/priv/plts/

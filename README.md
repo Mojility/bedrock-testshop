@@ -54,8 +54,9 @@ lands in `/dev/mailbox`. See `BUSINESS.md` for deployment and lead transfer.
 mix test
 ```
 
-`mix precommit` is what CI runs: compile with warnings as errors, prune
-unused dependencies, format, test. Run it before every commit.
+Run `mix precommit` before every commit. It checks formatting, compilation,
+coverage, Credo, types, security, and documentation. CI runs the same checks
+as separate steps so each result remains visible. See [quality checks](guides/quality.md).
 
 ## Build the image
 
@@ -105,7 +106,7 @@ hosted one Bedrock runs. The code is identical in both.
 
 ## Continuous integration
 
-`.github/workflows/build.yml` runs `mix precommit` against a PostgreSQL
+`.github/workflows/build.yml` runs the quality checks against a PostgreSQL
 service on every push to `main`, builds an ARM64 Docker image, and pushes its
 immutable commit tag to
 an Amazon ECR repository. Pushing needs two repository variables:
