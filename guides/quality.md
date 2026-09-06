@@ -55,3 +55,19 @@ Theme preferences run in the compiled JavaScript bundle. Inline styles remain
 allowed for generated theme tokens and LiveView styling. Production redirects
 HTTP browser requests to HTTPS behind the trusted TLS edge. Private localhost
 readiness checks remain available without a redirect.
+
+## Ongoing enforcement
+
+CI runs the required quality checks on pushes to main, pull requests, and each
+Monday. Scheduled checks can detect newly disclosed dependency vulnerabilities
+without a source change. Dependency update reports are informational; vulnerability
+and security checks are required. A failed quality job blocks image publication.
+Pull requests and scheduled runs cannot publish images or deploy.
+
+Run `mix precommit` before committing. A passing check applies to the tested
+revision; it does not prove untested behavior, replace code review, or make future
+changes safe automatically. Keep the 90% coverage minimum and strict checks when
+changing tooling. Review any new security exception in context and add regression
+tests for its safety boundary. GitHub required checks must be configured separately
+to prevent unchecked merges; local aliases and workflow files cannot enforce that
+repository setting. CI changes take effect only after they are pushed.
