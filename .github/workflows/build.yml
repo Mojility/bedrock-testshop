@@ -99,6 +99,11 @@ jobs:
           REPOSITORY: ${{ vars.ECR_REPOSITORY }}
         run: |
           for tag in "${{ github.sha }}"; do
+            existing=$(aws ecr batch-get-image --repository-name "$REPOSITORY" --image-ids "imageTag=$tag" --query 'images[0].imageId.imageDigest' --output text)
+            if [[ "$existing" != "None" && -n "$existing" ]]; then
+              echo "Reusing immutable image $REGISTRY/$REPOSITORY@$existing" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
             docker tag "shop:${{ github.sha }}" "$REGISTRY/$REPOSITORY:$tag"
             docker push "$REGISTRY/$REPOSITORY:$tag"
             echo "Pushed $REGISTRY/$REPOSITORY:$tag" >> "$GITHUB_STEP_SUMMARY"

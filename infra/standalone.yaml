@@ -251,6 +251,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       RepositoryName: !Ref ImageRepositoryName
+      ImageTagMutability: IMMUTABLE
       ImageScanningConfiguration:
         ScanOnPush: true
       LifecyclePolicy:
@@ -535,6 +536,7 @@ Resources:
           DATABASE_URL=ecto://$DB_USER:$DB_PASSWORD@${Database.Endpoint.Address}:${Database.Endpoint.Port}/shop
           SECRET_KEY_BASE=$(echo "$APP_SECRETS" | jq -r '.secret_key_base')
           PHX_HOST=${DomainName}
+          TRUSTED_PROXY_IPS=127.0.0.1,::1
           PORT=4000
           POOL_SIZE=10
           AWS_REGION=${AWS::Region}
@@ -554,9 +556,24 @@ Resources:
           ECR_REGISTRY=${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
           ECR_IMAGE=$ECR_REGISTRY/${ImageRepositoryName}:${ImageTag}
 
-          # Pulls the image on every start, so a restart is a deploy. Until
-          # the workflow has pushed a first image the pull fails and systemd
-          # retries every 30 seconds.
+          # Resolve the first immutable commit tag once. Later restarts use
+          # the persisted digest; an operator selects subsequent releases.
+          cat > $APP_DIR/start.sh << 'STARTSCRIPT'
+          #!/bin/bash
+          set -euo pipefail
+          if [ ! -s /opt/shop/image ]; then
+            digest=$(aws ecr batch-get-image --region ${AWS::Region} --repository-name ${ImageRepositoryName} --image-ids imageTag=${ImageTag} --query 'images[0].imageId.imageDigest' --output text)
+            [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || exit 1
+            echo "${ImageRepository.RepositoryUri}@$digest" > /opt/shop/image.tmp
+            chmod 600 /opt/shop/image.tmp
+            mv /opt/shop/image.tmp /opt/shop/image
+          fi
+          image=$(cat /opt/shop/image)
+          [[ "$image" =~ @sha256:[a-f0-9]{64}$ ]] || exit 1
+          docker pull "$image"
+          exec docker run --rm --name shop --env-file /opt/shop/.env --network host "$image"
+          STARTSCRIPT
+          chmod 700 $APP_DIR/start.sh
           cat > /etc/systemd/system/shop.service << SERVICE
           [Unit]
           Description=${AWS::StackName} Phoenix application
@@ -571,11 +588,7 @@ Resources:
           ExecStartPre=-/usr/bin/docker stop shop
           ExecStartPre=-/usr/bin/docker rm shop
           ExecStartPre=/bin/bash -c 'aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin $ECR_REGISTRY'
-          ExecStartPre=/usr/bin/docker pull $ECR_IMAGE
-          ExecStart=/usr/bin/docker run --rm --name shop \
-            --env-file $APP_DIR/.env \
-            --network host \
-            $ECR_IMAGE
+          ExecStart=/opt/shop/start.sh
           ExecStop=/usr/bin/docker stop shop
 
           [Install]

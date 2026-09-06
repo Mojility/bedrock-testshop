@@ -44,7 +44,9 @@ Canada. Roost runs `/app/bin/migrate` before `/app/bin/server`; the server does
 not repeat migrations on restart. Caddy terminates TLS.
 
 The standalone CloudFormation recipe uses an ARM instance in ca-central-1 and
-requires an explicit commit image tag and exact main-branch CI identity. Both
+requires an explicit commit image tag and exact main-branch CI identity. ECR
+tags are immutable; the first start resolves the tag to a digest saved in
+`/opt/shop/image`. Restarts use that selected digest. Both
 the runtime and infrastructure reject a non-Canadian AWS region. Its container
 entrypoint runs migrations
 before starting. A trusted deployment operator establishes the first owner with
@@ -63,4 +65,6 @@ database credentials, session secret, optional preview credential, and scoped
 short-lived AWS credentials; they receive no fleet management credentials.
 Standalone secrets are owned by the deploying account. SES delivery remains
 subject to that account's Canadian-region sending permissions. Set
-`LEAD_NOTIFICATIONS=false` for an isolated rehearsal to prevent notifications.
+`LEAD_NOTIFICATIONS=false` and `MAIL_ADAPTER=disabled` for an isolated rehearsal.
+The disabled adapter neither delivers nor logs message contents, even when a
+credential file is present. Rehearsal credentials must also deny SES delivery.

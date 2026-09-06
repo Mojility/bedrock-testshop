@@ -55,7 +55,8 @@ until that image exists. Point the domain at the `PublicIP` output if DNS is
 managed separately. Check SES identity verification and Canadian sending access.
 
 For subsequent releases, qualify the image and migrations, then update the
-protected service image reference to the new immutable commit and restart it
+protected `/opt/shop/image` file to the qualified full ECR image reference
+(`repository-uri@sha256:digest`) and restart the service
 through trusted SSM access. Restarting a service with the old image reference
 does not deploy a new image. The current bootstrap uses the stack image setting
 on first boot; a stack parameter update alone does not re-run user data on an
@@ -72,7 +73,8 @@ automatically create that bucket or renewer. Do not silently lose photographs
 or grant fleet permissions to make them load.
 
 Establish the intended owner through `Shop.Release.bootstrap_owner/1` and check
-sign-in before switching traffic. Configure exact trusted proxy peers. When
+sign-in before switching traffic. The recipe trusts only local Caddy peers
+`127.0.0.1` and `::1`. Keep forwarding headers from other peers untrusted. When
 moving leads, freeze old submissions, transfer records only within Canada,
 compare all source fields, retain source records, and remove temporary exports.
 Historical imports must not resend notifications.
