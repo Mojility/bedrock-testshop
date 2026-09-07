@@ -76,6 +76,10 @@ session. It renders without persisting scene changes. Signed photo links are
 bound to the photo and variant. Their holders can access the corresponding
 photo until expiry, so clients must keep preview output private.
 
+Public `/assets/published/fonts/*.woff2` files permit cross-origin reads without
+credentials for sandboxed previews; private media and authentication retain
+their existing access controls.
+
 ## Trust assumptions and limits
 
 - Only configured proxy peers may supply the visitor address used by rate
