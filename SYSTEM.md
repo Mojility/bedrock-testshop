@@ -86,8 +86,9 @@ asset preparation. A private authenticated gateway is required: this mode
 allows a local owner sign-in to the copied system, and must never be enabled on
 an internet-accessible production server. Session cookies are host-only,
 Secure, SameSite=None and Partitioned; frame ancestors allow only the configured
-parent. Mail delivery is disabled. The application has no management-platform
-runtime dependency.
+parent and optional `EXPLORATION_PLATFORM_ORIGIN`, an explicit HTTPS origin for
+the platform console. No wildcard ancestors are admitted. Mail delivery is
+disabled. The application has no management-platform runtime dependency.
 
 With the server running, execute the actual smoke suite using the same isolated
 configuration and `PHX_SERVER=false MIX_ENV=prod mix run --no-start scripts/smoke.exs`.

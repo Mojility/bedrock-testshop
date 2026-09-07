@@ -72,6 +72,25 @@ defmodule Shop.ExplorationTest do
     assert ShopWeb.Endpoint.session_options()[:same_site] == "Lax"
   end
 
+  test "preview allows both explicit console origins without admitting other sites", %{conn: conn} do
+    config = Application.fetch_env!(:shop, :exploration)
+
+    Application.put_env(
+      :shop,
+      :exploration,
+      Map.put(config, :platform_origin, "https://example.ca")
+    )
+
+    conn = get(conn, "/")
+    [policy] = get_resp_header(conn, "content-security-policy")
+
+    ancestors =
+      policy |> String.split("; ") |> Enum.find(&String.starts_with?(&1, "frame-ancestors"))
+
+    assert ancestors == "frame-ancestors https://console.example.ca https://example.ca"
+    assert get_resp_header(conn, "x-frame-options") == []
+  end
+
   test "local staff sign-in exists only in exploration mode", %{conn: conn} do
     conn = get(conn, "/users/log-in")
     assert redirected_to(conn) == "/app/leads"
@@ -115,6 +134,7 @@ defmodule Shop.ExplorationTest do
       "CUSTOMER_EXPLORATION" => "true",
       "EXPLORATION_HOST" => "work.example.ca",
       "EXPLORATION_PARENT_ORIGIN" => "https://console.example.ca",
+      "EXPLORATION_PLATFORM_ORIGIN" => "https://example.ca",
       "SECRET_KEY_BASE" => String.duplicate("x", 64),
       "DATABASE_URL" => "ecto://production:secret@production.invalid/live",
       "MAIL_ADAPTER" => "logger",
@@ -135,8 +155,29 @@ defmodule Shop.ExplorationTest do
     assert cfg[Shop.Repo][:url] == nil
     assert cfg[Shop.Repo][:username] == "developer"
     assert cfg[Shop.Mailer][:adapter] == Shop.DisabledMailAdapter
+    assert cfg[:exploration].platform_origin == "https://example.ca"
     assert cfg[:lead_notifications] == false
     assert cfg[ShopWeb.Endpoint][:server] == false
+
+    for origin <- [
+          "http://unsafe.invalid",
+          "https://example.ca https://evil.ca",
+          "https://*.example.ca",
+          "https://user@example.ca",
+          "https://example.ca/path",
+          "https://example.ca?x=1",
+          "https://example.ca#frame"
+        ] do
+      System.put_env("EXPLORATION_PLATFORM_ORIGIN", origin)
+
+      assert_raise RuntimeError, fn ->
+        Config.Reader.read!(Path.expand("../../config/runtime.exs", __DIR__), env: :prod)
+      end
+    end
+
+    System.delete_env("EXPLORATION_PLATFORM_ORIGIN")
+    cfg = Config.Reader.read!(Path.expand("../../config/runtime.exs", __DIR__), env: :prod)[:shop]
+    assert cfg[:exploration].platform_origin == nil
     System.put_env("EXPLORATION_PARENT_ORIGIN", "http://unsafe.invalid")
 
     assert_raise RuntimeError, fn ->

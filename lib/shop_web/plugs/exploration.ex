@@ -14,8 +14,14 @@ defmodule ShopWeb.Plugs.Exploration do
           |> delete_resp_header("x-frame-options")
           |> put_resp_header("cache-control", "no-store")
 
+        ancestors =
+          [config.parent_origin, Map.get(config, :platform_origin)]
+          |> Enum.reject(&is_nil/1)
+          |> Enum.uniq()
+          |> Enum.join(" ")
+
         policy =
-          "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: #{config.media_origin}; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors #{config.parent_origin}"
+          "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: #{config.media_origin}; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors #{ancestors}"
 
         conn = put_resp_header(conn, "content-security-policy", policy)
 

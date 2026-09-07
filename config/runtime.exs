@@ -185,18 +185,25 @@ if System.get_env("CUSTOMER_EXPLORATION") == "true" do
   host = System.fetch_env!("EXPLORATION_HOST")
   secret = System.fetch_env!("SECRET_KEY_BASE")
   parent = System.fetch_env!("EXPLORATION_PARENT_ORIGIN")
+  platform = System.get_env("EXPLORATION_PLATFORM_ORIGIN")
   media = System.get_env("EXPLORATION_MEDIA_ORIGIN")
 
-  for origin <- Enum.reject([parent, media], &is_nil/1) do
+  for origin <- Enum.reject([parent, platform, media], &is_nil/1) do
     uri = URI.parse(origin)
 
-    unless uri.scheme == "https" and is_binary(uri.host) and uri.userinfo == nil and
+    unless uri.scheme == "https" and is_binary(uri.host) and
+             Regex.match?(~r/\A[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\z/, uri.host) and
+             uri.userinfo == nil and
              uri.path in [nil, ""] and uri.query == nil and uri.fragment == nil do
       raise "Exploration origins must be explicit HTTPS origins"
     end
   end
 
-  config :shop, :exploration, %{parent_origin: parent, media_origin: media}
+  config :shop, :exploration, %{
+    parent_origin: parent,
+    platform_origin: platform,
+    media_origin: media
+  }
 
   config :shop, Shop.Repo,
     url: nil,
