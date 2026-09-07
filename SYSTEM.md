@@ -69,3 +69,30 @@ subject to that account's Canadian-region sending permissions. Set
 `LEAD_NOTIFICATIONS=false` and `MAIL_ADAPTER=disabled` for an isolated rehearsal.
 The disabled adapter neither delivers nor logs message contents, even when a
 credential file is present. Rehearsal credentials must also deny SES delivery.
+
+## Isolated exploration mode
+
+The application can run against a temporary database copy with
+`CUSTOMER_EXPLORATION=true`. This mode uses PostgreSQL peer authentication for
+local user `developer`, database `exploration`, and socket `/var/run/postgresql`.
+It ignores production database, mail, and cloud credential configuration.
+Set `EXPLORATION_HOST`, a new private `SECRET_KEY_BASE`, and the exact HTTPS
+`EXPLORATION_PARENT_ORIGIN`; optionally set `EXPLORATION_MEDIA_ORIGIN` to the
+existing public media origin. Only already published image paths are reused.
+Media files are not part of the database checkpoint in this initial mode.
+
+Boot with `PHX_SERVER=true MIX_ENV=prod mix phx.server` after compilation and
+asset preparation. A private authenticated gateway is required: this mode
+allows a local owner sign-in to the copied system, and must never be enabled on
+an internet-accessible production server. Session cookies are host-only,
+Secure, SameSite=None and Partitioned; frame ancestors allow only the configured
+parent. Mail delivery is disabled. The application has no management-platform
+runtime dependency.
+
+With the server running, execute the actual smoke suite using the same isolated
+configuration and `PHX_SERVER=false MIX_ENV=prod mix run --no-start scripts/smoke.exs`.
+It checks readiness, public pages and CSS, protected staff access, CSRF denial,
+a synthetic lead write, and authenticated staff reading. It deletes only its own
+test user, tokens and lead in cleanup. It refuses production mode and non-loopback
+HTTP targets. Passing compilation alone does not establish database compatibility;
+this suite exercises the selected source and copied schema without migrations.

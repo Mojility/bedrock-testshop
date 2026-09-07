@@ -20,7 +20,7 @@ end
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
-if System.get_env("PHX_SERVER") do
+if System.get_env("PHX_SERVER") == "true" do
   config :shop, ShopWeb.Endpoint, server: true
 end
 
@@ -30,7 +30,7 @@ if shop_name = System.get_env("SHOP_NAME") do
   config :shop, :shop_name, shop_name
 end
 
-if config_env() == :prod do
+if config_env() == :prod and System.get_env("CUSTOMER_EXPLORATION") != "true" do
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -178,4 +178,47 @@ config :shop, :lead_notifications, System.get_env("LEAD_NOTIFICATIONS") != "fals
 
 if System.get_env("MAIL_ADAPTER") == "disabled" do
   config :shop, Shop.Mailer, adapter: Shop.DisabledMailAdapter
+end
+
+# An isolated local working copy never inherits production endpoints or credentials.
+if System.get_env("CUSTOMER_EXPLORATION") == "true" do
+  host = System.fetch_env!("EXPLORATION_HOST")
+  secret = System.fetch_env!("SECRET_KEY_BASE")
+  parent = System.fetch_env!("EXPLORATION_PARENT_ORIGIN")
+  media = System.get_env("EXPLORATION_MEDIA_ORIGIN")
+
+  for origin <- Enum.reject([parent, media], &is_nil/1) do
+    uri = URI.parse(origin)
+
+    unless uri.scheme == "https" and is_binary(uri.host) and uri.userinfo == nil and
+             uri.path in [nil, ""] and uri.query == nil and uri.fragment == nil do
+      raise "Exploration origins must be explicit HTTPS origins"
+    end
+  end
+
+  config :shop, :exploration, %{parent_origin: parent, media_origin: media}
+
+  config :shop, Shop.Repo,
+    url: nil,
+    hostname: nil,
+    username: "developer",
+    password: nil,
+    database: "exploration",
+    socket_dir: "/var/run/postgresql",
+    ssl: false,
+    pool_size: 2
+
+  config :shop, ShopWeb.Endpoint,
+    http: [ip: {127, 0, 0, 1}, port: 4000],
+    url: [host: host, scheme: "https", port: 443],
+    check_origin: ["https://" <> host],
+    secret_key_base: secret,
+    server: System.get_env("PHX_SERVER") == "true"
+
+  config :shop, Shop.Mailer, adapter: Shop.DisabledMailAdapter
+  config :shop, :lead_notifications, false
+  config :shop, :aws_credentials_file, nil
+  config :shop, :media_bucket, nil
+  config :shop, :dns_cluster_query, nil
+  config :ex_aws, access_key_id: [], secret_access_key: []
 end

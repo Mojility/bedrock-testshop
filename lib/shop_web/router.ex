@@ -16,6 +16,7 @@ defmodule ShopWeb.Router do
     }
 
     plug :fetch_current_scope_for_user
+    plug ShopWeb.Plugs.Exploration
   end
 
   pipeline :api do

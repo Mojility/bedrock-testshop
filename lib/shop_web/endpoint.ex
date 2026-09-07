@@ -12,8 +12,8 @@ defmodule ShopWeb.Endpoint do
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    longpoll: [connect_info: [session: @session_options]]
+    websocket: [connect_info: [session: {__MODULE__, :session_options, []}]],
+    longpoll: [connect_info: [session: {__MODULE__, :session_options, []}]]
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -52,7 +52,23 @@ defmodule ShopWeb.Endpoint do
 
   plug Plug.MethodOverride
   plug Plug.Head
-  plug Plug.Session, @session_options
+  plug :load_session
+
+  @doc false
+  def session_options do
+    if Application.get_env(:shop, :exploration) do
+      Keyword.merge(@session_options,
+        key: "__Host-shop_exploration",
+        secure: true,
+        same_site: "None",
+        extra: "Partitioned"
+      )
+    else
+      @session_options
+    end
+  end
+
+  defp load_session(conn, _), do: Plug.Session.call(conn, Plug.Session.init(session_options()))
   plug ShopWeb.Router
   # Sandboxed previews have an opaque origin. Only successful public font
   # responses (including cache revalidation) permit credential-free CORS.

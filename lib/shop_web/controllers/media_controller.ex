@@ -1,10 +1,25 @@
 defmodule ShopWeb.MediaController do
   use ShopWeb, :controller
 
+  def show(conn, %{"id" => id, "variant" => variant} = params) do
+    case Application.get_env(:shop, :exploration) do
+      %{media_origin: origin} when is_binary(origin) ->
+        if media_entry(id, variant, params) && variant in ["thumb", "medium", "large"] &&
+             Ecto.UUID.cast(id) == {:ok, id} do
+          redirect(conn, external: origin <> "/media/" <> id <> "/" <> variant)
+        else
+          send_resp(conn, 404, "Not found")
+        end
+
+      _ ->
+        serve_media(conn, id, variant, params)
+    end
+  end
+
   # Only four raster MIME types are allowed, with nosniff; SVG and HTML are never served.
   # Tests cover hostile manifest MIME types and rejected object keys/preview signatures.
   # sobelow_skip ["XSS.ContentType", "XSS.SendResp"]
-  def show(conn, %{"id" => id, "variant" => variant} = params) do
+  defp serve_media(conn, id, variant, params) do
     with %{"key" => key} = entry <- media_entry(id, variant, params),
          true <- variant in ["thumb", "medium", "large"],
          true <-
