@@ -46,6 +46,24 @@ Do not give a hosted customer container fleet or host metadata credentials.
 Only explicitly configured proxy peers can supply visitor addresses. Canadian
 SES sandbox restrictions are not a reason to use another region.
 
+## Website source and publication
+
+Before changing a website file, identify whether it is authored source or
+publication output. Compact JSON does not establish provenance.
+
+- Page composition, website facts and theme are authored in Bedrock's design
+  document and published into `priv/published_site/scene.json`.
+- `priv/published_site/` and `priv/static/assets/published/` contain publication
+  outputs. Their local guidance identifies the producer and editable inputs.
+- `priv/website/components.json` is editable customer component source.
+- `lib/shop/website/` owns component definitions, expansion and public content;
+  `lib/shop_web/website_html.ex` implements HTML rendering. Business behavior
+  belongs in the application's contexts, controllers and LiveViews.
+
+Read `WEBSITE.md` for the source map and compatibility boundary. Follow the
+producer back to its inputs; do not repair generated output or replace a
+compatibility hash to conceal an incompatible source change.
+
 ## Project guidelines
 
 - Use `mix precommit` alias when you are done with all changes and fix any

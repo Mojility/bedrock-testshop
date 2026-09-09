@@ -6,6 +6,34 @@ and native component code. A publication changes
 `priv/published_site/scene.json`,
 the media manifest, and public assets; it does not replace application source.
 
+## Source map
+
+The authoring document and the published scene are different revisions of data.
+Bedrock edits the tenant's design document, freezes it for publication, and
+exports the runtime scene. This repository owns the published revision and its
+consumer; it does not contain that editor's live authoring database.
+
+| Change or file | Editable authority | How it reaches the website |
+| --- | --- | --- |
+| Composition, design facts and theme | Bedrock design document | Publish a validated design |
+| `priv/published_site/scene.json` | Published output of that document and theme | `Shop.Website.read_scene/0` reads it |
+| `priv/published_site/media.json` | Ready photograph metadata in the publisher | Publication exports the referenced variants |
+| `priv/static/assets/published/` | Publisher CSS and font sources | Publication copies CSS/fonts and rewrites font URLs |
+| `priv/website/components.json` | Customer extension declarations | Commit, refresh the editor's component model, then publish |
+| `lib/shop/website/` | Customer definitions, expansion and public-content code | Application build and release |
+| `lib/shop_web/website_html.ex` | Customer HTML renderer | Application build and release |
+| `test/fixtures/website_scene.json` | Deliberate test scenario | Tests consume it; publication does not update it |
+
+The producer is `Bedrock.Publishing.Export.files/1`. Publishing updates only its
+exported files and publication metadata. It does not replace the customer
+renderer, native component implementations or business records. There is no
+local Mix task that reconstructs an editor draft from the published scene.
+
+Trace the requested behavior to its editable source before working on a compact
+file. A scene may show which components are selected, but its HTML is produced
+by scene expansion and the renderer. Changing the published scene does not
+change those implementations and will be overwritten by a later publication.
+
 ## Extending the model
 
 Add declarations to `priv/website/components.json`. Version 1 contains a
@@ -63,6 +91,13 @@ conflict handling before allowing both sources to modify the same design.
 The scene pins the component-model hash. Refresh component definitions in the
 Bedrock editor before publishing a scene using new types. Incompatible models,
 missing native registrations, and unsupported scene versions fail explicitly.
+
+The hash includes both built-in registry definitions and customer extension
+entries. Importing `components.json` refreshes extensions only. A change to the
+customer's built-in registry therefore needs a coordinated publisher contract
+change; it cannot be fixed by refreshing extensions or replacing the scene hash.
+A rendering implementation change does not necessarily require a contract change.
+Keep the contract stable unless the requested capability actually changes it.
 
 `POST /api/website/preview` renders through the same code as the public page.
 It requires a bearer credential from `WEBSITE_PREVIEW_SECRET` (at least 32
