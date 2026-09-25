@@ -1,0 +1,4 @@
+# toolchain
+elixir 1.19.0-otp-28
+erlang 28.1
+nodejs 22.1.0

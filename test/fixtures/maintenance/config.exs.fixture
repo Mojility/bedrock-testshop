@@ -1,0 +1,12 @@
+import Config
+
+config :esbuild,
+  version: "0.25.4",
+  shop: [args: ~w(js/app.js --bundle)]
+
+# Configure tailwind (the version is required)
+config :tailwind,
+  version: "4.1.7",
+  shop: [args: ~w(--input=assets/css/app.css)]
+
+config :shop, :shop_name, "Fixture"

@@ -1,0 +1,6 @@
+%{
+  "heroicons": {:git, "https://github.com/tailwindlabs/heroicons.git", "0435d4ca364a608cc75e2f8683d374e55abbae26", [tag: "v2.2.0"]},
+  "phoenix": {:hex, :phoenix, "1.8.14", "abc", [:mix], [], "hexpm", "def"},
+  "phoenix_live_view": {:hex, :phoenix_live_view, "1.2.12", "abc", [:mix], [], "hexpm", "def"},
+  "lazy_html": {:hex, :lazy_html, "0.1.13", "abc", [:mix], [], "hexpm", "def"},
+}

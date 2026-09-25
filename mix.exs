@@ -24,6 +24,7 @@ defmodule Shop.MixProject do
           "docs/architecture.md",
           "docs/self-hosting.md",
           "docs/security-and-accessibility.md",
+          "docs/maintenance.md",
           "guides/quality.md",
           "SYSTEM.md",
           "BUSINESS.md",
@@ -111,8 +112,9 @@ defmodule Shop.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind shop", "esbuild shop"],
+      "assets.build": ["compile", "tailwind shop", "esbuild shop"],
       "assets.deploy": [
+        "compile",
         "tailwind shop --minify",
         "esbuild shop --minify",
         "phx.digest"

@@ -1,0 +1,436 @@
+name: Maintenance
+
+# Bedrock dispatches this workflow to bring the system to its maintenance
+# baseline: the toolchain, dependency requirements, asset tools and vendored
+# third-party files. It applies the baseline, updates dependencies, and runs
+# the full quality gate. When something changed and every check passed, it
+# pushes one commit to a maintenance/<id> branch. It never builds an image,
+# never deploys, and never changes main: Bedrock decides what is released.
+# Every run uploads a maintenance-result artifact. See docs/maintenance.md.
+#
+# Updated dependencies are compiled and tested in the maintain job, which
+# holds a read-only token. Only the publish job may write, and it runs no
+# project code: it applies the patch after checking that it touches only
+# the files maintenance is allowed to change.
+
+run-name: maintenance ${{ inputs.maintenance_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      maintenance_id:
+        description: Bedrock maintenance run id (UUID)
+        required: true
+        type: string
+      baseline:
+        description: Maintenance baseline (JSON)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: maintenance-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      maintenance_id: ${{ steps.validate.outputs.maintenance_id }}
+      outcome: ${{ steps.conclude.outputs.outcome }}
+      failed_step: ${{ steps.conclude.outputs.failed_step }}
+    env:
+      MIX_ENV: test
+      MAINTENANCE_ID: ${{ inputs.maintenance_id }}
+      BASELINE: ${{ inputs.baseline }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Only what is needed to choose the toolchain is checked here;
+      # apply_baseline.exs validates the whole baseline.
+      - name: Validate inputs
+        id: validate
+        run: |
+          uuid='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+          if [[ ! "$MAINTENANCE_ID" =~ $uuid ]]; then
+            echo "::error::maintenance_id must be a lowercase UUID."
+            exit 1
+          fi
+          echo "maintenance_id=$MAINTENANCE_ID" >> "$GITHUB_OUTPUT"
+
+          work="$RUNNER_TEMP/maintenance"
+          mkdir -p "$work"
+          if (( ${#BASELINE} >= 60000 )); then
+            echo "::error::The baseline is too large."
+            exit 1
+          fi
+          printf '%s' "$BASELINE" > "$work/baseline.json"
+          if ! jq -e '.version == 1 and (.tool_versions | type == "object")' "$work/baseline.json" > /dev/null; then
+            echo "::error::The baseline is not a version 1 baseline."
+            exit 1
+          fi
+
+          elixir=$(jq -r '.tool_versions.elixir | strings' "$work/baseline.json")
+          erlang=$(jq -r '.tool_versions.erlang | strings' "$work/baseline.json")
+          postgres=$(jq -r '.tool_versions.postgres | strings' "$work/baseline.json")
+          if [[ ! "$elixir" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?-otp-[0-9]+$ ||
+                ! "$erlang" =~ ^[0-9]+(\.[0-9]+){1,3}$ ||
+                ! "$postgres" =~ ^[0-9]+$ ]]; then
+            echo "::error::The baseline tool_versions are not valid."
+            exit 1
+          fi
+          {
+            echo "elixir=$elixir"
+            echo "erlang=$erlang"
+            echo "postgres=$postgres"
+          } >> "$GITHUB_OUTPUT"
+
+      # The baseline's toolchain is what apply_baseline.exs writes to
+      # .tool-versions, so the checks run on the toolchain being adopted.
+      - name: Set up Elixir
+        id: beam
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ steps.validate.outputs.erlang }}
+          elixir-version: ${{ steps.validate.outputs.elixir }}
+          version-type: strict
+
+      - name: Start PostgreSQL
+        id: postgres
+        env:
+          POSTGRES_MAJOR: ${{ steps.validate.outputs.postgres }}
+        run: |
+          docker run --detach --name postgres \
+            --env POSTGRES_USER=postgres --env POSTGRES_PASSWORD=postgres \
+            --publish 5432:5432 \
+            --health-cmd pg_isready --health-interval 2s --health-retries 30 \
+            "postgres:${POSTGRES_MAJOR}"
+          for _ in $(seq 60); do
+            if [[ "$(docker inspect --format '{{.State.Health.Status}}' postgres)" == healthy ]]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs postgres
+          exit 1
+
+      - name: Apply baseline
+        id: apply
+        run: |
+          work="$RUNNER_TEMP/maintenance"
+          cp mix.lock "$work/before.lock"
+          status=0
+          elixir scripts/maintenance/apply_baseline.exs apply \
+            --baseline "$work/baseline.json" > "$work/changes.json" || status=$?
+          if (( status == 2 )); then
+            echo "invalid=true" >> "$GITHUB_OUTPUT"
+          fi
+          exit "$status"
+
+      - name: Restore dependency cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-
+
+      - name: Restore Dialyzer PLTs
+        uses: actions/cache/restore@v4
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-plt-${{ hashFiles('.tool-versions') }}-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-plt-${{ hashFiles('.tool-versions') }}-
+
+      - name: Update dependencies
+        id: deps
+        run: |
+          mix deps.get
+          mix deps.update --all
+          mix format mix.exs
+
+      # Build outputs are gitignored, so they never reach the commit.
+      - name: Reinstall asset tools and build assets
+        id: assets
+        run: |
+          mix tailwind.install
+          mix esbuild.install
+          mix assets.build
+
+      # Runs every gate of the project's `quality` alias (the same checks
+      # as `mix precommit` and CI) and names the first one that failed.
+      - name: Quality gate
+        id: gates
+        run: |
+          work="$RUNNER_TEMP/maintenance"
+          GATES_FILE="$work/gates.txt" mix run --no-start --no-compile --no-deps-check \
+            -r scripts/maintenance/baseline_maintenance.ex \
+            -e 'File.write!(System.fetch_env!("GATES_FILE"), Enum.join(BaselineMaintenance.quality_gates(Mix.Project.config()[:aliases]), "\n"))'
+          mapfile -t gates < "$work/gates.txt"
+          if (( ${#gates[@]} == 0 )); then
+            echo "failed_gate=quality alias" >> "$GITHUB_OUTPUT"
+            echo "::error::mix.exs defines no quality alias."
+            exit 1
+          fi
+
+          failed=""
+          for gate in "${gates[@]}"; do
+            echo "::group::mix $gate"
+            read -ra args <<< "$gate"
+            if ! mix "${args[@]}" < /dev/null; then
+              failed=${failed:-$gate}
+              echo "::error::mix $gate failed."
+            fi
+            echo "::endgroup::"
+          done
+
+          if [[ -n "$failed" ]]; then
+            echo "failed_gate=$failed" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+      - name: Summarise changes
+        id: summarise
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
+        run: |
+          work="$RUNNER_TEMP/maintenance"
+          script=scripts/maintenance/apply_baseline.exs
+          elixir "$script" lock-diff "$work/before.lock" mix.lock > "$work/dependencies.json"
+          jq -s '.[0] + {dependencies: .[1]}' "$work/changes.json" "$work/dependencies.json" > "$work/changes-full.json"
+          mix hex.outdated > "$work/outdated.txt" 2>&1 || true
+          elixir "$script" blocked --baseline "$work/baseline.json" --outdated "$work/outdated.txt" > "$work/blocked.json"
+
+      - name: Package the change
+        id: package
+        run: |
+          work="$RUNNER_TEMP/maintenance"
+          git add --all
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --cached --binary > "$work/maintenance.patch"
+          elixir scripts/maintenance/apply_baseline.exs commit-message \
+            "$MAINTENANCE_ID" "$work/changes-full.json" > "$work/commit-message.txt"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Conclude
+        id: conclude
+        if: always()
+        env:
+          VALIDATE: ${{ steps.validate.outcome }}
+          BEAM: ${{ steps.beam.outcome }}
+          POSTGRES: ${{ steps.postgres.outcome }}
+          APPLY: ${{ steps.apply.outcome }}
+          APPLY_INVALID: ${{ steps.apply.outputs.invalid }}
+          DEPS: ${{ steps.deps.outcome }}
+          ASSETS: ${{ steps.assets.outcome }}
+          GATES: ${{ steps.gates.outcome }}
+          FAILED_GATE: ${{ steps.gates.outputs.failed_gate }}
+          SUMMARISE: ${{ steps.summarise.outcome }}
+          PACKAGE: ${{ steps.package.outcome }}
+          CHANGED: ${{ steps.package.outputs.changed }}
+        run: |
+          outcome=""
+          failed_step=""
+          if [[ "$VALIDATE" != success || "$APPLY_INVALID" == true ]]; then
+            outcome=invalid
+          else
+            for step in "setup_elixir=$BEAM" "postgres=$POSTGRES" "apply_baseline=$APPLY" \
+                        "update_dependencies=$DEPS" "assets=$ASSETS" "quality=$GATES" \
+                        "summarise=$SUMMARISE" "package=$PACKAGE"; do
+              if [[ "${step#*=}" != success ]]; then
+                outcome=failed
+                failed_step=${step%%=*}
+                break
+              fi
+            done
+            if [[ "$failed_step" == quality && -n "$FAILED_GATE" ]]; then
+              failed_step="quality: $FAILED_GATE"
+            fi
+            if [[ -z "$outcome" ]]; then
+              if [[ "$CHANGED" == true ]]; then outcome=ready; else outcome=current; fi
+            fi
+          fi
+          echo "outcome=$outcome" >> "$GITHUB_OUTPUT"
+          echo "failed_step=$failed_step" >> "$GITHUB_OUTPUT"
+          echo "Maintenance outcome: $outcome ${failed_step:+(failed at $failed_step)}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep work for the publish and result jobs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maintenance-work
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            ${{ runner.temp }}/maintenance/maintenance.patch
+            ${{ runner.temp }}/maintenance/commit-message.txt
+            ${{ runner.temp }}/maintenance/changes.json
+            ${{ runner.temp }}/maintenance/changes-full.json
+            ${{ runner.temp }}/maintenance/blocked.json
+
+  publish:
+    needs: maintain
+    if: needs.maintain.outputs.outcome == 'ready'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      branch: ${{ steps.push.outputs.branch }}
+      commit_sha: ${{ steps.push.outputs.commit_sha }}
+      failed_step: ${{ steps.push.outputs.failed_step }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: maintenance-work
+          path: ${{ runner.temp }}/maintenance
+
+      - name: Commit and push the maintenance branch
+        id: push
+        env:
+          MAINTENANCE_ID: ${{ needs.maintain.outputs.maintenance_id }}
+          BASELINE: ${{ inputs.baseline }}
+        run: |
+          work="$RUNNER_TEMP/maintenance"
+          stage=scope
+          trap 'echo "failed_step=$stage" >> "$GITHUB_OUTPUT"' ERR
+
+          # Maintenance may change only toolchain and dependency declarations,
+          # the lock file, and vendored files the baseline names.
+          declare -A allowed=()
+          for path in .tool-versions Dockerfile mix.exs mix.lock config/config.exs; do
+            allowed[$path]=1
+          done
+          while IFS= read -r path; do
+            allowed[$path]=1
+          done < <(printf '%s' "$BASELINE" | jq -r '.vendored[]?.path | strings')
+
+          unexpected=0
+          while IFS= read -r path; do
+            if [[ -z "${allowed[$path]:-}" ]]; then
+              echo "::error::The maintenance patch changes $path, which maintenance must not touch."
+              unexpected=1
+            fi
+          done < <(git apply --numstat "$work/maintenance.patch" | cut -f3)
+          (( unexpected == 0 ))
+
+          stage=apply_patch
+          git apply --index "$work/maintenance.patch"
+
+          stage=commit
+          branch="maintenance/$MAINTENANCE_ID"
+          git switch --create "$branch"
+          git -c user.name=bedrock-maintenance -c user.email=maintenance@mybedrock.ca \
+            commit --quiet --file "$work/commit-message.txt"
+
+          stage=push
+          git push origin "HEAD:refs/heads/$branch"
+          {
+            echo "branch=$branch"
+            echo "commit_sha=$(git rev-parse HEAD)"
+          } >> "$GITHUB_OUTPUT"
+
+  result:
+    needs: [maintain, publish]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: maintenance-work
+          path: ${{ runner.temp }}/maintenance
+
+      - name: Write maintenance-result.json
+        env:
+          MAINTENANCE_ID: ${{ needs.maintain.outputs.maintenance_id }}
+          OUTCOME: ${{ needs.maintain.outputs.outcome }}
+          MAINTAIN_FAILED_STEP: ${{ needs.maintain.outputs.failed_step }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+          PUBLISH_FAILED_STEP: ${{ needs.publish.outputs.failed_step }}
+          BRANCH: ${{ needs.publish.outputs.branch }}
+          COMMIT_SHA: ${{ needs.publish.outputs.commit_sha }}
+          BASE_SHA: ${{ github.sha }}
+        run: |
+          work="$RUNNER_TEMP/maintenance"
+          mkdir -p "$work"
+          branch=""
+          commit_sha=""
+          failed_step=""
+          case "$OUTCOME" in
+            invalid | current)
+              status=$OUTCOME ;;
+            failed)
+              status=failed
+              failed_step=$MAINTAIN_FAILED_STEP ;;
+            ready)
+              if [[ "$PUBLISH_RESULT" == success ]]; then
+                status=changed
+                branch=$BRANCH
+                commit_sha=$COMMIT_SHA
+              else
+                status=failed
+                failed_step=${PUBLISH_FAILED_STEP:-publish}
+              fi ;;
+            *)
+              status=failed
+              failed_step=maintain ;;
+          esac
+
+          json_or() {
+            if [[ -s "$1" ]] && jq -e . "$1" > /dev/null 2>&1; then cat "$1"; else printf '%s' "$2"; fi
+          }
+          changes=$(json_or "$work/changes-full.json" "$(json_or "$work/changes.json" '{}')")
+          blocked=$(json_or "$work/blocked.json" '[]')
+          if [[ "$status" == invalid ]]; then
+            changes='{}'
+            blocked='[]'
+          fi
+
+          jq -n \
+            --arg maintenance_id "$MAINTENANCE_ID" \
+            --arg status "$status" \
+            --arg base_sha "$BASE_SHA" \
+            --arg branch "$branch" \
+            --arg commit_sha "$commit_sha" \
+            --arg failed_step "$failed_step" \
+            --argjson changes "$changes" \
+            --argjson blocked "$blocked" \
+            'def nullable: if . == "" then null else . end;
+             {
+               version: 1,
+               maintenance_id: ($maintenance_id | nullable),
+               status: $status,
+               base_sha: $base_sha,
+               branch: ($branch | nullable),
+               commit_sha: ($commit_sha | nullable),
+               failed_step: ($failed_step | nullable),
+               changes: ({tool_versions: {}, dependencies: {}, requirements: {}, asset_tools: {}, vendored: []} + $changes),
+               blocked_requirements: $blocked
+             }' > "$work/maintenance-result.json"
+          cat "$work/maintenance-result.json"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: maintenance-result
+          path: ${{ runner.temp }}/maintenance/maintenance-result.json
+          retention-days: 30

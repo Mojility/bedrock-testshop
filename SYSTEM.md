@@ -44,6 +44,13 @@ Bedrock verifies the build and rehearses it against a private database copy in
 Canada. Roost runs `/app/bin/migrate` before `/app/bin/server`; the server does
 not repeat migrations on restart. Caddy terminates TLS.
 
+`.tool-versions` states the Elixir, Erlang/OTP and PostgreSQL versions. CI
+reads it, and the `Dockerfile` defaults must match it. Bedrock keeps them and
+the dependencies current by dispatching `.github/workflows/maintenance.yml`,
+which applies a baseline with `scripts/maintenance/apply_baseline.exs`, runs
+the quality checks, and pushes a `maintenance/<id>` branch. It never deploys.
+See `docs/maintenance.md`.
+
 The standalone CloudFormation recipe uses an ARM instance in ca-central-1 and
 requires an explicit commit image tag and exact main-branch CI identity. ECR
 tags are immutable; the first start resolves the tag to a digest saved in

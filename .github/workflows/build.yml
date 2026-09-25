@@ -1,6 +1,7 @@
 name: Build and push
 
 # On every push to main: run the checks against a PostgreSQL service,
+# with the Elixir, Erlang/OTP and PostgreSQL versions from .tool-versions,
 # build the Docker image, and push it to Amazon ECR. The push authenticates
 # through GitHub OIDC by assuming the role in the AWS_ROLE_ARN repository
 # variable; there are no long-lived keys. Without AWS_ROLE_ARN the image is
@@ -22,12 +23,31 @@ env:
   AWS_REGION: ca-central-1
 
 jobs:
+  # .tool-versions states the toolchain. A service container starts before
+  # any step runs, so this job reads the PostgreSQL major for it.
+  toolchain:
+    runs-on: ubuntu-latest
+    outputs:
+      postgres: ${{ steps.read.outputs.postgres }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        name: Read PostgreSQL major from .tool-versions
+        run: |
+          postgres=$(awk '$1 == "postgres" { print $2 }' .tool-versions)
+          if [[ ! "$postgres" =~ ^[0-9]+$ ]]; then
+            echo "::error file=.tool-versions::Add a 'postgres <major>' line naming the PostgreSQL major version."
+            exit 1
+          fi
+          echo "postgres=$postgres" >> "$GITHUB_OUTPUT"
+
   quality:
+    needs: toolchain
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:${{ needs.toolchain.outputs.postgres }}
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -48,24 +68,24 @@ jobs:
 
       - uses: erlef/setup-beam@v1
         with:
-          elixir-version: '1.20.2'
-          otp-version: '29.0'
+          version-file: .tool-versions
+          version-type: strict
 
       - uses: actions/cache@v4
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-elixir-1.20.2-otp-29.0-mix-${{ hashFiles('mix.lock') }}
-          restore-keys: ${{ runner.os }}-elixir-1.20.2-otp-29.0-mix-
+          key: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-${{ hashFiles('.tool-versions') }}-
 
       - name: Restore Dialyzer PLTs
         id: plt-cache
         uses: actions/cache/restore@v4
         with:
           path: priv/plts
-          key: ${{ runner.os }}-elixir-1.20.2-otp-29.0-plt-${{ hashFiles('mix.lock') }}
-          restore-keys: ${{ runner.os }}-elixir-1.20.2-otp-29.0-plt-
+          key: ${{ runner.os }}-plt-${{ hashFiles('.tool-versions') }}-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-plt-${{ hashFiles('.tool-versions') }}-
 
       - run: mix deps.get
       - name: Dependency upgrade visibility

@@ -1,0 +1,22 @@
+defmodule Fixture.MixProject do
+  use Mix.Project
+
+  def project do
+    [app: :fixture, version: "0.1.0", elixir: "~> 1.15", deps: deps()]
+  end
+
+  # Dependencies, with a comment the rewrite must keep.
+  defp deps do
+    [
+      {:phoenix, "~> 1.8.0"},
+      {:phoenix_live_view, "~> 1.1.0", override: true},
+      # Only in this shop; not part of the baseline.
+      {:nimble_csv, "~> 1.2.3", only: [:dev, :test], runtime: false},
+      {:decimal, "~> 2.1"},
+      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
+      {:heroicons,
+       github: "tailwindlabs/heroicons", tag: "v2.2.0", app: false, compile: false},
+      {:local_tool, path: "../local_tool"}
+    ]
+  end
+end

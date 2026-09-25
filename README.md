@@ -18,9 +18,9 @@ For product, architecture, independent operation, and evidence gaps, read the
 
 ## What you need
 
-- Elixir 1.20 on Erlang/OTP 29 (`.github/workflows/build.yml` pins the
-  versions CI uses)
-- PostgreSQL 14 or later, reachable as `postgres`/`postgres` on
+- The Elixir and Erlang/OTP versions in `.tool-versions` (CI uses exactly
+  these; `asdf` or `mise` can install them)
+- PostgreSQL at the major version in `.tool-versions`, reachable as `postgres`/`postgres` on
   `localhost` for development and test (change `config/dev.exs` and
   `config/test.exs` if yours differs)
 - Docker, to build the production image

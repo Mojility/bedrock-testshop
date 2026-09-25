@@ -11,6 +11,7 @@ that still needs operational evidence. They do not certify a live deployment.
 | Operate the system independently | [Self-hosting](self-hosting.md) |
 | Review controls and remaining evidence | [Security and accessibility](security-and-accessibility.md) |
 | Run development and release checks | [Quality checks](../guides/quality.md) |
+| Understand routine updates | [Maintenance](maintenance.md) |
 
 The repository-root `README.md` covers local setup.
 [SYSTEM.md](../SYSTEM.md) records the current application inventory.

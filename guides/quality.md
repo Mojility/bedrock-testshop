@@ -2,7 +2,7 @@
 
 Run `mix deps.get` to install development tools.
 Run `mix precommit` before committing changes.
-Use the exact Elixir and OTP versions in `.github/workflows/build.yml`.
+Use the exact Elixir and OTP versions in `.tool-versions`.
 
 Security checks run before compilation so Hex tasks remain available.
 The checks stop on the first failure:
@@ -24,7 +24,7 @@ Run `mix hex.outdated --all` to inspect available dependency upgrades.
 Upgrade visibility is advisory in CI; it does not approve an upgrade.
 
 The first Dialyzer run builds a cache and takes longer.
-CI caches PLTs separately for each exact Elixir and OTP version.
+CI caches PLTs separately for each `.tool-versions` toolchain.
 Development tools are excluded from production dependencies.
 Use Mox for gateway behaviours when a test needs an external boundary mock.
 
