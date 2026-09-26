@@ -27,6 +27,11 @@ from the `Dockerfile` here, in front of one PostgreSQL database.
   follow-up at `/app/leads`. Pending email notifications retry independently.
   `/app/team` lets the owner invite staff and revoke access. Tables: `leads`.
 
+- **Inventory** (`lib/shop/inventory.ex`, `lib/shop/inventory/`): authenticated
+  staff manage parts at `/app/inventory`. Quantities on hand are derived from
+  attributable, reasoned, retry-safe movements rather than overwritten counts.
+  Tables: `inventory_items`, `inventory_movements`.
+
 Private photographs are served from this application's Canadian S3 bucket.
 The runtime reads short-lived credentials from `AWS_CREDENTIALS_FILE` on each
 request. The host renews that file. Only explicitly configured proxy addresses

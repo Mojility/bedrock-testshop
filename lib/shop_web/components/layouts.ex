@@ -43,6 +43,7 @@ defmodule ShopWeb.Layouts do
         <ul class="menu menu-horizontal items-center gap-1 px-1">
           <%= if @current_scope do %>
             <li><.link navigate={~p"/app/leads"}>Leads</.link></li>
+            <li><.link navigate={~p"/app/inventory"}>Inventory</.link></li>
             <li :if={@current_scope.user.role == "owner"}>
               <.link navigate={~p"/app/team"}>Team</.link>
             </li>
