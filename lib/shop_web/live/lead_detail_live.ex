@@ -2,6 +2,7 @@ defmodule ShopWeb.LeadDetailLive do
   use ShopWeb, :live_view
 
   alias Shop.Leads
+  alias ShopWeb.Operations
 
   def mount(%{"id" => id}, _, socket) do
     {:ok, load(socket, id)}
@@ -41,21 +42,24 @@ defmodule ShopWeb.LeadDetailLive do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <section id="lead-detail" class="space-y-8">
-        <header>
-          <.link navigate={~p"/app/leads"} class="link">← Sales pipeline</.link>
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <h1 class="text-3xl font-bold">{@lead.name}</h1>
-            <span id="lead-state" class="badge badge-outline">{stage_label(@lead.status)}</span>
-          </div>
-          <p class="mt-2 text-base-content/70">{@lead.email || @lead.phone}</p>
-        </header>
+    <Layouts.app flash={@flash} current_scope={@current_scope} current_section="leads">
+      <Operations.page
+        id="lead-detail"
+        title={@lead.name}
+        description={@lead.email || @lead.phone}
+      >
+        <:actions>
+          <Operations.status
+            id="lead-state"
+            label={stage_label(@lead.status)}
+            tone={stage_tone(@lead.status)}
+          />
+        </:actions>
+        <.link navigate={~p"/app/leads"} class="link">← Sales pipeline</.link>
 
-        <section aria-labelledby="enquiry-heading" class="rounded-box border border-base-300 p-6">
-          <h2 id="enquiry-heading" class="text-xl font-semibold">Enquiry</h2>
-          <p class="mt-3 whitespace-pre-line">{@lead.message}</p>
-        </section>
+        <Operations.panel id="enquiry" title="Enquiry">
+          <p class="whitespace-pre-line">{@lead.message}</p>
+        </Operations.panel>
 
         <div
           :if={@lead.status not in ["lost", "quote", "job_closed"]}
@@ -159,7 +163,7 @@ defmodule ShopWeb.LeadDetailLive do
             </li>
           </ol>
         </section>
-      </section>
+      </Operations.page>
     </Layouts.app>
     """
   end
@@ -189,4 +193,9 @@ defmodule ShopWeb.LeadDetailLive do
   defp stage_label("job_closed"), do: "Closed job"
   defp stage_label("lost"), do: "Dismissed — not an opportunity"
   defp stage_label(status), do: String.capitalize(status)
+
+  defp stage_tone("new"), do: "warning"
+  defp stage_tone("lost"), do: "error"
+  defp stage_tone("job_closed"), do: "success"
+  defp stage_tone(_status), do: "neutral"
 end

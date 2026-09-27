@@ -32,8 +32,10 @@ from the `Dockerfile` here, in front of one PostgreSQL database.
   non-opportunities or trash junk, while owners and office managers can restore
   or permanently empty trash. Junk is excluded from funnel and response counts.
   Pending email notifications retry independently.
-  `/app/team` lets the owner invite staff and revoke access. Tables: `leads`,
-  `lead_activities`.
+  `/app/team` lets the owner invite staff and revoke access. Shared staff
+  navigation and operations components provide the authenticated lead workspace
+  shell and page patterns without changing the separate public website renderer.
+  Tables: `leads`, `lead_activities`.
 
 Private photographs are served from this application's Canadian S3 bucket.
 The runtime reads short-lived credentials from `AWS_CREDENTIALS_FILE` on each

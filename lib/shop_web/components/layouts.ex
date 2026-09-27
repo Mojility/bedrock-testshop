@@ -31,24 +31,50 @@ defmodule ShopWeb.Layouts do
     default: nil,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
+  attr :current_section, :string, default: nil
   slot :inner_block, required: true
 
   def app(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :staff_destinations,
+        ShopWeb.StaffNavigation.for_scope(assigns.current_scope)
+      )
+
     ~H"""
-    <header class="navbar border-b border-base-300 px-4 sm:px-6 lg:px-8">
+    <header class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 bg-base-100 px-4 py-3 sm:px-6 lg:px-8">
       <div class="flex-1">
         <.link navigate={~p"/"} class="text-lg font-semibold">{Shop.name()}</.link>
       </div>
-      <nav class="flex-none">
-        <ul class="menu menu-horizontal items-center gap-1 px-1">
+      <nav class="max-w-full" aria-label="Staff navigation">
+        <ul class="flex flex-wrap items-center gap-2">
           <%= if @current_scope do %>
-            <li><.link navigate={~p"/app/leads"}>Sales pipeline</.link></li>
-            <li :if={@current_scope.user.role == "owner"}>
-              <.link navigate={~p"/app/team"}>Team</.link>
+            <li :for={destination <- @staff_destinations}>
+              <.link
+                navigate={destination.path}
+                aria-current={if @current_section == destination.id, do: "page"}
+                class={[
+                  "inline-flex min-h-11 items-center rounded-field px-3 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                  @current_section == destination.id && "bg-base-200 text-base-content",
+                  @current_section != destination.id && "hover:bg-base-200"
+                ]}
+              >{destination.label}</.link>
             </li>
-            <li class="hidden sm:block opacity-70">{@current_scope.user.email}</li>
-            <li><.link href={~p"/users/settings"}>Settings</.link></li>
-            <li><.link href={~p"/users/log-out"} method="delete">Log out</.link></li>
+            <li class="hidden opacity-70 sm:block">{@current_scope.user.email}</li>
+            <li>
+              <.link
+                href={~p"/users/settings"}
+                class="inline-flex min-h-11 items-center px-3 underline"
+              >Settings</.link>
+            </li>
+            <li>
+              <.link
+                href={~p"/users/log-out"}
+                method="delete"
+                class="inline-flex min-h-11 items-center px-3 underline"
+              >Log out</.link>
+            </li>
           <% else %>
             <li><.link href={~p"/users/log-in"}>Log in</.link></li>
           <% end %>
@@ -58,7 +84,10 @@ defmodule ShopWeb.Layouts do
     </header>
 
     <main class="px-4 py-12 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
+      <div class={[
+        "mx-auto flex flex-col gap-4",
+        if(@current_scope, do: "max-w-6xl", else: "max-w-2xl")
+      ]}>
         {render_slot(@inner_block)}
       </div>
     </main>

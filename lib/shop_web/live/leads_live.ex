@@ -1,6 +1,7 @@
 defmodule ShopWeb.LeadsLive do
   use ShopWeb, :live_view
   alias Shop.Leads
+  alias ShopWeb.Operations
 
   def mount(_, _, socket) do
     scope = socket.assigns.current_scope
@@ -63,14 +64,13 @@ defmodule ShopWeb.LeadsLive do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <section id="leads" class="space-y-8">
-        <header class="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 class="text-3xl font-bold">Sales pipeline</h1><p class="mt-2 text-base-content/70">
-              Every genuine website enquiry, from response through closed job.
-            </p>
-          </div>
+    <Layouts.app flash={@flash} current_scope={@current_scope} current_section="leads">
+      <Operations.page
+        id="leads"
+        title="Sales pipeline"
+        description="Every genuine website enquiry, from response through closed job."
+      >
+        <:actions>
           <div class="join">
             <button id="show-pipeline" class="btn join-item" phx-click="show_pipeline">Pipeline</button><button
               id="show-trash"
@@ -78,7 +78,7 @@ defmodule ShopWeb.LeadsLive do
               phx-click="show_trash"
             >Trash</button>
           </div>
-        </header>
+        </:actions>
 
         <dl :if={!@trash?} id="pipeline-stats" class="grid grid-cols-2 gap-3 sm:grid-cols-6">
           <.stat label="Website leads" value={@stats.leads} /><.stat
@@ -198,7 +198,7 @@ defmodule ShopWeb.LeadsLive do
             </tbody>
           </table>
         </div>
-      </section>
+      </Operations.page>
     </Layouts.app>
     """
   end
