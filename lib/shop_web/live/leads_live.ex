@@ -22,7 +22,12 @@ defmodule ShopWeb.LeadsLive do
          |> put_flash(:info, "Pipeline activity saved.")}
 
       {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, "Add follow-up notes and a valid survey date.")}
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Choose a valid survey date and enter the required site address."
+         )}
     end
   end
 
@@ -135,17 +140,46 @@ defmodule ShopWeb.LeadsLive do
                 </td><td>{lead.email || lead.phone}</td><td>
                   <.form
                     :if={!@trash?}
-                    for={to_form(%{"status" => lead.status, "notes" => ""}, as: :lead)}
+                    for={
+                      to_form(
+                        %{
+                          "status" => "survey",
+                          "notes" => "Survey booked",
+                          "survey_date" => "",
+                          "survey_address" => ""
+                        },
+                        as: :lead
+                      )
+                    }
                     id={"follow-up-#{lead.id}"}
                     phx-submit="save"
                     phx-value-id={lead.id}
-                    class="inline"
+                    class="flex min-w-72 flex-col gap-2"
                   >
-                    <input type="hidden" name="lead[status]" value="survey" /><input
-                      type="hidden"
-                      name="lead[notes]"
-                      value="Survey booked"
-                    /><button class="btn btn-sm" type="submit">Mark survey</button>
+                    <input type="hidden" name="lead[status]" value="survey" />
+                    <input type="hidden" name="lead[notes]" value="Survey booked" />
+                    <label class="form-control">
+                      <span class="label-text">Site survey date</span>
+                      <input
+                        id={"survey-date-#{lead.id}"}
+                        class="input input-bordered input-sm"
+                        type="date"
+                        name="lead[survey_date]"
+                        required
+                      />
+                    </label>
+                    <label class="form-control">
+                      <span class="label-text">Site address</span>
+                      <input
+                        id={"survey-address-#{lead.id}"}
+                        class="input input-bordered input-sm"
+                        type="text"
+                        name="lead[survey_address]"
+                        maxlength="500"
+                        required
+                      />
+                    </label>
+                    <button class="btn btn-sm" type="submit">Book survey</button>
                   </.form><button
                     :if={!@trash?}
                     id={"trash-#{lead.id}"}

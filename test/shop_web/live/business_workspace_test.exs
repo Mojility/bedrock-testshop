@@ -20,7 +20,28 @@ defmodule ShopWeb.BusinessWorkspaceTest do
     assert has_element?(view, "#response-alert")
 
     view
-    |> form("#follow-up-#{lead.id}", lead: %{status: "survey", notes: "Survey booked"})
+    |> form("#follow-up-#{lead.id}",
+      lead: %{
+        status: "survey",
+        notes: "Survey booked",
+        survey_date: "2026-10-10",
+        survey_address: ""
+      }
+    )
+    |> render_submit()
+
+    assert has_element?(view, "#leads-#{lead.id} .badge", "New")
+    assert render(view) =~ "required site address"
+
+    view
+    |> form("#follow-up-#{lead.id}",
+      lead: %{
+        status: "survey",
+        notes: "Survey booked",
+        survey_date: "2026-10-10",
+        survey_address: "123 Main Street"
+      }
+    )
     |> render_submit()
 
     assert has_element?(view, "#leads-#{lead.id} .badge", "Site survey")
@@ -28,6 +49,7 @@ defmodule ShopWeb.BusinessWorkspaceTest do
 
     saved = Shop.Repo.get!(Leads.Lead, lead.id)
     assert saved.notes == "Survey booked"
+    assert saved.survey_address == "123 Main Street"
     assert saved.responded_at
     assert saved.surveyed_at
 
@@ -63,12 +85,17 @@ defmodule ShopWeb.BusinessWorkspaceTest do
 
     view
     |> form("#follow-up-form",
-      lead: %{notes: "Good initial call", survey_date: "2026-10-10"}
+      lead: %{
+        notes: "Good initial call",
+        survey_date: "2026-10-10",
+        survey_address: "123 Main Street"
+      }
     )
     |> render_submit()
 
     assert has_element?(view, "#lead-state", "Site survey")
     assert has_element?(view, "#activity-history", "Good initial call")
+    assert Shop.Repo.get!(Leads.Lead, lead.id).survey_address == "123 Main Street"
 
     view
     |> form("#dismiss-form", lead: %{notes: "Outside service area"})
@@ -78,15 +105,19 @@ defmodule ShopWeb.BusinessWorkspaceTest do
     refute has_element?(view, "#follow-up-form")
   end
 
-  test "lead detail keeps invalid follow-up recoverable", %{conn: conn} do
+  test "lead detail requires and retains the site address for survey booking", %{conn: conn} do
     {:ok, lead} = Leads.submit(%{"name" => "Jo", "phone" => "555"})
     {:ok, view, _} = live(log_in_user(conn, user_fixture()), "/app/leads/#{lead.id}")
 
     view
-    |> form("#follow-up-form", lead: %{notes: "", survey_date: ""})
+    |> form("#follow-up-form",
+      lead: %{notes: "Call went well", survey_date: "2026-10-10", survey_address: ""}
+    )
     |> render_submit()
 
-    assert render(view) =~ "Add follow-up notes and choose a valid survey date."
+    assert render(view) =~ "required site address"
+    assert has_element?(view, "#survey-date[value='2026-10-10']")
+    assert has_element?(view, "#follow-up-notes", "Call went well")
     assert has_element?(view, "#lead-state", "New")
   end
 

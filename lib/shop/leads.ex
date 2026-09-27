@@ -100,6 +100,11 @@ defmodule Shop.Leads do
 
   defp validate_follow_up_notes(changeset, _status), do: changeset
 
+  defp validate_survey_booking(changeset, "survey"),
+    do: Ecto.Changeset.validate_required(changeset, [:survey_date, :survey_address])
+
+  defp validate_survey_booking(changeset, _status), do: changeset
+
   defp do_follow_up(user, id, attrs, status) do
     Repo.transaction(fn ->
       lead =
@@ -109,9 +114,15 @@ defmodule Shop.Leads do
 
       changeset =
         lead
-        |> Ecto.Changeset.cast(attrs, [:notes, :survey_date])
+        |> Ecto.Changeset.cast(attrs, [:notes, :survey_date, :survey_address])
+        |> Ecto.Changeset.update_change(:survey_address, fn
+          address when is_binary(address) -> String.trim(address)
+          address -> address
+        end)
         |> validate_follow_up_notes(status)
+        |> validate_survey_booking(status)
         |> Ecto.Changeset.validate_length(:notes, max: 4000)
+        |> Ecto.Changeset.validate_length(:survey_address, max: 500)
         |> Ecto.Changeset.put_change(:status, status)
         |> put_stage_times(status, now)
 

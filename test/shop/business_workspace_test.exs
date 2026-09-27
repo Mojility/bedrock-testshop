@@ -98,11 +98,13 @@ defmodule Shop.BusinessWorkspaceTest do
     assert {:ok, surveyed} =
              Leads.follow_up(staff_scope, lead.id, %{
                "notes" => "Spoke with prospect",
-               "survey_date" => "2026-10-10"
+               "survey_date" => "2026-10-10",
+               "survey_address" => "123 Main Street"
              })
 
     assert surveyed.status == "survey"
     assert surveyed.survey_date == ~D[2026-10-10]
+    assert surveyed.survey_address == "123 Main Street"
     assert surveyed.responded_at
     assert surveyed.surveyed_at
 

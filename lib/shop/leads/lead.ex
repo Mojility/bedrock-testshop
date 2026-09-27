@@ -27,6 +27,7 @@ defmodule Shop.Leads.Lead do
     field :quoted_at, :utc_datetime_usec
     field :job_closed_at, :utc_datetime_usec
     field :survey_date, :date
+    field :survey_address, :string
     field :trashed_at, :utc_datetime_usec
     field :legacy_id, :binary_id
 

@@ -27,10 +27,11 @@ from the `Dockerfile` here, in front of one PostgreSQL database.
   authenticated follow-up at `/app/leads`, with a table and counts for website
   leads, conversations, surveys, quotes, closed jobs, and enquiries awaiting a
   response. Lead details show matched contact history and attributed activity;
-  notes advance a lead to Conversation and an optional survey date advances it
-  to Survey. Staff can dismiss non-opportunities or trash junk, while owners and
-  office managers can restore or permanently empty trash. Junk is excluded from
-  funnel and response counts. Pending email notifications retry independently.
+  notes advance a lead to Conversation, while booking a survey requires both a
+  survey date and site address before advancing it to Survey. Staff can dismiss
+  non-opportunities or trash junk, while owners and office managers can restore
+  or permanently empty trash. Junk is excluded from funnel and response counts.
+  Pending email notifications retry independently.
   `/app/team` lets the owner invite staff and revoke access. Tables: `leads`,
   `lead_activities`.
 

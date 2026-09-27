@@ -17,7 +17,12 @@ defmodule ShopWeb.LeadDetailLive do
 
       {:error, _reason} ->
         {:noreply,
-         put_flash(socket, :error, "Add follow-up notes and choose a valid survey date.")}
+         socket
+         |> assign(:follow_up_form, to_form(attrs, as: :lead))
+         |> put_flash(
+           :error,
+           "Add follow-up notes, a valid survey date, and the required site address."
+         )}
     end
   end
 
@@ -64,7 +69,7 @@ defmodule ShopWeb.LeadDetailLive do
           >
             <h2 class="text-xl font-semibold">Record follow-up</h2>
             <p class="text-sm text-base-content/70">
-              Saving notes records a conversation. Add a survey date when the call goes well to book the site survey at the same time.
+              Saving notes records a conversation. To book a site survey at the same time, enter both its date and site address.
             </p>
             <.input
               field={@follow_up_form[:notes]}
@@ -76,8 +81,16 @@ defmodule ShopWeb.LeadDetailLive do
             />
             <.input
               field={@follow_up_form[:survey_date]}
+              id="survey-date"
               type="date"
               label="Site survey date (optional)"
+            />
+            <.input
+              field={@follow_up_form[:survey_address]}
+              id="survey-address"
+              type="text"
+              label="Site address (required when booking a survey)"
+              maxlength="500"
             />
             <.button variant="primary" phx-disable-with="Saving…">Save follow-up</.button>
           </.form>
@@ -158,7 +171,8 @@ defmodule ShopWeb.LeadDetailLive do
       page_title: lead.name,
       lead: lead,
       history: history,
-      follow_up_form: to_form(%{"notes" => "", "survey_date" => ""}, as: :lead),
+      follow_up_form:
+        to_form(%{"notes" => "", "survey_date" => "", "survey_address" => ""}, as: :lead),
       dismiss_form: to_form(%{"notes" => ""}, as: :lead)
     )
   end
