@@ -1,0 +1,47 @@
+<section :if={@bindings != []} class="catalogue-binding-section">
+  <h3>Bindings: meaning and effects</h3>
+  <article :for={binding <- @bindings} class="catalogue-binding">
+    <h4>{binding["name"]}</h4><p>{binding["purpose"]}</p>
+    <div class="wb-actions">
+      <.link
+        :for={id <- binding["domain_concepts"]}
+        patch={"/dev/catalogue/domain?node=#{id}"}
+        class="catalogue-relation"
+      >{Shop.Catalogue.Domain.get(id)["name"]}</.link>
+    </div>
+    <dl class="catalogue-binding-facts">
+      <div>
+        <dt>Projection fields</dt><dd>{Enum.join(binding["reads"], ", ")}</dd>
+      </div><div>
+        <dt>{if binding["effect"] == "command", do: "Command inputs", else: "View state"}</dt><dd>
+          {if binding["inputs"] ++ binding["view_state"] == [],
+            do: "Nothing · read-only",
+            else: Enum.join(binding["inputs"] ++ binding["view_state"], ", ")}
+        </dd>
+      </div>
+    </dl>
+    <div class="wb-actions">
+      <.link
+        patch={"/dev/catalogue/model?node=#{binding["projection"]}"}
+        class="catalogue-relation"
+      >Projection: {Shop.Catalogue.Model.get(binding["projection"])["name"]}</.link>
+      <.link
+        :if={binding["command"]}
+        patch={"/dev/catalogue/model?node=#{binding["command"]}"}
+        class="catalogue-relation"
+      >Command: {Shop.Catalogue.Model.get(binding["command"])["name"]}</.link>
+      <.link
+        patch={"/dev/catalogue/model?node=binding:#{binding["id"]}"}
+        class="catalogue-relation"
+      >{Shop.Catalogue.Model.label(binding["effect"])} binding</.link>
+    </div>
+    <p>{binding["rule"]}</p><p :if={binding["scope"]}>{binding["scope"]}</p>
+    <div class="wb-actions">
+      <.link
+        :for={id <- binding["components"]}
+        patch={"/dev/catalogue/graph?node=#{id}"}
+        class="catalogue-relation"
+      >{Shop.Catalogue.Components.get(id).title}</.link>
+    </div>
+  </article>
+</section>

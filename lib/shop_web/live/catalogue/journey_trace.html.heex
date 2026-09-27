@@ -1,0 +1,93 @@
+<section
+  class="catalogue-panel catalogue-space"
+  id={"trace-#{@journey["id"]}"}
+  aria-label={"Journey: #{@journey["name"]}"}
+>
+  <span class="catalogue-label">Journey</span>
+  <h2>{@journey["name"]}</h2>
+  <dl class="catalogue-binding-facts">
+    <div>
+      <dt>Actor</dt><dd>
+        <.link patch={"/dev/catalogue/model?node=#{@journey["actor"]}"} class="wb-link">{Shop.Catalogue.Model.get(
+          @journey["actor"]
+        )["name"]}</.link>
+      </dd>
+    </div>
+    <div>
+      <dt>Goal</dt><dd>
+        <.link patch={"/dev/catalogue/model?node=#{@journey["goal"]}"} class="wb-link">{Shop.Catalogue.Model.get(
+          @journey["goal"]
+        )["name"]}</.link>
+      </dd>
+    </div>
+  </dl>
+  <nav class="wb-actions catalogue-space" aria-label="Journey stages">
+    <a
+      :for={{stage, index} <- Enum.with_index(@journey["stages"], 1)}
+      href={"#journey-stage-#{stage["id"]}"}
+      class="catalogue-relation"
+    >{index}. {Shop.Catalogue.Model.get(stage["interaction"])["name"]}</a>
+  </nav>
+  <ol class="catalogue-journey-stages">
+    <li
+      :for={{stage, index} <- Enum.with_index(@journey["stages"], 1)}
+      id={"journey-stage-#{stage["id"]}"}
+    >
+      <h3>
+        {index}.
+        <.link patch={"/dev/catalogue/model?node=#{stage["interaction"]}"} class="wb-link">{Shop.Catalogue.Model.get(
+          stage["interaction"]
+        )["name"]}</.link>
+      </h3>
+      <p>
+        Performed by
+        <.link patch={"/dev/catalogue/model?node=#{stage["performer"]}"} class="wb-link">{Shop.Catalogue.Model.get(
+          stage["performer"]
+        )["name"]}</.link>
+      </p>
+      <p>{stage["context"]}</p>
+      <div :for={id <- stage["compositions"]} class="catalogue-binding">
+        <.compositions
+          {@story}
+          embedded={true}
+          journey={true}
+          scenario={
+            case id do
+              "split" -> "stock"
+              "record" -> "receiving"
+              "movement-history" -> "movements"
+              "schedule" -> "schedule"
+              "task" -> "task"
+              id -> id
+            end
+          }
+        />
+        <details class="catalogue-space">
+          <summary>Component breakdown and domain bindings</summary>
+          <div class="wb-actions">
+            <.link patch={"/dev/catalogue/graph?node=#{id}"} class="catalogue-relation">Open {Shop.Catalogue.Components.get(
+              id
+            ).title} separately</.link>
+            <.link patch={"/dev/catalogue/model?node=component:#{id}"} class="catalogue-relation">Explore composition relationships</.link>
+            <.link
+              :for={child <- Shop.Catalogue.Components.get(id).depends}
+              patch={"/dev/catalogue/graph?node=#{child}"}
+              class="catalogue-relation"
+            >{Shop.Catalogue.Components.get(child).title}</.link>
+          </div>
+          <.bindings bindings={Shop.Catalogue.Domain.for_component(id)} />
+        </details>
+      </div>
+      <dl class="catalogue-binding-facts">
+        <div>
+          <dt>Stage complete when</dt><dd>{stage["completion"]}</dd>
+        </div><div>
+          <dt>Context carried forward</dt><dd>{stage["handoff"]}</dd>
+        </div>
+      </dl>
+    </li>
+  </ol>
+  <p class="catalogue-footnote">
+    This trace describes the sample Journey. Previews share session-local state; they are not an installed customer workflow.
+  </p>
+</section>

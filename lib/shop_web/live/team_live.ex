@@ -2,6 +2,7 @@ defmodule ShopWeb.TeamLive do
   use ShopWeb, :live_view
   alias Shop.Accounts
   alias Shop.Accounts.Staff
+  alias ShopWeb.Operations
 
   def mount(_, _, socket) do
     {:ok,
@@ -42,37 +43,53 @@ defmodule ShopWeb.TeamLive do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <section id="team" class="space-y-8">
-        <div>
-          <h1 class="text-3xl font-bold">Your team</h1>
-          <p class="mt-2">Invite people who should receive and follow up on enquiries.</p>
-        </div>
-        <.form for={@form} id="invite-form" phx-submit="invite">
-          <.input field={@form[:email]} type="email" label="Staff email" required />
-          <.button variant="primary" phx-disable-with="Inviting…">Invite staff member</.button>
-        </.form>
-        <ul id="team-list" phx-update="stream" class="space-y-4">
-          <li
-            :for={{id, user} <- @streams.users}
-            id={id}
-            class="flex flex-wrap items-center justify-between gap-4 border-b border-base-300 pb-4"
-          >
-            <div>
-              <p class="font-semibold">{user.email}</p>
-              <p>{if user.disabled_at, do: "Access revoked", else: user.role}</p>
-            </div>
-            <.button
-              :if={user.role != "owner" && is_nil(user.disabled_at)}
-              phx-click="revoke"
-              phx-value-id={user.id}
-              data-confirm="Revoke this person's access?"
+    <Layouts.app flash={@flash} current_scope={@current_scope} current_section="team">
+      <Operations.page
+        id="team"
+        title="Your team"
+        description="Manage who can receive and follow up on enquiries."
+      >
+        <Operations.panel
+          id="invite-staff"
+          title="Invite a staff member"
+          description="They will receive a link to sign in. Only owners can manage access."
+        >
+          <.form for={@form} id="invite-form" phx-submit="invite">
+            <.input field={@form[:email]} type="email" label="Staff email" required />
+            <Operations.form_actions>
+              <.button variant="primary" phx-disable-with="Inviting…">Invite staff member</.button>
+            </Operations.form_actions>
+          </.form>
+        </Operations.panel>
+        <Operations.panel id="staff-access" title="Staff access">
+          <ul id="team-list" phx-update="stream" class="flex flex-col gap-4">
+            <li
+              :for={{id, user} <- @streams.users}
+              id={id}
+              class="flex flex-wrap items-center justify-between gap-4 border-b border-base-300 pb-4"
             >
-              Revoke access
-            </.button>
-          </li>
-        </ul>
-      </section>
+              <div>
+                <p class="font-semibold">{user.email}</p>
+                <Operations.status
+                  label={
+                    if user.disabled_at, do: "Access revoked", else: String.capitalize(user.role)
+                  }
+                  tone={if user.disabled_at, do: "warning", else: "neutral"}
+                />
+              </div>
+              <.button
+                :if={user.role != "owner" && is_nil(user.disabled_at)}
+                variant="danger"
+                phx-click="revoke"
+                phx-value-id={user.id}
+                data-confirm="Revoke this person's access?"
+              >
+                Revoke access
+              </.button>
+            </li>
+          </ul>
+        </Operations.panel>
+      </Operations.page>
     </Layouts.app>
     """
   end

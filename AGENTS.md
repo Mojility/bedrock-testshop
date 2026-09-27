@@ -9,6 +9,42 @@ is for a person picking the repository up cold.
 Sign-in is passwordless: a magic link is the only way in. Do not add
 password fields, password login, or password reset.
 
+## Business and presentation models
+
+Actor, Goal, Interaction and Journey organize business intent. Identify who
+benefits, the outcome and the Interaction before changing domain or UI behaviour.
+A Journey names its beneficiary; each stage names its performer, compositions,
+completion condition and context carried onward. Those people can differ.
+
+Read `CATALOGUE.md` when working on domain concepts, bindings or compositions.
+Reuse stable concept identities. Distinguish business meaning from storage shape
+and record explicit mappings. Selection, sorting and filtering change view state;
+named Commands change business state. Bind controls to task projections and
+permitted inputs, not directly to arbitrary editable schema fields.
+
+Keep necessary task context visible and preserve it through handoffs. In Journey
+previews, render compositions inline with their domain and component breakdowns.
+Isolate repeated instances' state and accessible IDs or render one trace at a time.
+Public/private mode labels explain context; they do not grant authorization.
+Use synthetic demo state without production persistence or messaging.
+
+Name actions by their real business effect. “Request electrical service” avoids
+the employment ambiguity of “Ask about a job.” A Contacted status does not prove
+a reply was sent or the customer's Goal was achieved. Report that gap explicitly.
+Verify whole Journeys, including keyboard use, errors, correction and retained
+records. Keep demonstrated, verified, accepted and deployed claims separate.
+Customer models remain portable; do not depend on Bedrock's live planning tracker.
+
+## Accessibility
+
+Accessibility is a primary acceptance criterion for all UI work. Target WCAG 2.2
+AA and follow the executable catalogue's accessibility contract in `CATALOGUE.md`.
+Carry names, roles, states, relationships, keyboard operation, visible focus,
+error association, announcements, contrast and reflow through every composition.
+Prefer native semantics. Test actual keyboard/focus behaviour in a browser as well
+as semantic regression tests. Record outstanding assistive-technology verification;
+never claim conformance from automated tests alone.
+
 ## Repository ownership and maintenance
 
 This is a conventional, standalone customer application. It owns staff accounts,
@@ -63,6 +99,18 @@ publication output. Compact JSON does not establish provenance.
 Read `WEBSITE.md` for the source map and compatibility boundary. Follow the
 producer back to its inputs; do not repair generated output or replace a
 compatibility hash to conceal an incompatible source change.
+
+## Staff workflows and iteration quality
+
+Read `OPERATIONS.md` before changing staff pages. Use the shared staff navigation,
+layout, operations components and core controls; Leads and Team demonstrate the
+patterns. Keep business authorization and data integrity in contexts and database
+constraints. Extend the shared components instead of inventing new styles per page.
+
+Every completed increment must pass all applicable quality gates and be suitable
+for owner release selection. There is no lower-quality prototype or later hardening
+pass. Reduce scope to a complete safe workflow when needed. Release verification
+against current live data is still required before deployment.
 
 ## Project guidelines
 

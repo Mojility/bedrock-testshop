@@ -83,6 +83,11 @@ defmodule ShopWeb.Router do
 
     live_session :current_user,
       on_mount: [{ShopWeb.UserAuth, :mount_current_scope}] do
+      if Application.compile_env(:shop, :dev_routes) do
+        live "/dev/catalogue", CatalogueLive, :index
+        live "/dev/catalogue/:section", CatalogueLive, :index
+      end
+
       live "/users/log-in", UserLive.Login, :new
       live "/users/log-in/:token", UserLive.Confirmation, :new
     end

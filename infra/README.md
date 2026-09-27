@@ -82,5 +82,7 @@ Historical imports must not resend notifications.
 RDS retains seven days of automated backups and takes a final snapshot on
 stack deletion. Database export and S3 protection are separate responsibilities.
 The hosted pilot's local recovery points do not provide off-host backups.
-Email remains subject to the deploying account's Canadian SES sandbox and
-identity permissions; there is no cross-region fallback.
+SES production access, sending limits, and identity permissions are specific to
+the deploying account and Canadian region. Verify all three for a standalone
+deployment, then check end-to-end application delivery. There is no cross-region
+fallback.

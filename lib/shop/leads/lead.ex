@@ -1,9 +1,8 @@
 defmodule Shop.Leads.Lead do
   @moduledoc """
   Someone who asked to be contacted through a shop's website: who they are,
-  how to reach them, and what they need. Written once; the only thing that
-  changes afterwards is `seen_at`, the moment the owner first looked at it
-  in the console.
+  how to reach them, and what they need. Staff can update status and private
+  notes. `seen_at` records the first saved follow-up.
   """
   use Ecto.Schema
 
@@ -48,7 +47,16 @@ defmodule Shop.Leads.Lead do
     |> validate_a_way_to_reach_them()
   end
 
-  @doc "Whether the owner has looked at this lead yet."
+  @doc "Validate staff follow-up without changing the original public enquiry."
+  def follow_up_changeset(lead, attrs) do
+    lead
+    |> cast(attrs, [:status, :notes])
+    |> validate_required([:status])
+    |> validate_inclusion(:status, ["new", "contacted", "closed"])
+    |> validate_length(:notes, max: 4000)
+  end
+
+  @doc "Whether staff have saved follow-up for this lead yet."
   @spec seen?(t()) :: boolean()
   def seen?(%__MODULE__{seen_at: %DateTime{}}), do: true
   def seen?(%__MODULE__{}), do: false

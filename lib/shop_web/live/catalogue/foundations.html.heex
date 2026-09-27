@@ -1,0 +1,42 @@
+<div>
+  <section class="catalogue-intro">
+    <h2>A shared language for everyday work.</h2><p>
+      Compact, legible components that keep business information together. These examples use the same Phoenix components that customer workflows can compose.
+    </p>
+  </section>
+  <div class="catalogue-grid">
+    <section class="catalogue-panel">
+      <h2>Semantic colour</h2><div class="catalogue-swatches">
+        <div :for={role <- ~w(ink accent paper canvas line)}>
+          <div class={"swatch swatch-#{role}"}></div><strong>{role}</strong>
+        </div>
+      </div><p>
+        Forest emphasis, warm surfaces, explicit labels. Try the theme switch: colour roles change, meaning stays the same.
+      </p>
+    </section>
+    <section class="catalogue-panel">
+      <h2>Type & density</h2><h3 class="catalogue-type">200A panel replacement</h3><p>
+        Working text · Barlow 14px
+      </p><small>Supporting context · 12px</small><div class="catalogue-rule"></div><p>
+        32px controls · 44px standard rows · 34px compact rows · 44px mobile controls
+      </p>
+    </section>
+    <section class="catalogue-panel">
+      <h2>Behaviour is part of the contract</h2><p>
+        Focusable controls, recoverable validation, preserved input, and honest state are library responsibilities.
+      </p><.button id="exercise-control" phx-click="exercise" class="wb-button">Exercise control</.button><p
+        id="exercise-result"
+        role="status"
+      >
+        Activated {@count} times
+      </p>
+    </section>
+    <section class="catalogue-panel">
+      <h2>What ships with a component</h2><ul>
+        <li>Named attributes and slots</li><li>Keyboard and responsive behaviour</li><li>
+          Empty, error, success and disabled states
+        </li><li>Examples and behaviour tests</li>
+      </ul><p>Presentation components do not own permissions or business writes.</p>
+    </section>
+  </div>
+</div>

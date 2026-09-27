@@ -1,0 +1,1044 @@
+{
+  "id": "website_leads",
+  "version": 1,
+  "name": "Website enquiries and follow-up",
+  "scope": "Synthetic cross-role walkthrough",
+  "outcome": "Connect a visitor’s request to accountable staff follow-up.",
+  "questions": [
+    "Who handles new enquiries?",
+    "What does closed mean for this business?",
+    "How are visitors contacted, and who owns the response?"
+  ],
+  "rules": [
+    "Name and phone or email required.",
+    "Only staff can save status and private notes in the real application."
+  ],
+  "compositions": [
+    "website-intro",
+    "enquiry-form",
+    "lead-queue",
+    "lead-follow-up"
+  ],
+  "dependencies": [
+    "Shared domain primitives: text, identifier and timestamp."
+  ],
+  "domain_model": {
+    "version": 1,
+    "nodes": [
+      {
+        "id": "contact_details",
+        "name": "Contact details",
+        "kind": "Value object",
+        "description": "Ways to reach the person asking for help. At least one is required.",
+        "fields": [
+          {
+            "name": "email",
+            "type": "text",
+            "meaning": "Optional email; validate format if present.",
+            "required": false,
+            "value_source": "recorded"
+          },
+          {
+            "name": "phone",
+            "type": "text",
+            "meaning": "Optional phone number.",
+            "required": false,
+            "value_source": "recorded"
+          }
+        ],
+        "rules": [
+          "Supply a phone number or email. Missing is not the same as an invalid email."
+        ],
+        "sample": "alex@example.test · 613-555-0142",
+        "presentations": [
+          "enquiry-form",
+          "lead-follow-up"
+        ]
+      },
+      {
+        "id": "lead",
+        "name": "Lead / enquiry",
+        "kind": "Entity",
+        "description": "A request submitted through the website, with staff-owned follow-up recorded separately from the original request.",
+        "fields": [
+          {
+            "name": "id",
+            "type": "identifier",
+            "meaning": "Stable enquiry identity.",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "name",
+            "type": "text",
+            "meaning": "Name of the person requesting contact.",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "contact",
+            "type": "contact_details",
+            "meaning": "At least one reply channel.",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "message",
+            "type": "text",
+            "meaning": "Original request; optional in the existing implementation.",
+            "required": false,
+            "value_source": "recorded"
+          },
+          {
+            "name": "received_at",
+            "type": "timestamp",
+            "meaning": "System receipt time.",
+            "required": true,
+            "value_source": "derived"
+          },
+          {
+            "name": "source",
+            "type": "text",
+            "meaning": "Website or trusted import origin.",
+            "required": true,
+            "value_source": "derived"
+          },
+          {
+            "name": "status",
+            "type": "text",
+            "meaning": "new, contacted or closed; staff may update.",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "notes",
+            "type": "text",
+            "meaning": "Private follow-up notes.",
+            "required": false,
+            "value_source": "recorded"
+          },
+          {
+            "name": "seen_at",
+            "type": "timestamp",
+            "meaning": "First saved follow-up time in current implementation, not proof of merely viewing.",
+            "required": false,
+            "value_source": "derived"
+          },
+          {
+            "name": "notified_at",
+            "type": "timestamp",
+            "meaning": "Notification bookkeeping; not evidence of a customer reply.",
+            "required": false,
+            "value_source": "derived"
+          }
+        ],
+        "rules": [
+          "Public submission cannot set status, notes or bookkeeping timestamps.",
+          "Follow-up needs staff authorization. Contacted and closed are manually recorded statuses, not proof of a sent message or completed job.",
+          "Original request fields are preserved by follow-up."
+        ],
+        "sample": "Alex Morgan · heating repair enquiry · New",
+        "presentations": [
+          "enquiry-form",
+          "lead-queue",
+          "lead-follow-up"
+        ]
+      }
+    ]
+  },
+  "domain_objects": [
+    "contact_details",
+    "lead"
+  ],
+  "presentation_bindings": [
+    {
+      "id": "submit_enquiry",
+      "name": "Submit an enquiry",
+      "components": [
+        "enquiry-form"
+      ],
+      "domain_concepts": [
+        "lead",
+        "contact_details"
+      ],
+      "purpose": "Connect this Interaction to its task information and permitted effect.",
+      "reads": [],
+      "inputs": [
+        "lead.name",
+        "lead.contact",
+        "lead.message"
+      ],
+      "view_state": [],
+      "effect": "command",
+      "interaction": "interaction:submit_enquiry",
+      "projection": "projection:submit_enquiry",
+      "command": "command:submit_enquiry",
+      "rule": "Public request fields and private follow-up fields have separate write permissions. Selection never sends a reply."
+    },
+    {
+      "id": "select_enquiry",
+      "name": "Select an enquiry",
+      "components": [
+        "lead-queue"
+      ],
+      "domain_concepts": [
+        "lead",
+        "contact_details"
+      ],
+      "purpose": "Connect this Interaction to its task information and permitted effect.",
+      "reads": [
+        "lead.id",
+        "lead.name",
+        "lead.contact",
+        "lead.message",
+        "lead.status",
+        "lead.received_at"
+      ],
+      "inputs": [],
+      "view_state": [
+        "view.selected_lead_id"
+      ],
+      "effect": "view_state",
+      "interaction": "interaction:review_enquiries",
+      "projection": "projection:select_enquiry",
+      "command": null,
+      "rule": "Public request fields and private follow-up fields have separate write permissions. Selection never sends a reply."
+    },
+    {
+      "id": "save_follow_up",
+      "name": "Save follow-up",
+      "components": [
+        "lead-follow-up"
+      ],
+      "domain_concepts": [
+        "lead",
+        "contact_details"
+      ],
+      "purpose": "Connect this Interaction to its task information and permitted effect.",
+      "reads": [
+        "lead.name",
+        "lead.contact",
+        "lead.message",
+        "lead.status",
+        "lead.notes"
+      ],
+      "inputs": [
+        "lead.status",
+        "lead.notes"
+      ],
+      "view_state": [],
+      "effect": "command",
+      "interaction": "interaction:record_follow_up",
+      "projection": "projection:save_follow_up",
+      "command": "command:save_follow_up",
+      "rule": "Public request fields and private follow-up fields have separate write permissions. Selection never sends a reply."
+    }
+  ],
+  "binding_ids": [
+    "submit_enquiry",
+    "select_enquiry",
+    "save_follow_up"
+  ],
+  "composition_contracts": [
+    {
+      "component": "website-intro",
+      "interaction": "interaction:understand_services",
+      "bindings": [],
+      "purpose": "Read services and the invitation to ask for help.",
+      "inputs": "Synthetic website content and session enquiries.",
+      "regions": {
+        "primary_work": "Understand the service offer",
+        "supporting_context": "Actor, current enquiry and clear mode boundary."
+      },
+      "state": "Shared catalogue session; public draft and private follow-up remain separate.",
+      "outputs": "View-state selection or explicit submission commands.",
+      "variants": [
+        "Desktop and narrow layouts use the same controls and business meaning."
+      ],
+      "recovery": [
+        "Invalid inputs remain editable with linked errors.",
+        "Refresh resets synthetic records."
+      ],
+      "gaps": [
+        "The walkthrough does not authenticate visitors as staff, write records, send notifications or contact customers."
+      ]
+    },
+    {
+      "component": "enquiry-form",
+      "interaction": "interaction:submit_enquiry",
+      "bindings": [
+        "submit_enquiry"
+      ],
+      "purpose": "Supply a name and at least one contact method; receive confirmation.",
+      "inputs": "Synthetic website content and session enquiries.",
+      "regions": {
+        "primary_work": "Ask to be contacted",
+        "supporting_context": "Actor, current enquiry and clear mode boundary."
+      },
+      "state": "Shared catalogue session; public draft and private follow-up remain separate.",
+      "outputs": "View-state selection or explicit submission commands.",
+      "variants": [
+        "Desktop and narrow layouts use the same controls and business meaning."
+      ],
+      "recovery": [
+        "Invalid inputs remain editable with linked errors.",
+        "Refresh resets synthetic records."
+      ],
+      "gaps": [
+        "The walkthrough does not authenticate visitors as staff, write records, send notifications or contact customers."
+      ]
+    },
+    {
+      "component": "lead-queue",
+      "interaction": "interaction:review_enquiries",
+      "bindings": [
+        "select_enquiry"
+      ],
+      "purpose": "Select an enquiry without treating selection as contact or follow-up.",
+      "inputs": "Synthetic website content and session enquiries.",
+      "regions": {
+        "primary_work": "Review incoming enquiries",
+        "supporting_context": "Actor, current enquiry and clear mode boundary."
+      },
+      "state": "Shared catalogue session; public draft and private follow-up remain separate.",
+      "outputs": "View-state selection or explicit submission commands.",
+      "variants": [
+        "Desktop and narrow layouts use the same controls and business meaning."
+      ],
+      "recovery": [
+        "Invalid inputs remain editable with linked errors.",
+        "Refresh resets synthetic records."
+      ],
+      "gaps": [
+        "The walkthrough does not authenticate visitors as staff, write records, send notifications or contact customers."
+      ]
+    },
+    {
+      "component": "lead-follow-up",
+      "interaction": "interaction:record_follow_up",
+      "bindings": [
+        "save_follow_up"
+      ],
+      "purpose": "After contacting the person outside this demo, record status and private notes.",
+      "inputs": "Synthetic website content and session enquiries.",
+      "regions": {
+        "primary_work": "Record follow-up",
+        "supporting_context": "Actor, current enquiry and clear mode boundary."
+      },
+      "state": "Shared catalogue session; public draft and private follow-up remain separate.",
+      "outputs": "View-state selection or explicit submission commands.",
+      "variants": [
+        "Desktop and narrow layouts use the same controls and business meaning."
+      ],
+      "recovery": [
+        "Invalid inputs remain editable with linked errors.",
+        "Refresh resets synthetic records."
+      ],
+      "gaps": [
+        "The walkthrough does not authenticate visitors as staff, write records, send notifications or contact customers."
+      ]
+    }
+  ],
+  "design_model": {
+    "version": 1,
+    "nodes": [
+      {
+        "id": "domain:contact_details",
+        "kind": "Value object",
+        "name": "Contact details",
+        "description": "Ways to reach the person asking for help. At least one is required.",
+        "domain_id": "contact_details"
+      },
+      {
+        "id": "domain:lead",
+        "kind": "Entity",
+        "name": "Lead / enquiry",
+        "description": "A request submitted through the website, with staff-owned follow-up recorded separately from the original request.",
+        "domain_id": "lead"
+      },
+      {
+        "id": "blueprint:website_leads",
+        "kind": "Blueprint",
+        "name": "Website enquiries and follow-up",
+        "description": "A visitor asks for help; office staff review the enquiry and record follow-up.",
+        "version": 1,
+        "scope": "Synthetic catalogue walkthrough backed by existing starter behaviour; no messages or database writes."
+      },
+      {
+        "id": "actor:prospective_customer",
+        "kind": "Actor",
+        "name": "Prospective customer",
+        "description": "Someone looking for help from this business."
+      },
+      {
+        "id": "actor:office_staff",
+        "kind": "Actor",
+        "name": "Office staff",
+        "description": "An authorized owner or team member handling enquiries."
+      },
+      {
+        "id": "goal:get_help",
+        "kind": "Goal",
+        "name": "Get help with a service need",
+        "description": "Understand the offer, submit a request and receive a useful response. Actual response delivery remains outside this demo."
+      },
+      {
+        "id": "goal:follow_up_enquiries",
+        "kind": "Goal",
+        "name": "Follow up incoming enquiries",
+        "description": "Know what was requested and keep the team informed of follow-up."
+      },
+      {
+        "id": "interaction:understand_services",
+        "kind": "Interaction",
+        "name": "Understand the service offer",
+        "description": "Read services and the invitation to ask for help."
+      },
+      {
+        "id": "interaction:submit_enquiry",
+        "kind": "Interaction",
+        "name": "Ask to be contacted",
+        "description": "Supply a name and at least one contact method; receive confirmation."
+      },
+      {
+        "id": "interaction:review_enquiries",
+        "kind": "Interaction",
+        "name": "Review incoming enquiries",
+        "description": "Select an enquiry without treating selection as contact or follow-up."
+      },
+      {
+        "id": "interaction:record_follow_up",
+        "kind": "Interaction",
+        "name": "Record follow-up",
+        "description": "After contacting the person outside this demo, record status and private notes."
+      },
+      {
+        "id": "journey:enquiry_to_follow_up",
+        "kind": "Journey",
+        "name": "From service need to follow-up",
+        "description": "Ordered Interactions with an explicit visitor-to-staff handoff.",
+        "actor": "actor:prospective_customer",
+        "goal": "goal:get_help",
+        "steps": [
+          "interaction:understand_services",
+          "interaction:submit_enquiry",
+          "interaction:review_enquiries",
+          "interaction:record_follow_up"
+        ],
+        "stages": [
+          {
+            "id": "understand_services",
+            "interaction": "interaction:understand_services",
+            "performer": "actor:prospective_customer",
+            "compositions": [
+              "website-intro"
+            ],
+            "context": "Public website · prospective customer",
+            "completion": "The visitor understands what the business offers.",
+            "handoff": "Continue to the contact form."
+          },
+          {
+            "id": "submit_enquiry",
+            "interaction": "interaction:submit_enquiry",
+            "performer": "actor:prospective_customer",
+            "compositions": [
+              "enquiry-form"
+            ],
+            "context": "Public website · prospective customer",
+            "completion": "A valid enquiry is acknowledged and appears in the shared staff queue.",
+            "handoff": "The enquiry crosses to a private staff queue. This walkthrough shows both perspectives; real visitors cannot access that queue."
+          },
+          {
+            "id": "review_enquiries",
+            "interaction": "interaction:review_enquiries",
+            "performer": "actor:office_staff",
+            "compositions": [
+              "lead-queue"
+            ],
+            "context": "Private operations · authorized office staff",
+            "completion": "The staff member has selected the correct enquiry.",
+            "handoff": "The selected enquiry appears in the follow-up stage. Selection does not set seen_at."
+          },
+          {
+            "id": "record_follow_up",
+            "interaction": "interaction:record_follow_up",
+            "performer": "actor:office_staff",
+            "compositions": [
+              "lead-follow-up"
+            ],
+            "context": "Private operations · authorized office staff",
+            "completion": "A valid status and notes update is recorded.",
+            "handoff": "No email or phone call is made here. The customer goal still depends on staff providing a response."
+          }
+        ]
+      },
+      {
+        "id": "journey:handle_enquiries",
+        "kind": "Journey",
+        "name": "Review and follow up enquiries",
+        "description": "Ordered Interactions with an explicit visitor-to-staff handoff.",
+        "actor": "actor:office_staff",
+        "goal": "goal:follow_up_enquiries",
+        "steps": [
+          "interaction:review_enquiries",
+          "interaction:record_follow_up"
+        ],
+        "stages": [
+          {
+            "id": "review_enquiries",
+            "interaction": "interaction:review_enquiries",
+            "performer": "actor:office_staff",
+            "compositions": [
+              "lead-queue"
+            ],
+            "context": "Private operations · authorized office staff",
+            "completion": "The staff member has selected the correct enquiry.",
+            "handoff": "The selected enquiry appears in the follow-up stage. Selection does not set seen_at."
+          },
+          {
+            "id": "record_follow_up",
+            "interaction": "interaction:record_follow_up",
+            "performer": "actor:office_staff",
+            "compositions": [
+              "lead-follow-up"
+            ],
+            "context": "Private operations · authorized office staff",
+            "completion": "A valid status and notes update is recorded.",
+            "handoff": "No email or phone call is made here. The customer goal still depends on staff providing a response."
+          }
+        ]
+      },
+      {
+        "id": "projection:submit_enquiry",
+        "kind": "Projection",
+        "name": "Submit an enquiry context",
+        "description": "Task-specific enquiry information.",
+        "fields": [],
+        "scope": "Synthetic session; public form never renders private notes.",
+        "freshness": "Updated immediately from session state."
+      },
+      {
+        "id": "command:submit_enquiry",
+        "kind": "Command",
+        "name": "Submit an enquiry",
+        "description": "Validate inputs and update the sample without external side effects.",
+        "inputs": [
+          "lead.name",
+          "lead.contact",
+          "lead.message"
+        ],
+        "authority": "Public enquiry input only.",
+        "effects": [
+          "Add a new enquiry."
+        ],
+        "preconditions": [
+          "A name and one valid contact route."
+        ],
+        "failures": [
+          "Retain invalid input and explain corrections."
+        ]
+      },
+      {
+        "id": "binding:submit_enquiry",
+        "kind": "Binding",
+        "name": "Submit an enquiry",
+        "description": "Connect this Interaction to its task information and permitted effect.",
+        "effect": "command"
+      },
+      {
+        "id": "projection:select_enquiry",
+        "kind": "Projection",
+        "name": "Select an enquiry context",
+        "description": "Task-specific enquiry information.",
+        "fields": [
+          "lead.id",
+          "lead.name",
+          "lead.contact",
+          "lead.message",
+          "lead.status",
+          "lead.received_at"
+        ],
+        "scope": "Synthetic session; public form never renders private notes.",
+        "freshness": "Updated immediately from session state."
+      },
+      {
+        "id": "binding:select_enquiry",
+        "kind": "Binding",
+        "name": "Select an enquiry",
+        "description": "Connect this Interaction to its task information and permitted effect.",
+        "effect": "view_state"
+      },
+      {
+        "id": "projection:save_follow_up",
+        "kind": "Projection",
+        "name": "Save follow-up context",
+        "description": "Task-specific enquiry information.",
+        "fields": [
+          "lead.name",
+          "lead.contact",
+          "lead.message",
+          "lead.status",
+          "lead.notes"
+        ],
+        "scope": "Synthetic session; public form never renders private notes.",
+        "freshness": "Updated immediately from session state."
+      },
+      {
+        "id": "command:save_follow_up",
+        "kind": "Command",
+        "name": "Save follow-up",
+        "description": "Validate inputs and update the sample without external side effects.",
+        "inputs": [
+          "lead.status",
+          "lead.notes"
+        ],
+        "authority": "Staff-only in production; synthetic walkthrough does not establish access.",
+        "effects": [
+          "Change status and notes; set first saved follow-up time."
+        ],
+        "preconditions": [
+          "Status is new, contacted or closed; notes at most 4,000 characters."
+        ],
+        "failures": [
+          "Retain invalid input and explain corrections."
+        ]
+      },
+      {
+        "id": "binding:save_follow_up",
+        "kind": "Binding",
+        "name": "Save follow-up",
+        "description": "Connect this Interaction to its task information and permitted effect.",
+        "effect": "command"
+      },
+      {
+        "id": "evidence:website_leads",
+        "kind": "Evidence",
+        "name": "Source and catalogue evidence",
+        "description": "Public Lead changeset and staff follow-up validation are reused by the synthetic demo.",
+        "sources": [
+          "lib/shop/leads/lead.ex",
+          "lib/shop/leads.ex",
+          "lib/shop_web/controllers/lead_controller.ex",
+          "lib/shop_web/live/leads_live.ex"
+        ],
+        "limitations": [
+          "Actual calls, email replies, booking, assignment and response deadlines are not implemented in the walkthrough.",
+          "Existing seen_at is set on saved follow-up, not on viewing."
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "source": "domain:contact_details",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "email"
+      },
+      {
+        "source": "domain:contact_details",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "phone"
+      },
+      {
+        "source": "domain:lead",
+        "relation": "has_field_of_type",
+        "target": "domain:identifier",
+        "field": "id"
+      },
+      {
+        "source": "domain:lead",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "name"
+      },
+      {
+        "source": "domain:lead",
+        "relation": "has_field_of_type",
+        "target": "domain:contact_details",
+        "field": "contact"
+      },
+      {
+        "source": "domain:lead",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "message"
+      },
+      {
+        "source": "domain:lead",
+        "relation": "has_field_of_type",
+        "target": "domain:timestamp",
+        "field": "received_at"
+      },
+      {
+        "source": "domain:lead",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "source"
+      },
+      {
+        "source": "domain:lead",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "status"
+      },
+      {
+        "source": "domain:lead",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "notes"
+      },
+      {
+        "source": "domain:lead",
+        "relation": "has_field_of_type",
+        "target": "domain:timestamp",
+        "field": "seen_at"
+      },
+      {
+        "source": "domain:lead",
+        "relation": "has_field_of_type",
+        "target": "domain:timestamp",
+        "field": "notified_at"
+      },
+      {
+        "source": "actor:prospective_customer",
+        "relation": "seeks",
+        "target": "goal:get_help"
+      },
+      {
+        "source": "actor:office_staff",
+        "relation": "seeks",
+        "target": "goal:follow_up_enquiries"
+      },
+      {
+        "source": "actor:prospective_customer",
+        "relation": "performs",
+        "target": "interaction:understand_services"
+      },
+      {
+        "source": "interaction:understand_services",
+        "relation": "advances",
+        "target": "goal:get_help"
+      },
+      {
+        "source": "component:website-intro",
+        "relation": "supports",
+        "target": "interaction:understand_services"
+      },
+      {
+        "source": "blueprint:website_leads",
+        "relation": "includes",
+        "target": "component:website-intro"
+      },
+      {
+        "source": "actor:prospective_customer",
+        "relation": "performs",
+        "target": "interaction:submit_enquiry"
+      },
+      {
+        "source": "interaction:submit_enquiry",
+        "relation": "advances",
+        "target": "goal:get_help"
+      },
+      {
+        "source": "component:enquiry-form",
+        "relation": "supports",
+        "target": "interaction:submit_enquiry"
+      },
+      {
+        "source": "blueprint:website_leads",
+        "relation": "includes",
+        "target": "component:enquiry-form"
+      },
+      {
+        "source": "actor:office_staff",
+        "relation": "performs",
+        "target": "interaction:review_enquiries"
+      },
+      {
+        "source": "interaction:review_enquiries",
+        "relation": "advances",
+        "target": "goal:follow_up_enquiries"
+      },
+      {
+        "source": "component:lead-queue",
+        "relation": "supports",
+        "target": "interaction:review_enquiries"
+      },
+      {
+        "source": "blueprint:website_leads",
+        "relation": "includes",
+        "target": "component:lead-queue"
+      },
+      {
+        "source": "actor:office_staff",
+        "relation": "performs",
+        "target": "interaction:record_follow_up"
+      },
+      {
+        "source": "interaction:record_follow_up",
+        "relation": "advances",
+        "target": "goal:follow_up_enquiries"
+      },
+      {
+        "source": "component:lead-follow-up",
+        "relation": "supports",
+        "target": "interaction:record_follow_up"
+      },
+      {
+        "source": "blueprint:website_leads",
+        "relation": "includes",
+        "target": "component:lead-follow-up"
+      },
+      {
+        "source": "interaction:review_enquiries",
+        "relation": "advances",
+        "target": "goal:get_help"
+      },
+      {
+        "source": "interaction:record_follow_up",
+        "relation": "advances",
+        "target": "goal:get_help"
+      },
+      {
+        "source": "actor:prospective_customer",
+        "relation": "undertakes",
+        "target": "journey:enquiry_to_follow_up"
+      },
+      {
+        "source": "journey:enquiry_to_follow_up",
+        "relation": "pursues",
+        "target": "goal:get_help"
+      },
+      {
+        "source": "journey:enquiry_to_follow_up",
+        "relation": "includes",
+        "target": "interaction:understand_services"
+      },
+      {
+        "source": "journey:enquiry_to_follow_up",
+        "relation": "includes",
+        "target": "interaction:submit_enquiry"
+      },
+      {
+        "source": "journey:enquiry_to_follow_up",
+        "relation": "includes",
+        "target": "interaction:review_enquiries"
+      },
+      {
+        "source": "journey:enquiry_to_follow_up",
+        "relation": "includes",
+        "target": "interaction:record_follow_up"
+      },
+      {
+        "source": "actor:office_staff",
+        "relation": "undertakes",
+        "target": "journey:handle_enquiries"
+      },
+      {
+        "source": "journey:handle_enquiries",
+        "relation": "pursues",
+        "target": "goal:follow_up_enquiries"
+      },
+      {
+        "source": "journey:handle_enquiries",
+        "relation": "includes",
+        "target": "interaction:review_enquiries"
+      },
+      {
+        "source": "journey:handle_enquiries",
+        "relation": "includes",
+        "target": "interaction:record_follow_up"
+      },
+      {
+        "source": "projection:submit_enquiry",
+        "relation": "describes",
+        "target": "domain:lead"
+      },
+      {
+        "source": "binding:submit_enquiry",
+        "relation": "reads_through",
+        "target": "projection:submit_enquiry"
+      },
+      {
+        "source": "binding:submit_enquiry",
+        "relation": "supports",
+        "target": "interaction:submit_enquiry"
+      },
+      {
+        "source": "binding:submit_enquiry",
+        "relation": "connects",
+        "target": "component:enquiry-form"
+      },
+      {
+        "source": "component:enquiry-form",
+        "relation": "bound_by",
+        "target": "binding:submit_enquiry"
+      },
+      {
+        "source": "binding:submit_enquiry",
+        "relation": "submits_to",
+        "target": "command:submit_enquiry"
+      },
+      {
+        "source": "projection:select_enquiry",
+        "relation": "describes",
+        "target": "domain:lead"
+      },
+      {
+        "source": "binding:select_enquiry",
+        "relation": "reads_through",
+        "target": "projection:select_enquiry"
+      },
+      {
+        "source": "binding:select_enquiry",
+        "relation": "supports",
+        "target": "interaction:review_enquiries"
+      },
+      {
+        "source": "binding:select_enquiry",
+        "relation": "connects",
+        "target": "component:lead-queue"
+      },
+      {
+        "source": "component:lead-queue",
+        "relation": "bound_by",
+        "target": "binding:select_enquiry"
+      },
+      {
+        "source": "projection:save_follow_up",
+        "relation": "describes",
+        "target": "domain:lead"
+      },
+      {
+        "source": "binding:save_follow_up",
+        "relation": "reads_through",
+        "target": "projection:save_follow_up"
+      },
+      {
+        "source": "binding:save_follow_up",
+        "relation": "supports",
+        "target": "interaction:record_follow_up"
+      },
+      {
+        "source": "binding:save_follow_up",
+        "relation": "connects",
+        "target": "component:lead-follow-up"
+      },
+      {
+        "source": "component:lead-follow-up",
+        "relation": "bound_by",
+        "target": "binding:save_follow_up"
+      },
+      {
+        "source": "binding:save_follow_up",
+        "relation": "submits_to",
+        "target": "command:save_follow_up"
+      },
+      {
+        "source": "evidence:website_leads",
+        "relation": "checks",
+        "target": "blueprint:website_leads"
+      }
+    ]
+  },
+  "acceptance": [
+    "Submit a valid enquiry and find it in the private queue.",
+    "Reject an enquiry with no reply channel.",
+    "Select a lead and record follow-up without changing its original message."
+  ],
+  "not_implemented": [
+    "No real customer contact or messages in the catalogue.",
+    "No assignment, automated response deadlines, booking or lead conversion."
+  ],
+  "product_model": {
+    "actors": [
+      {
+        "id": "prospective_customer",
+        "name": "Prospective customer"
+      },
+      {
+        "id": "office_staff",
+        "name": "Office staff"
+      }
+    ],
+    "goals": [
+      {
+        "id": "get_help",
+        "actor_id": "prospective_customer",
+        "name": "Get help with a service need"
+      },
+      {
+        "id": "follow_up_enquiries",
+        "actor_id": "office_staff",
+        "name": "Follow up incoming enquiries"
+      }
+    ],
+    "interactions": [
+      {
+        "id": "understand_services",
+        "name": "Understand the service offer",
+        "actor_id": "prospective_customer",
+        "goal_id": "get_help"
+      },
+      {
+        "id": "submit_enquiry",
+        "name": "Ask to be contacted",
+        "actor_id": "prospective_customer",
+        "goal_id": "get_help"
+      },
+      {
+        "id": "review_enquiries",
+        "name": "Review incoming enquiries",
+        "actor_id": "office_staff",
+        "goal_id": "follow_up_enquiries"
+      },
+      {
+        "id": "record_follow_up",
+        "name": "Record follow-up",
+        "actor_id": "office_staff",
+        "goal_id": "follow_up_enquiries"
+      }
+    ],
+    "journeys": [
+      {
+        "id": "enquiry_to_follow_up",
+        "actor_id": "prospective_customer",
+        "goal_id": "get_help",
+        "steps": [
+          "understand_services",
+          "submit_enquiry",
+          "review_enquiries",
+          "record_follow_up"
+        ],
+        "name": "From service need to follow-up",
+        "description": "Ordered Interactions with an explicit visitor-to-staff handoff."
+      },
+      {
+        "id": "handle_enquiries",
+        "actor_id": "office_staff",
+        "goal_id": "follow_up_enquiries",
+        "steps": [
+          "review_enquiries",
+          "record_follow_up"
+        ],
+        "name": "Review and follow up enquiries",
+        "description": "Ordered Interactions with an explicit visitor-to-staff handoff."
+      }
+    ]
+  },
+  "implementation_mapping": {
+    "lead.contact": "Lead.email and Lead.phone; conceptual grouping, not a nested database record",
+    "lead.received_at": "Lead.inserted_at; recorded by the system",
+    "lead.seen_at": "First saved follow-up, not first display",
+    "lead.notified_at": "Internal notification bookkeeping, not evidence of a customer reply"
+  },
+  "et_alignment": {
+    "bedrock_actor": "field_service_owner",
+    "bedrock_goal": "follow_up_leads",
+    "customer_product_model": "Separate portable Actor/Goal/Interaction/Journey definitions; not imported into the Bedrock product.",
+    "status": "Catalogue evidence only; no claim that the prospective customer received help."
+  },
+  "source": "bedrock/blueprints/website-leads.v1.json",
+  "source_sha256": "79009ee6b3a46dd3a6263d0b26e526749609de718dd73a884f72a4a144ca64f6"
+}

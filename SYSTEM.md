@@ -104,3 +104,55 @@ a synthetic lead write, and authenticated staff reading. It deletes only its own
 test user, tokens and lead in cleanup. It refuses production mode and non-loopback
 HTTP targets. Passing compilation alone does not establish database compatibility;
 this suite exercises the selected source and copied schema without migrations.
+
+## Staff operations design
+
+`OPERATIONS.md` defines the shared staff-page patterns and quality standard.
+`ShopWeb.Operations` provides typed presentation components; `StaffNavigation`
+owns the visible destinations. Leads and Team use the shared shell and components.
+Authorization, validation and business writes remain in the existing contexts.
+
+## Development component catalogue
+
+`/dev/catalogue` is available when `dev_routes` is enabled, including local
+development and test builds. It is absent from production routes. It uses the
+browser pipeline and existing `current_user` LiveView session, with no requirement
+to sign in because every example uses synthetic state and performs no database
+writes or external actions. The normal staff authorization routes are unchanged.
+
+The catalogue demonstrates the Workbench visual conventions, controls, composition
+dependencies, and a materials-receiving blueprint. Sample receipts and field checks
+last only for the current LiveView; refreshing resets them. Production inventory
+behaviour, durable receipts, and cross-user transactions are not implemented.
+See [the catalogue guide](CATALOGUE.md) for running and extending it.
+
+The catalogue also demonstrates temporal domain types, zoned receipt entry,
+date-filtered stock history and a session-local crew schedule. The `tz` package
+provides bundled IANA time-zone rules, used explicitly by `Shop.Catalogue.Temporal`;
+there is no automatic network updater. These examples add no business tables or
+production scheduling capability.
+
+The catalogue's Model section explores typed design relationships across actors,
+goals, capabilities, domain concepts, commands, projections, bindings and visual
+components. Receiving blueprint version 4 carries composition contracts and
+explicit binding effects. This metadata is descriptive; it does not interpret
+commands or replace application authorization and validation.
+
+The catalogue also traces an Actor's Journey through ordered Interactions and the
+compositions used at each stage. Version 5 records the Journey Actor and Goal,
+separate stage performers, completion conditions and context passed onward.
+This is navigable design intent, not a runtime workflow engine.
+
+Journey stages render working compositions inline. A shared LiveView state feeds
+stock, receiving and movement history, so changes appear across stages without
+leaving the Journey. Standalone exploration remains available in expandable details.
+
+The development catalogue also demonstrates website enquiries across prospective
+customer and office staff Journeys. `priv/catalogue/website-leads.json`
+carries the
+portable product model, Lead/contact concepts, bindings and composition contracts.
+The catalogue combines this with the receiving snapshot and reuses shared domain
+primitives. Inline public-form, queue and follow-up previews share bounded synthetic
+session state through `Shop.Catalogue.Enquiries`. They reuse Lead changeset validation
+but never call the repository or notifier; real staff authorization remains in
+`Shop.Leads`. No customer application is replaced or upgraded by this example.

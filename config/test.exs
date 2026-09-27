@@ -40,3 +40,6 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 config :shop, :lead_notifications, false
+
+# Exercise the development-only catalogue routes in integration tests.
+config :shop, dev_routes: true

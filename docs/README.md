@@ -1,6 +1,6 @@
 # Application documentation
 
-This repository contains TestShop's independently operated business system.
+This repository contains {{SHOP_NAME}}'s independently operated business system.
 These guides describe source behavior, deployment responsibilities, and work
 that still needs operational evidence. They do not certify a live deployment.
 

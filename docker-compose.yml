@@ -42,7 +42,7 @@ services:
       PHX_SCHEME: http
       PORT: "4000"
       MAIL_ADAPTER: logger
-      MAIL_FROM: "TestShop <noreply@localhost>"
+      MAIL_FROM: "{{SHOP_NAME}} <noreply@localhost>"
     ports:
       - "${APP_PORT:-4000}:4000"
 

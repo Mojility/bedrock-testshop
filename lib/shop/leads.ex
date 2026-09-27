@@ -30,10 +30,7 @@ defmodule Shop.Leads do
 
         result =
           lead
-          |> Ecto.Changeset.cast(attrs, [:status, :notes])
-          |> Ecto.Changeset.validate_required([:status])
-          |> Ecto.Changeset.validate_inclusion(:status, ["new", "contacted", "closed"])
-          |> Ecto.Changeset.validate_length(:notes, max: 4000)
+          |> Lead.follow_up_changeset(attrs)
           |> Ecto.Changeset.put_change(:seen_at, lead.seen_at || DateTime.utc_now())
           |> Repo.update()
 

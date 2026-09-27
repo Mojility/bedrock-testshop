@@ -1,0 +1,2764 @@
+{
+  "id": "materials_receiving",
+  "version": 5,
+  "name": "Receive purchased materials",
+  "maturity": "demonstrated",
+  "scope": "Catalogue scenario only; not an installed customer capability",
+  "business_types": [
+    "electrical_contracting",
+    "equipment_maintenance"
+  ],
+  "operating_models": [
+    "warehouse_stock",
+    "van_stock"
+  ],
+  "actor": "warehouse_staff",
+  "outcome": "Know what arrived, what remains on order, and what stock is available for work",
+  "questions": [
+    "Where do you keep stock: warehouse, vans, or both?",
+    "Do suppliers deliver orders in parts?",
+    "Do you reserve stock for jobs before it is used?",
+    "Who may receive deliveries and correct mistakes?"
+  ],
+  "records": [
+    "purchase_order",
+    "purchase_order_line",
+    "stock_location",
+    "receipt",
+    "stock_movement",
+    "inventory_item",
+    "stock_position"
+  ],
+  "rules": [
+    "Receive a positive whole quantity no greater than the outstanding order quantity",
+    "Keep the order open until all ordered units are received",
+    "Increase on-hand stock without changing job reservations",
+    "Retain a delivery reference for each receipt",
+    "Never approve or pay a bill as a side effect of receiving"
+  ],
+  "compositions": [
+    "record",
+    "split",
+    "task",
+    "schedule",
+    "movement-history"
+  ],
+  "dependencies": [
+    "material_catalogue",
+    "stock_locations",
+    "purchase_orders",
+    "staff_authorization"
+  ],
+  "demonstrated": [
+    "partial delivery",
+    "full delivery",
+    "validation recovery",
+    "session-local duplicate revision rejection",
+    "stock visibility",
+    "time-zone-aware receipt entry",
+    "inclusive movement date filtering",
+    "one-off crew scheduling",
+    "overlap and daylight-saving validation"
+  ],
+  "not_implemented": [
+    "persistent transactions",
+    "cross-user concurrency",
+    "role enforcement",
+    "receipt corrections and returns",
+    "unit conversions",
+    "multiple order lines",
+    "accounting integration",
+    "recurring schedules",
+    "ambiguous-time occurrence selection",
+    "persistent transfer commands"
+  ],
+  "acceptance": [
+    "Receive 8 of 24 units: 16 remain outstanding; availability rises by 8",
+    "Receive the remaining 16: the order is complete and further receipt is unavailable",
+    "Reject zero, negative, fractional and excessive quantities without changing stock",
+    "Retain entered values and delivery reference after a validation failure",
+    "Reject a stale receipt revision without applying it twice"
+  ],
+  "provenance": "Bedrock Workbench design exploration, September 2026; synthetic examples",
+  "domain_model": {
+    "version": 3,
+    "nodes": [
+      {
+        "id": "number",
+        "name": "Number",
+        "kind": "Primitive",
+        "description": "A numeric value. Its business meaning comes from the quantity or field that contains it.",
+        "fields": [],
+        "rules": [
+          "Use decimal arithmetic for measured quantities; do not silently round."
+        ],
+        "sample": "8",
+        "presentations": [
+          "input",
+          "table"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "text",
+        "name": "Text",
+        "kind": "Primitive",
+        "description": "Human-readable words such as a part name or delivery reference.",
+        "fields": [],
+        "rules": [
+          "Validation belongs to the field context."
+        ],
+        "sample": "15A AFCI breaker",
+        "presentations": [
+          "input",
+          "table"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "identifier",
+        "name": "Identifier",
+        "kind": "Primitive",
+        "description": "A stable reference to a record, independent of its display name.",
+        "fields": [],
+        "rules": [
+          "Controls select by identifier, never by a label that could change."
+        ],
+        "sample": "MAT-112",
+        "presentations": [
+          "select"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "image",
+        "name": "Image reference",
+        "kind": "Primitive",
+        "description": "Optional supporting media owned by the business.",
+        "fields": [],
+        "rules": [
+          "A missing image is valid; image descriptions must be supplied where meaningful."
+        ],
+        "sample": "Representative breaker photo",
+        "presentations": [
+          "photo"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "unit",
+        "name": "Stocking unit",
+        "kind": "Value object",
+        "description": "How a quantity is counted or measured.",
+        "fields": [
+          {
+            "name": "code",
+            "type": "text",
+            "meaning": "Examples: each, m or box",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "precision",
+            "type": "number",
+            "meaning": "Allowed fractional digits for this item",
+            "required": true,
+            "value_source": "recorded"
+          }
+        ],
+        "rules": [
+          "Each and box use whole counts in this demo; measured stock may permit fractions.",
+          "Conversions between purchase and stocking units are not implemented."
+        ],
+        "sample": "each · whole units",
+        "presentations": [
+          "select"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "quantity",
+        "name": "Quantity",
+        "kind": "Value object",
+        "description": "A value paired with its unit; “8” alone does not say 8 of what.",
+        "fields": [
+          {
+            "name": "value",
+            "type": "number",
+            "meaning": "Count or measured amount",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "unit",
+            "type": "unit",
+            "meaning": "Unit and precision",
+            "required": true,
+            "value_source": "recorded"
+          }
+        ],
+        "rules": [
+          "Compare or add quantities only in compatible units."
+        ],
+        "sample": "8 each",
+        "presentations": [
+          "input",
+          "table"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "inventory_item",
+        "name": "Inventory item",
+        "kind": "Entity",
+        "description": "The identity and description of a stocked part, independent of where it is kept.",
+        "fields": [
+          {
+            "name": "id",
+            "type": "identifier",
+            "meaning": "Stable selected value",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "sku",
+            "type": "text",
+            "meaning": "Business-facing part code",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "name",
+            "type": "text",
+            "meaning": "Primary display label",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "stocking_unit",
+            "type": "unit",
+            "meaning": "How this item is stocked",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "photo",
+            "type": "image",
+            "meaning": "Optional supporting image",
+            "required": false,
+            "value_source": "recorded"
+          }
+        ],
+        "rules": [
+          "An item can have many stock positions, one per location."
+        ],
+        "sample": "MAT-112 · 15A AFCI breaker",
+        "presentations": [
+          "inventory-picker",
+          "table",
+          "inspector"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "stock_location",
+        "name": "Stock location",
+        "kind": "Entity",
+        "description": "A place holding stock, such as a warehouse or van.",
+        "fields": [
+          {
+            "name": "id",
+            "type": "identifier",
+            "meaning": "Stable location reference",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "name",
+            "type": "text",
+            "meaning": "Human-readable location",
+            "required": true,
+            "value_source": "recorded"
+          }
+        ],
+        "rules": [],
+        "sample": "Main warehouse",
+        "presentations": [
+          "select"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "stock_position",
+        "name": "Stock position",
+        "kind": "Entity",
+        "description": "Quantities for one item at one location. Availability is a derived value, not another editable count.",
+        "fields": [
+          {
+            "name": "item",
+            "type": "inventory_item",
+            "meaning": "The stocked part",
+            "relationship": "reference",
+            "required": true,
+            "value_source": "reference",
+            "cardinality": "one",
+            "lifecycle_ownership": "independent"
+          },
+          {
+            "name": "location",
+            "type": "stock_location",
+            "meaning": "Where the quantities apply",
+            "relationship": "reference",
+            "required": true,
+            "value_source": "reference",
+            "cardinality": "one",
+            "lifecycle_ownership": "independent"
+          },
+          {
+            "name": "on_hand",
+            "type": "quantity",
+            "meaning": "Physical quantity held",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "reserved",
+            "type": "quantity",
+            "meaning": "Quantity committed to work",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "available",
+            "type": "quantity",
+            "meaning": "On hand minus reserved",
+            "required": true,
+            "value_source": "derived"
+          }
+        ],
+        "rules": [
+          "The demo does not permit negative stock or reservations exceeding on hand.",
+          "A real business must explicitly decide how backorders and negative availability work.",
+          "Stock changes through business actions, not by editing the displayed availability."
+        ],
+        "sample": "8 on hand − 8 reserved = 0 available · each",
+        "presentations": [
+          "table",
+          "inspector"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "purchase_order_line",
+        "name": "Purchase order line",
+        "kind": "Entity",
+        "description": "The ordered item and quantities used to validate a delivery.",
+        "fields": [
+          {
+            "name": "item",
+            "type": "inventory_item",
+            "meaning": "Part being purchased",
+            "relationship": "reference",
+            "required": true,
+            "value_source": "reference",
+            "cardinality": "one",
+            "lifecycle_ownership": "independent"
+          },
+          {
+            "name": "ordered",
+            "type": "quantity",
+            "meaning": "Quantity requested",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "received",
+            "type": "quantity",
+            "meaning": "Quantity received so far",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "outstanding",
+            "type": "quantity",
+            "meaning": "Ordered minus received",
+            "required": true,
+            "value_source": "derived"
+          }
+        ],
+        "rules": [
+          "The demonstrated order contains one line of 24 whole units."
+        ],
+        "sample": "24 ordered · 0 received · 24 outstanding",
+        "presentations": [
+          "table",
+          "record"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "receipt",
+        "name": "Receipt",
+        "kind": "Entity",
+        "description": "A recorded delivery with a reference and quantity; changes stock through a controlled action.",
+        "fields": [
+          {
+            "name": "line",
+            "type": "purchase_order_line",
+            "meaning": "Order line fulfilled",
+            "relationship": "reference",
+            "required": true,
+            "value_source": "reference",
+            "cardinality": "one",
+            "lifecycle_ownership": "independent"
+          },
+          {
+            "name": "location",
+            "type": "stock_location",
+            "meaning": "Destination",
+            "relationship": "reference",
+            "required": true,
+            "value_source": "reference",
+            "cardinality": "one",
+            "lifecycle_ownership": "independent"
+          },
+          {
+            "name": "quantity",
+            "type": "quantity",
+            "meaning": "Received amount",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "reference",
+            "type": "text",
+            "meaning": "Delivery or packing-slip reference",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "occurred_at",
+            "type": "timestamp",
+            "meaning": "When delivery arrived",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "recorded_at",
+            "type": "timestamp",
+            "meaning": "When entry was recorded",
+            "required": true,
+            "value_source": "derived"
+          },
+          {
+            "name": "zone",
+            "type": "time_zone",
+            "meaning": "Zone used to enter the arrival time",
+            "required": true,
+            "value_source": "recorded"
+          }
+        ],
+        "rules": [
+          "Quantity is positive, whole and no greater than outstanding for this example.",
+          "Receiving adds to on hand without changing reservations.",
+          "Receiving neither approves nor pays a supplier bill."
+        ],
+        "sample": "8 each · Slip 481",
+        "presentations": [
+          "record",
+          "receiving",
+          "timestamp-field",
+          "movement-history"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "date",
+        "name": "Calendar date",
+        "kind": "Primitive",
+        "description": "A day on the calendar, without a time or time zone.",
+        "fields": [],
+        "rules": [
+          "Never convert a date-only value through UTC; that can change its day.",
+          "Use for due dates, promised delivery days and all-day planning."
+        ],
+        "sample": "2026-09-28",
+        "presentations": [
+          "date-field",
+          "date-range"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "local_time",
+        "name": "Local time",
+        "kind": "Primitive",
+        "description": "A time of day without a date or zone; it is not an exact moment.",
+        "fields": [],
+        "rules": [
+          "Pair with a date and IANA time zone before resolving an instant.",
+          "Useful for opening hours; recurring schedules are not implemented in this example."
+        ],
+        "sample": "08:30",
+        "presentations": [
+          "time-field"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "time_zone",
+        "name": "Time zone",
+        "kind": "Value object",
+        "description": "An IANA region whose rules determine local time and daylight-saving changes.",
+        "fields": [
+          {
+            "name": "name",
+            "type": "text",
+            "meaning": "IANA identifier, such as America/Toronto",
+            "required": true,
+            "value_source": "recorded"
+          }
+        ],
+        "rules": [
+          "An abbreviation or fixed offset is not a substitute for a scheduling zone.",
+          "Time-zone rule updates travel through maintained application dependencies."
+        ],
+        "sample": "America/Toronto",
+        "presentations": [
+          "select",
+          "timestamp-field",
+          "time-range"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "timestamp",
+        "name": "Timestamp",
+        "kind": "Primitive",
+        "description": "An exact instant, stored in UTC and displayed with explicit local-zone context.",
+        "fields": [],
+        "rules": [
+          "Do not treat a datetime-local input as an instant without a zone.",
+          "Reject nonexistent local times and ambiguous repeated times instead of silently choosing.",
+          "The example rejects repeated times; an explicit earlier/later occurrence chooser is future work."
+        ],
+        "sample": "2026-09-26T13:30:00Z",
+        "presentations": [
+          "timestamp-field",
+          "timestamp-display"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "duration",
+        "name": "Elapsed duration",
+        "kind": "Value object",
+        "description": "An elapsed amount of time, expressed with an explicit unit.",
+        "fields": [
+          {
+            "name": "minutes",
+            "type": "number",
+            "meaning": "Elapsed minutes between resolved instants",
+            "required": true,
+            "value_source": "recorded"
+          }
+        ],
+        "rules": [
+          "Elapsed duration can differ from wall-clock difference across daylight-saving changes.",
+          "A calendar day is not always 24 elapsed hours."
+        ],
+        "sample": "120 minutes",
+        "presentations": [
+          "duration-display",
+          "time-range"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "date_range",
+        "name": "Date range",
+        "kind": "Value object",
+        "description": "Two calendar dates defining an inclusive span.",
+        "fields": [
+          {
+            "name": "from",
+            "type": "date",
+            "meaning": "First included day",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "to",
+            "type": "date",
+            "meaning": "Last included day",
+            "required": true,
+            "value_source": "recorded"
+          }
+        ],
+        "rules": [
+          "End must be on or after start; a single-day range is valid.",
+          "A timestamp filter applies these dates in its stated reporting time zone."
+        ],
+        "sample": "September 1–30, 2026 · both dates included",
+        "presentations": [
+          "date-range",
+          "movement-history"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "time_range",
+        "name": "Scheduled window",
+        "kind": "Value object",
+        "description": "A start and end instant plus the scheduling zone.",
+        "fields": [
+          {
+            "name": "starts_at",
+            "type": "timestamp",
+            "meaning": "Included start instant",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "ends_at",
+            "type": "timestamp",
+            "meaning": "Excluded end instant",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "zone",
+            "type": "time_zone",
+            "meaning": "Local scheduling context",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "duration",
+            "type": "duration",
+            "meaning": "Elapsed end minus start",
+            "required": true,
+            "value_source": "derived"
+          }
+        ],
+        "rules": [
+          "End must be strictly after start; overnight work uses the next calendar date.",
+          "Intervals are half-open: a booking ending at 11:00 may meet one starting at 11:00."
+        ],
+        "sample": "September 28 · 09:00–11:00 America/Toronto",
+        "presentations": [
+          "time-range",
+          "schedule"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "appointment",
+        "name": "Appointment",
+        "kind": "Entity",
+        "description": "A scheduled work window for a resource, such as a crew.",
+        "fields": [
+          {
+            "name": "id",
+            "type": "identifier",
+            "meaning": "Stable booking reference",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "resource",
+            "type": "text",
+            "meaning": "Assigned crew",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "window",
+            "type": "time_range",
+            "meaning": "Scheduled start, end and zone",
+            "required": true,
+            "value_source": "recorded"
+          }
+        ],
+        "rules": [
+          "This demonstration rejects overlapping bookings for Crew A.",
+          "Recurring bookings, resource permissions, cancellation and cross-user concurrency are not implemented."
+        ],
+        "sample": "Crew A · warehouse work · 2 hours",
+        "presentations": [
+          "schedule"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      },
+      {
+        "id": "stock_movement",
+        "name": "Stock movement",
+        "kind": "Entity",
+        "description": "A receipt or transfer event, with occurrence time distinct from record-entry time.",
+        "fields": [
+          {
+            "name": "item",
+            "type": "inventory_item",
+            "meaning": "Moved part",
+            "relationship": "reference",
+            "required": true,
+            "value_source": "reference",
+            "cardinality": "one",
+            "lifecycle_ownership": "independent"
+          },
+          {
+            "name": "quantity",
+            "type": "quantity",
+            "meaning": "Quantity moved",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "source",
+            "type": "stock_location",
+            "meaning": "Origin",
+            "relationship": "reference",
+            "required": true,
+            "value_source": "reference",
+            "cardinality": "one",
+            "lifecycle_ownership": "independent"
+          },
+          {
+            "name": "destination",
+            "type": "stock_location",
+            "meaning": "Destination",
+            "relationship": "reference",
+            "required": true,
+            "value_source": "reference",
+            "cardinality": "one",
+            "lifecycle_ownership": "independent"
+          },
+          {
+            "name": "occurred_at",
+            "type": "timestamp",
+            "meaning": "When the physical event happened",
+            "required": true,
+            "value_source": "recorded"
+          },
+          {
+            "name": "recorded_at",
+            "type": "timestamp",
+            "meaning": "When the system recorded it",
+            "required": true,
+            "value_source": "derived"
+          },
+          {
+            "name": "reference",
+            "type": "text",
+            "meaning": "Receipt or transfer reference",
+            "required": true,
+            "value_source": "recorded"
+          }
+        ],
+        "rules": [
+          "Keep occurrence and recording times distinct when entering events later.",
+          "Stock quantities change through validated actions; changing a displayed date never rewrites stock.",
+          "Transfer entries are read-only fixtures here; transfer commands and persistent ledgers are not implemented."
+        ],
+        "sample": "TR-104 · 2 each · Van 02 → Main warehouse",
+        "presentations": [
+          "movement-history",
+          "timestamp-display"
+        ],
+        "scope": "Conceptual business type; sample values are synthetic."
+      }
+    ]
+  },
+  "presentation_bindings": [
+    {
+      "id": "choose_inventory_item",
+      "name": "Choose an inventory item",
+      "components": [
+        "inventory-picker",
+        "select",
+        "search",
+        "split",
+        "table"
+      ],
+      "purpose": "Identify the correct part while seeing its location-specific availability.",
+      "reads": [
+        "inventory_item.id",
+        "inventory_item.sku",
+        "inventory_item.name",
+        "stock_position.location",
+        "stock_position.on_hand",
+        "stock_position.available",
+        "inventory_item.stocking_unit"
+      ],
+      "rule": "Selecting a part changes view state only. Availability is contextual information, not a reservation or promise of stock.",
+      "empty": "Show no matching items and allow filters to be cleared.",
+      "scope": "One synthetic stock position per item; location is visible in each option. Real deployments require an explicit location and freshness policy.",
+      "domain_concepts": [
+        "inventory_item",
+        "stock_position"
+      ],
+      "effect": "view_state",
+      "inputs": [],
+      "view_state": [
+        "view.selected_item_id"
+      ],
+      "interaction": "interaction:inspect_stock",
+      "projection": "projection:stock_choices",
+      "command": null
+    },
+    {
+      "id": "inspect_stock",
+      "name": "Inspect stock",
+      "components": [
+        "table",
+        "inspector",
+        "photo",
+        "split"
+      ],
+      "purpose": "Compare quantities and inspect the selected part.",
+      "reads": [
+        "inventory_item.name",
+        "inventory_item.photo",
+        "stock_position.on_hand",
+        "stock_position.reserved",
+        "stock_position.available"
+      ],
+      "rule": "Derived availability is read-only; receiving is a separate business action.",
+      "domain_concepts": [
+        "inventory_item",
+        "stock_position"
+      ],
+      "effect": "read_only",
+      "inputs": [],
+      "view_state": [],
+      "interaction": "interaction:inspect_stock",
+      "projection": "projection:stock_detail",
+      "command": null
+    },
+    {
+      "id": "record_receipt",
+      "name": "Record a delivery",
+      "components": [
+        "input",
+        "button",
+        "record"
+      ],
+      "purpose": "Capture a received quantity and reference, then apply the receiving rules.",
+      "reads": [
+        "purchase_order_line.outstanding",
+        "stock_position.on_hand"
+      ],
+      "rule": "Validate before recording; increment received and on-hand quantities while preserving reservations. The demo uses session-local state, not persistent transactions.",
+      "domain_concepts": [
+        "receipt",
+        "purchase_order_line",
+        "stock_position"
+      ],
+      "effect": "command",
+      "inputs": [
+        "receipt.quantity",
+        "receipt.reference",
+        "receipt.occurred_at",
+        "receipt.zone"
+      ],
+      "view_state": [],
+      "interaction": "interaction:receive_delivery",
+      "projection": "projection:receiving_context",
+      "command": "command:receive_materials"
+    },
+    {
+      "id": "schedule_work",
+      "name": "Schedule warehouse work",
+      "components": [
+        "date-field",
+        "time-field",
+        "time-range",
+        "duration-display",
+        "schedule"
+      ],
+      "purpose": "Book a crew with explicit local-zone intent and an exact elapsed duration.",
+      "reads": [
+        "time_range.starts_at",
+        "time_range.ends_at",
+        "time_range.duration"
+      ],
+      "rule": "Validate both zoned instants, positive interval and no overlap with the same crew. Adjacent bookings are allowed.",
+      "domain_concepts": [
+        "appointment",
+        "time_range"
+      ],
+      "effect": "command",
+      "inputs": [
+        "time_range.starts_at",
+        "time_range.ends_at",
+        "time_range.zone"
+      ],
+      "view_state": [],
+      "interaction": "interaction:schedule_work",
+      "projection": "projection:crew_agenda",
+      "command": "command:schedule_warehouse_work"
+    },
+    {
+      "id": "time_stock_event",
+      "name": "Record when stock arrived",
+      "components": [
+        "timestamp-field",
+        "record",
+        "timestamp-display"
+      ],
+      "purpose": "Distinguish the physical arrival from the later entry of that event.",
+      "reads": [
+        "receipt.recorded_at"
+      ],
+      "rule": "Resolve the entered local time with its zone. Generate recorded_at at command time, never from an editable field.",
+      "domain_concepts": [
+        "receipt",
+        "stock_movement"
+      ],
+      "effect": "command",
+      "inputs": [
+        "receipt.occurred_at",
+        "receipt.zone"
+      ],
+      "view_state": [],
+      "interaction": "interaction:receive_delivery",
+      "projection": "projection:receipt_times",
+      "command": "command:receive_materials"
+    },
+    {
+      "id": "filter_movement_dates",
+      "name": "Review stock movements by date",
+      "components": [
+        "date-range",
+        "movement-history"
+      ],
+      "purpose": "Review receipts and transfers occurring within a calendar date range.",
+      "reads": [
+        "stock_movement.occurred_at",
+        "stock_movement.recorded_at"
+      ],
+      "rule": "Both dates are included in America/Toronto. Invalid ranges retain the last valid result set. Filtering never changes stock.",
+      "domain_concepts": [
+        "date_range",
+        "stock_movement"
+      ],
+      "effect": "view_state",
+      "inputs": [],
+      "view_state": [
+        "view.movement_date_range"
+      ],
+      "interaction": "interaction:review_movements",
+      "projection": "projection:movement_history",
+      "command": null
+    },
+    {
+      "id": "check_packaging",
+      "name": "Check packaging",
+      "components": [
+        "task",
+        "button"
+      ],
+      "domain_concepts": [
+        "receipt"
+      ],
+      "purpose": "Complete or reopen the synthetic packaging check.",
+      "reads": [],
+      "inputs": [],
+      "view_state": [],
+      "effect": "command",
+      "interaction": "interaction:check_packaging",
+      "projection": "projection:packaging_check",
+      "command": "command:check_packaging",
+      "rule": "Toggles the session check only; no attachments or durable evidence are captured."
+    }
+  ],
+  "domain_objects": [
+    "inventory_item",
+    "stock_location",
+    "stock_position",
+    "purchase_order_line",
+    "receipt",
+    "appointment",
+    "stock_movement"
+  ],
+  "binding_ids": [
+    "choose_inventory_item",
+    "inspect_stock",
+    "record_receipt",
+    "schedule_work",
+    "time_stock_event",
+    "filter_movement_dates",
+    "check_packaging"
+  ],
+  "composition_contracts": [
+    {
+      "component": "record",
+      "interaction": "interaction:receive_delivery",
+      "bindings": [
+        "record_receipt",
+        "time_stock_event"
+      ],
+      "purpose": "Receive a delivery",
+      "inputs": "Order line and current stock",
+      "regions": {
+        "primary_work": "Receipt quantity, reference and occurrence time",
+        "supporting_context": "Outstanding quantity and receipt history"
+      },
+      "state": "Business examples and view state last for this LiveView session only.",
+      "outputs": "Named commands or view-state changes through the listed bindings.",
+      "variants": [
+        "Wide: related context alongside work.",
+        "Narrow: preserve reading order and accessible navigation."
+      ],
+      "recovery": [
+        "Validation keeps input and identifies errors.",
+        "Refresh resets all synthetic records."
+      ],
+      "gaps": [
+        "Production authority, persistence and cross-user concurrency remain unimplemented."
+      ]
+    },
+    {
+      "component": "split",
+      "interaction": "interaction:inspect_stock",
+      "bindings": [
+        "choose_inventory_item",
+        "inspect_stock"
+      ],
+      "purpose": "Find and inspect stock",
+      "inputs": "Stock choices and selected item",
+      "regions": {
+        "primary_work": "Search, sort, filter, pagination and selection",
+        "supporting_context": "Selected part and location-specific quantities"
+      },
+      "state": "Business examples and view state last for this LiveView session only.",
+      "outputs": "Named commands or view-state changes through the listed bindings.",
+      "variants": [
+        "Wide: related context alongside work.",
+        "Narrow: preserve reading order and accessible navigation."
+      ],
+      "recovery": [
+        "Validation keeps input and identifies errors.",
+        "Refresh resets all synthetic records."
+      ],
+      "gaps": [
+        "Production authority, persistence and cross-user concurrency remain unimplemented."
+      ]
+    },
+    {
+      "component": "task",
+      "interaction": "interaction:check_packaging",
+      "bindings": [
+        "check_packaging"
+      ],
+      "purpose": "Check packaging",
+      "inputs": "Synthetic delivery task",
+      "regions": {
+        "primary_work": "Completion action",
+        "supporting_context": "Packaging context and completion state"
+      },
+      "state": "Business examples and view state last for this LiveView session only.",
+      "outputs": "Named commands or view-state changes through the listed bindings.",
+      "variants": [
+        "Wide: related context alongside work.",
+        "Narrow: preserve reading order and accessible navigation."
+      ],
+      "recovery": [
+        "Validation keeps input and identifies errors.",
+        "Refresh resets all synthetic records."
+      ],
+      "gaps": [
+        "Production authority, persistence and cross-user concurrency remain unimplemented."
+      ]
+    },
+    {
+      "component": "schedule",
+      "interaction": "interaction:schedule_work",
+      "bindings": [
+        "schedule_work"
+      ],
+      "purpose": "Schedule warehouse work",
+      "inputs": "Crew A agenda",
+      "regions": {
+        "primary_work": "Zoned start and end",
+        "supporting_context": "Bookings and elapsed duration"
+      },
+      "state": "Business examples and view state last for this LiveView session only.",
+      "outputs": "Named commands or view-state changes through the listed bindings.",
+      "variants": [
+        "Wide: related context alongside work.",
+        "Narrow: preserve reading order and accessible navigation."
+      ],
+      "recovery": [
+        "Validation keeps input and identifies errors.",
+        "Refresh resets all synthetic records."
+      ],
+      "gaps": [
+        "Production authority, persistence and cross-user concurrency remain unimplemented."
+      ]
+    },
+    {
+      "component": "movement-history",
+      "interaction": "interaction:review_movements",
+      "bindings": [
+        "filter_movement_dates"
+      ],
+      "purpose": "Review stock movements",
+      "inputs": "Receipt and transfer history",
+      "regions": {
+        "primary_work": "Inclusive date filter",
+        "supporting_context": "Occurrence and recording times"
+      },
+      "state": "Business examples and view state last for this LiveView session only.",
+      "outputs": "Named commands or view-state changes through the listed bindings.",
+      "variants": [
+        "Wide: related context alongside work.",
+        "Narrow: preserve reading order and accessible navigation."
+      ],
+      "recovery": [
+        "Validation keeps input and identifies errors.",
+        "Refresh resets all synthetic records."
+      ],
+      "gaps": [
+        "Production authority, persistence and cross-user concurrency remain unimplemented."
+      ]
+    }
+  ],
+  "design_model": {
+    "version": 2,
+    "nodes": [
+      {
+        "id": "blueprint:materials_receiving",
+        "kind": "Blueprint",
+        "name": "Receive purchased materials",
+        "description": "A reusable proposal combining receiving, stock review and warehouse scheduling. Confirm fit with each business.",
+        "version": 5,
+        "scope": "Catalogue scenario only; not an installed customer capability"
+      },
+      {
+        "id": "actor:warehouse_staff",
+        "kind": "Actor",
+        "name": "Warehouse staff",
+        "description": "Record deliveries and review stock at the warehouse."
+      },
+      {
+        "id": "goal:reliable_stock",
+        "kind": "Goal",
+        "name": "Know what stock is available",
+        "description": "Warehouse staff can distinguish received, reserved and available stock."
+      },
+      {
+        "id": "context:warehouse_and_vans",
+        "kind": "Business context",
+        "name": "Warehouse and van stock",
+        "description": "Electrical contracting or equipment maintenance with partial deliveries and stock held in more than one location."
+      },
+      {
+        "id": "capability:receiving",
+        "kind": "Capability",
+        "name": "Receive and review materials",
+        "description": "Recognize deliveries, record partial receipts and review the resulting stock position."
+      },
+      {
+        "id": "workspace:warehouse",
+        "kind": "Workspace",
+        "name": "Warehouse work",
+        "description": "Connected receiving, stock review, packaging checks and scheduling examples; navigation is demonstrated, production workflow is not installed."
+      },
+      {
+        "id": "mode:design",
+        "kind": "Mode",
+        "name": "System design",
+        "description": "Synthetic examples for exploring behaviour; actions do not change live business records."
+      },
+      {
+        "id": "interaction:inspect_stock",
+        "kind": "Interaction",
+        "name": "Review stock",
+        "description": "Find a part and inspect its location-specific quantities."
+      },
+      {
+        "id": "interaction:receive_delivery",
+        "kind": "Interaction",
+        "name": "Record a delivery",
+        "description": "Enter what arrived and when; see the remaining order quantity."
+      },
+      {
+        "id": "interaction:schedule_work",
+        "kind": "Interaction",
+        "name": "Plan warehouse work",
+        "description": "Book a one-off window for Crew A."
+      },
+      {
+        "id": "interaction:review_movements",
+        "kind": "Interaction",
+        "name": "Review stock movements",
+        "description": "Inspect occurrence and recording times within selected calendar dates."
+      },
+      {
+        "id": "interaction:check_packaging",
+        "kind": "Interaction",
+        "name": "Check packaging",
+        "description": "Record the sample packaging check; no photo evidence or signature is captured."
+      },
+      {
+        "id": "journey:receive_and_review",
+        "kind": "Journey",
+        "name": "Receive and review a delivery",
+        "description": "Identify materials, record the delivery, then inspect the stock movement.",
+        "steps": [
+          "interaction:inspect_stock",
+          "interaction:receive_delivery",
+          "interaction:review_movements"
+        ],
+        "actor": "actor:warehouse_staff",
+        "goal": "goal:reliable_stock",
+        "stages": [
+          {
+            "id": "identify_materials",
+            "interaction": "interaction:inspect_stock",
+            "performer": "actor:warehouse_staff",
+            "compositions": [
+              "split"
+            ],
+            "context": "Delivery and item reference",
+            "completion": "The correct item and its stock location are identified.",
+            "handoff": "Carry the identified item into the delivery task. The demo uses the fixed MAT-112 order line; selecting another item does not retarget that order."
+          },
+          {
+            "id": "record_delivery",
+            "interaction": "interaction:receive_delivery",
+            "performer": "actor:warehouse_staff",
+            "compositions": [
+              "record"
+            ],
+            "context": "MAT-112 order line, outstanding quantity and destination stock position",
+            "completion": "A valid receipt updates received and on-hand quantities.",
+            "handoff": "The receipt enters session-local movement history with occurrence and recording times."
+          },
+          {
+            "id": "review_result",
+            "interaction": "interaction:review_movements",
+            "performer": "actor:warehouse_staff",
+            "compositions": [
+              "movement-history"
+            ],
+            "context": "MAT-112 receipts and sample transfers",
+            "completion": "The worker can see when the delivery occurred and when it was recorded.",
+            "handoff": "Finish the review or return to stock and receiving; filters remain view state."
+          }
+        ]
+      },
+      {
+        "id": "domain:number",
+        "kind": "Primitive",
+        "name": "Number",
+        "description": "A numeric value. Its business meaning comes from the quantity or field that contains it.",
+        "domain_id": "number"
+      },
+      {
+        "id": "domain:text",
+        "kind": "Primitive",
+        "name": "Text",
+        "description": "Human-readable words such as a part name or delivery reference.",
+        "domain_id": "text"
+      },
+      {
+        "id": "domain:identifier",
+        "kind": "Primitive",
+        "name": "Identifier",
+        "description": "A stable reference to a record, independent of its display name.",
+        "domain_id": "identifier"
+      },
+      {
+        "id": "domain:image",
+        "kind": "Primitive",
+        "name": "Image reference",
+        "description": "Optional supporting media owned by the business.",
+        "domain_id": "image"
+      },
+      {
+        "id": "domain:unit",
+        "kind": "Value object",
+        "name": "Stocking unit",
+        "description": "How a quantity is counted or measured.",
+        "domain_id": "unit"
+      },
+      {
+        "id": "domain:quantity",
+        "kind": "Value object",
+        "name": "Quantity",
+        "description": "A value paired with its unit; “8” alone does not say 8 of what.",
+        "domain_id": "quantity"
+      },
+      {
+        "id": "domain:inventory_item",
+        "kind": "Entity",
+        "name": "Inventory item",
+        "description": "The identity and description of a stocked part, independent of where it is kept.",
+        "domain_id": "inventory_item"
+      },
+      {
+        "id": "domain:stock_location",
+        "kind": "Entity",
+        "name": "Stock location",
+        "description": "A place holding stock, such as a warehouse or van.",
+        "domain_id": "stock_location"
+      },
+      {
+        "id": "domain:stock_position",
+        "kind": "Entity",
+        "name": "Stock position",
+        "description": "Quantities for one item at one location. Availability is a derived value, not another editable count.",
+        "domain_id": "stock_position"
+      },
+      {
+        "id": "domain:purchase_order_line",
+        "kind": "Entity",
+        "name": "Purchase order line",
+        "description": "The ordered item and quantities used to validate a delivery.",
+        "domain_id": "purchase_order_line"
+      },
+      {
+        "id": "domain:receipt",
+        "kind": "Entity",
+        "name": "Receipt",
+        "description": "A recorded delivery with a reference and quantity; changes stock through a controlled action.",
+        "domain_id": "receipt"
+      },
+      {
+        "id": "domain:date",
+        "kind": "Primitive",
+        "name": "Calendar date",
+        "description": "A day on the calendar, without a time or time zone.",
+        "domain_id": "date"
+      },
+      {
+        "id": "domain:local_time",
+        "kind": "Primitive",
+        "name": "Local time",
+        "description": "A time of day without a date or zone; it is not an exact moment.",
+        "domain_id": "local_time"
+      },
+      {
+        "id": "domain:time_zone",
+        "kind": "Value object",
+        "name": "Time zone",
+        "description": "An IANA region whose rules determine local time and daylight-saving changes.",
+        "domain_id": "time_zone"
+      },
+      {
+        "id": "domain:timestamp",
+        "kind": "Primitive",
+        "name": "Timestamp",
+        "description": "An exact instant, stored in UTC and displayed with explicit local-zone context.",
+        "domain_id": "timestamp"
+      },
+      {
+        "id": "domain:duration",
+        "kind": "Value object",
+        "name": "Elapsed duration",
+        "description": "An elapsed amount of time, expressed with an explicit unit.",
+        "domain_id": "duration"
+      },
+      {
+        "id": "domain:date_range",
+        "kind": "Value object",
+        "name": "Date range",
+        "description": "Two calendar dates defining an inclusive span.",
+        "domain_id": "date_range"
+      },
+      {
+        "id": "domain:time_range",
+        "kind": "Value object",
+        "name": "Scheduled window",
+        "description": "A start and end instant plus the scheduling zone.",
+        "domain_id": "time_range"
+      },
+      {
+        "id": "domain:appointment",
+        "kind": "Entity",
+        "name": "Appointment",
+        "description": "A scheduled work window for a resource, such as a crew.",
+        "domain_id": "appointment"
+      },
+      {
+        "id": "domain:stock_movement",
+        "kind": "Entity",
+        "name": "Stock movement",
+        "description": "A receipt or transfer event, with occurrence time distinct from record-entry time.",
+        "domain_id": "stock_movement"
+      },
+      {
+        "id": "command:receive_materials",
+        "kind": "Command",
+        "name": "Record receipt",
+        "description": "Apply a validated partial delivery to the order and stock position.",
+        "inputs": [
+          "receipt.quantity",
+          "receipt.reference",
+          "receipt.occurred_at",
+          "receipt.zone"
+        ],
+        "effects": [
+          "Increase received and on-hand quantities; preserve reservations.",
+          "Assign recording time when the command succeeds."
+        ],
+        "preconditions": [
+          "Positive whole-unit quantity within outstanding amount.",
+          "Matching session revision and valid zoned occurrence time."
+        ],
+        "failures": [
+          "Invalid quantity, missing reference, stale revision or invalid local time retains input."
+        ],
+        "authority": "Synthetic catalogue only. Production role authorization is not implemented.",
+        "recovery": "Correct retained inputs and retry. Refresh resets session state.",
+        "concurrency": "Session-local only; cross-user transactions are not demonstrated."
+      },
+      {
+        "id": "command:schedule_warehouse_work",
+        "kind": "Command",
+        "name": "Schedule warehouse work",
+        "description": "Add a one-off Crew A booking.",
+        "inputs": [
+          "time_range.starts_at",
+          "time_range.ends_at",
+          "time_range.zone"
+        ],
+        "effects": [
+          "Add the booking and display actual elapsed duration."
+        ],
+        "preconditions": [
+          "Valid zoned endpoints, positive interval and no overlap for Crew A."
+        ],
+        "failures": [
+          "Invalid local time, reversed interval or overlap retains input."
+        ],
+        "authority": "Synthetic catalogue only. Production role authorization is not implemented.",
+        "recovery": "Correct retained inputs and retry. Refresh resets session state.",
+        "concurrency": "Session-local only; cross-user transactions are not demonstrated."
+      },
+      {
+        "id": "command:check_packaging",
+        "kind": "Command",
+        "name": "Record packaging check",
+        "description": "Mark the synthetic packaging task complete.",
+        "inputs": [],
+        "effects": [
+          "Toggle the session check between complete and needed; reopening is supported."
+        ],
+        "preconditions": [
+          "Catalogue example is open."
+        ],
+        "failures": [
+          "No persistent evidence or production authority is implemented."
+        ],
+        "authority": "Synthetic catalogue only. Production role authorization is not implemented.",
+        "recovery": "Correct retained inputs and retry. Refresh resets session state.",
+        "concurrency": "Session-local only; cross-user transactions are not demonstrated."
+      },
+      {
+        "id": "event:materials_received",
+        "kind": "Event",
+        "name": "Materials received",
+        "description": "A receipt history entry separates occurrence time from recording time. It is not a durable event log."
+      },
+      {
+        "id": "policy:crew_overlap",
+        "kind": "Policy",
+        "name": "Crew bookings may meet but not overlap",
+        "description": "The example permits adjacent half-open windows and rejects overlapping bookings for Crew A."
+      },
+      {
+        "id": "transition:partial_receipt",
+        "kind": "State transition",
+        "name": "Outstanding to partially received",
+        "description": "A valid partial receipt reduces outstanding quantity while leaving the order incomplete."
+      },
+      {
+        "id": "rule:receiving_1",
+        "kind": "Rule",
+        "name": "Receiving rule 1",
+        "description": "Receive a positive whole quantity no greater than the outstanding order quantity"
+      },
+      {
+        "id": "rule:receiving_2",
+        "kind": "Rule",
+        "name": "Receiving rule 2",
+        "description": "Keep the order open until all ordered units are received"
+      },
+      {
+        "id": "rule:receiving_3",
+        "kind": "Rule",
+        "name": "Receiving rule 3",
+        "description": "Increase on-hand stock without changing job reservations"
+      },
+      {
+        "id": "rule:receiving_4",
+        "kind": "Rule",
+        "name": "Receiving rule 4",
+        "description": "Retain a delivery reference for each receipt"
+      },
+      {
+        "id": "rule:receiving_5",
+        "kind": "Rule",
+        "name": "Receiving rule 5",
+        "description": "Never approve or pay a bill as a side effect of receiving"
+      },
+      {
+        "id": "projection:stock_choices",
+        "kind": "Projection",
+        "name": "Choose an inventory item context",
+        "description": "Identify the correct part while seeing its location-specific availability.",
+        "fields": [
+          "inventory_item.id",
+          "inventory_item.sku",
+          "inventory_item.name",
+          "stock_position.location",
+          "stock_position.on_hand",
+          "stock_position.available",
+          "inventory_item.stocking_unit"
+        ],
+        "scope": "One synthetic stock position per item; location is visible in each option. Real deployments require an explicit location and freshness policy.",
+        "freshness": "Recomputed from current catalogue session state; not a reservation or production availability promise."
+      },
+      {
+        "id": "query:stock_choices",
+        "kind": "Query",
+        "name": "Read choose an inventory item context",
+        "description": "Read the synthetic projection without changing business records.",
+        "scope": "Current catalogue session only; no production data access."
+      },
+      {
+        "id": "binding:choose_inventory_item",
+        "kind": "Binding",
+        "name": "Choose an inventory item",
+        "description": "Identify the correct part while seeing its location-specific availability.",
+        "effect": "view_state",
+        "inputs": [],
+        "view_state": [
+          "view.selected_item_id"
+        ],
+        "rule": "Selecting a part changes view state only. Availability is contextual information, not a reservation or promise of stock."
+      },
+      {
+        "id": "projection:stock_detail",
+        "kind": "Projection",
+        "name": "Inspect stock context",
+        "description": "Compare quantities and inspect the selected part.",
+        "fields": [
+          "inventory_item.name",
+          "inventory_item.photo",
+          "stock_position.on_hand",
+          "stock_position.reserved",
+          "stock_position.available"
+        ],
+        "scope": "Synthetic session-local records only.",
+        "freshness": "Recomputed from current catalogue session state; not a reservation or production availability promise."
+      },
+      {
+        "id": "query:stock_detail",
+        "kind": "Query",
+        "name": "Read inspect stock context",
+        "description": "Read the synthetic projection without changing business records.",
+        "scope": "Current catalogue session only; no production data access."
+      },
+      {
+        "id": "binding:inspect_stock",
+        "kind": "Binding",
+        "name": "Inspect stock",
+        "description": "Compare quantities and inspect the selected part.",
+        "effect": "read_only",
+        "inputs": [],
+        "view_state": [],
+        "rule": "Derived availability is read-only; receiving is a separate business action."
+      },
+      {
+        "id": "projection:receiving_context",
+        "kind": "Projection",
+        "name": "Record a delivery context",
+        "description": "Capture a received quantity and reference, then apply the receiving rules.",
+        "fields": [
+          "purchase_order_line.outstanding",
+          "stock_position.on_hand"
+        ],
+        "scope": "Synthetic session-local records only.",
+        "freshness": "Recomputed from current catalogue session state; not a reservation or production availability promise."
+      },
+      {
+        "id": "query:receiving_context",
+        "kind": "Query",
+        "name": "Read record a delivery context",
+        "description": "Read the synthetic projection without changing business records.",
+        "scope": "Current catalogue session only; no production data access."
+      },
+      {
+        "id": "binding:record_receipt",
+        "kind": "Binding",
+        "name": "Record a delivery",
+        "description": "Capture a received quantity and reference, then apply the receiving rules.",
+        "effect": "command",
+        "inputs": [
+          "receipt.quantity",
+          "receipt.reference",
+          "receipt.occurred_at",
+          "receipt.zone"
+        ],
+        "view_state": [],
+        "rule": "Validate before recording; increment received and on-hand quantities while preserving reservations. The demo uses session-local state, not persistent transactions."
+      },
+      {
+        "id": "projection:crew_agenda",
+        "kind": "Projection",
+        "name": "Schedule warehouse work context",
+        "description": "Book a crew with explicit local-zone intent and an exact elapsed duration.",
+        "fields": [
+          "time_range.starts_at",
+          "time_range.ends_at",
+          "time_range.duration"
+        ],
+        "scope": "Synthetic session-local records only.",
+        "freshness": "Recomputed from current catalogue session state; not a reservation or production availability promise."
+      },
+      {
+        "id": "query:crew_agenda",
+        "kind": "Query",
+        "name": "Read schedule warehouse work context",
+        "description": "Read the synthetic projection without changing business records.",
+        "scope": "Current catalogue session only; no production data access."
+      },
+      {
+        "id": "binding:schedule_work",
+        "kind": "Binding",
+        "name": "Schedule warehouse work",
+        "description": "Book a crew with explicit local-zone intent and an exact elapsed duration.",
+        "effect": "command",
+        "inputs": [
+          "time_range.starts_at",
+          "time_range.ends_at",
+          "time_range.zone"
+        ],
+        "view_state": [],
+        "rule": "Validate both zoned instants, positive interval and no overlap with the same crew. Adjacent bookings are allowed."
+      },
+      {
+        "id": "projection:receipt_times",
+        "kind": "Projection",
+        "name": "Record when stock arrived context",
+        "description": "Distinguish the physical arrival from the later entry of that event.",
+        "fields": [
+          "receipt.recorded_at"
+        ],
+        "scope": "Synthetic session-local records only.",
+        "freshness": "Recomputed from current catalogue session state; not a reservation or production availability promise."
+      },
+      {
+        "id": "query:receipt_times",
+        "kind": "Query",
+        "name": "Read record when stock arrived context",
+        "description": "Read the synthetic projection without changing business records.",
+        "scope": "Current catalogue session only; no production data access."
+      },
+      {
+        "id": "binding:time_stock_event",
+        "kind": "Binding",
+        "name": "Record when stock arrived",
+        "description": "Distinguish the physical arrival from the later entry of that event.",
+        "effect": "command",
+        "inputs": [
+          "receipt.occurred_at",
+          "receipt.zone"
+        ],
+        "view_state": [],
+        "rule": "Resolve the entered local time with its zone. Generate recorded_at at command time, never from an editable field."
+      },
+      {
+        "id": "projection:movement_history",
+        "kind": "Projection",
+        "name": "Review stock movements by date context",
+        "description": "Review receipts and transfers occurring within a calendar date range.",
+        "fields": [
+          "stock_movement.occurred_at",
+          "stock_movement.recorded_at"
+        ],
+        "scope": "Synthetic session-local records only.",
+        "freshness": "Recomputed from current catalogue session state; not a reservation or production availability promise."
+      },
+      {
+        "id": "query:movement_history",
+        "kind": "Query",
+        "name": "Read review stock movements by date context",
+        "description": "Read the synthetic projection without changing business records.",
+        "scope": "Current catalogue session only; no production data access."
+      },
+      {
+        "id": "binding:filter_movement_dates",
+        "kind": "Binding",
+        "name": "Review stock movements by date",
+        "description": "Review receipts and transfers occurring within a calendar date range.",
+        "effect": "view_state",
+        "inputs": [],
+        "view_state": [
+          "view.movement_date_range"
+        ],
+        "rule": "Both dates are included in America/Toronto. Invalid ranges retain the last valid result set. Filtering never changes stock."
+      },
+      {
+        "id": "projection:packaging_check",
+        "kind": "Projection",
+        "name": "Packaging check state",
+        "description": "The session-local completion flag for the sample delivery."
+      },
+      {
+        "id": "binding:check_packaging",
+        "kind": "Binding",
+        "name": "Check packaging",
+        "description": "Complete or reopen the synthetic packaging check.",
+        "effect": "command",
+        "inputs": [],
+        "view_state": [],
+        "rule": "Toggles the session check only; no attachments or durable evidence are captured."
+      },
+      {
+        "id": "evidence:catalogue",
+        "kind": "Evidence",
+        "name": "Catalogue behaviour checks",
+        "description": "Session-local behaviour tests and browser review cover the demonstrated subset; no installed customer capability is asserted.",
+        "revision": "Receiving blueprint v5",
+        "acceptance": [
+          "Receive 8 of 24 units: 16 remain outstanding; availability rises by 8",
+          "Receive the remaining 16: the order is complete and further receipt is unavailable",
+          "Reject zero, negative, fractional and excessive quantities without changing stock",
+          "Retain entered values and delivery reference after a validation failure",
+          "Reject a stale receipt revision without applying it twice"
+        ],
+        "limitations": [
+          "persistent transactions",
+          "cross-user concurrency",
+          "role enforcement",
+          "receipt corrections and returns",
+          "unit conversions",
+          "multiple order lines",
+          "accounting integration",
+          "recurring schedules",
+          "ambiguous-time occurrence selection",
+          "persistent transfer commands"
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "source": "actor:warehouse_staff",
+        "relation": "seeks",
+        "target": "goal:reliable_stock"
+      },
+      {
+        "source": "workspace:warehouse",
+        "relation": "operates_in",
+        "target": "mode:design"
+      },
+      {
+        "source": "blueprint:materials_receiving",
+        "relation": "applies_in",
+        "target": "context:warehouse_and_vans"
+      },
+      {
+        "source": "blueprint:materials_receiving",
+        "relation": "proposes",
+        "target": "capability:receiving"
+      },
+      {
+        "source": "blueprint:materials_receiving",
+        "relation": "includes",
+        "target": "workspace:warehouse"
+      },
+      {
+        "source": "actor:warehouse_staff",
+        "relation": "performs",
+        "target": "interaction:inspect_stock"
+      },
+      {
+        "source": "interaction:inspect_stock",
+        "relation": "advances",
+        "target": "goal:reliable_stock"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "supports",
+        "target": "interaction:inspect_stock"
+      },
+      {
+        "source": "actor:warehouse_staff",
+        "relation": "performs",
+        "target": "interaction:receive_delivery"
+      },
+      {
+        "source": "interaction:receive_delivery",
+        "relation": "advances",
+        "target": "goal:reliable_stock"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "supports",
+        "target": "interaction:receive_delivery"
+      },
+      {
+        "source": "actor:warehouse_staff",
+        "relation": "performs",
+        "target": "interaction:schedule_work"
+      },
+      {
+        "source": "interaction:schedule_work",
+        "relation": "advances",
+        "target": "goal:reliable_stock"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "supports",
+        "target": "interaction:schedule_work"
+      },
+      {
+        "source": "actor:warehouse_staff",
+        "relation": "performs",
+        "target": "interaction:review_movements"
+      },
+      {
+        "source": "interaction:review_movements",
+        "relation": "advances",
+        "target": "goal:reliable_stock"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "supports",
+        "target": "interaction:review_movements"
+      },
+      {
+        "source": "actor:warehouse_staff",
+        "relation": "performs",
+        "target": "interaction:check_packaging"
+      },
+      {
+        "source": "interaction:check_packaging",
+        "relation": "advances",
+        "target": "goal:reliable_stock"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "supports",
+        "target": "interaction:check_packaging"
+      },
+      {
+        "source": "journey:receive_and_review",
+        "relation": "includes",
+        "target": "interaction:inspect_stock"
+      },
+      {
+        "source": "journey:receive_and_review",
+        "relation": "includes",
+        "target": "interaction:receive_delivery"
+      },
+      {
+        "source": "journey:receive_and_review",
+        "relation": "includes",
+        "target": "interaction:review_movements"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:number"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:text"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:identifier"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:image"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:unit"
+      },
+      {
+        "source": "domain:unit",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "code"
+      },
+      {
+        "source": "domain:unit",
+        "relation": "has_field_of_type",
+        "target": "domain:number",
+        "field": "precision"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:quantity"
+      },
+      {
+        "source": "domain:quantity",
+        "relation": "has_field_of_type",
+        "target": "domain:number",
+        "field": "value"
+      },
+      {
+        "source": "domain:quantity",
+        "relation": "has_field_of_type",
+        "target": "domain:unit",
+        "field": "unit"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:inventory_item"
+      },
+      {
+        "source": "domain:inventory_item",
+        "relation": "has_field_of_type",
+        "target": "domain:identifier",
+        "field": "id"
+      },
+      {
+        "source": "domain:inventory_item",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "sku"
+      },
+      {
+        "source": "domain:inventory_item",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "name"
+      },
+      {
+        "source": "domain:inventory_item",
+        "relation": "has_field_of_type",
+        "target": "domain:unit",
+        "field": "stocking_unit"
+      },
+      {
+        "source": "domain:inventory_item",
+        "relation": "has_field_of_type",
+        "target": "domain:image",
+        "field": "photo"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:stock_location"
+      },
+      {
+        "source": "domain:stock_location",
+        "relation": "has_field_of_type",
+        "target": "domain:identifier",
+        "field": "id"
+      },
+      {
+        "source": "domain:stock_location",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "name"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:stock_position"
+      },
+      {
+        "source": "domain:stock_position",
+        "relation": "references",
+        "target": "domain:inventory_item",
+        "field": "item"
+      },
+      {
+        "source": "domain:stock_position",
+        "relation": "references",
+        "target": "domain:stock_location",
+        "field": "location"
+      },
+      {
+        "source": "domain:stock_position",
+        "relation": "has_field_of_type",
+        "target": "domain:quantity",
+        "field": "on_hand"
+      },
+      {
+        "source": "domain:stock_position",
+        "relation": "has_field_of_type",
+        "target": "domain:quantity",
+        "field": "reserved"
+      },
+      {
+        "source": "domain:stock_position",
+        "relation": "has_field_of_type",
+        "target": "domain:quantity",
+        "field": "available"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:purchase_order_line"
+      },
+      {
+        "source": "domain:purchase_order_line",
+        "relation": "references",
+        "target": "domain:inventory_item",
+        "field": "item"
+      },
+      {
+        "source": "domain:purchase_order_line",
+        "relation": "has_field_of_type",
+        "target": "domain:quantity",
+        "field": "ordered"
+      },
+      {
+        "source": "domain:purchase_order_line",
+        "relation": "has_field_of_type",
+        "target": "domain:quantity",
+        "field": "received"
+      },
+      {
+        "source": "domain:purchase_order_line",
+        "relation": "has_field_of_type",
+        "target": "domain:quantity",
+        "field": "outstanding"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:receipt"
+      },
+      {
+        "source": "domain:receipt",
+        "relation": "references",
+        "target": "domain:purchase_order_line",
+        "field": "line"
+      },
+      {
+        "source": "domain:receipt",
+        "relation": "references",
+        "target": "domain:stock_location",
+        "field": "location"
+      },
+      {
+        "source": "domain:receipt",
+        "relation": "has_field_of_type",
+        "target": "domain:quantity",
+        "field": "quantity"
+      },
+      {
+        "source": "domain:receipt",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "reference"
+      },
+      {
+        "source": "domain:receipt",
+        "relation": "has_field_of_type",
+        "target": "domain:timestamp",
+        "field": "occurred_at"
+      },
+      {
+        "source": "domain:receipt",
+        "relation": "has_field_of_type",
+        "target": "domain:timestamp",
+        "field": "recorded_at"
+      },
+      {
+        "source": "domain:receipt",
+        "relation": "has_field_of_type",
+        "target": "domain:time_zone",
+        "field": "zone"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:date"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:local_time"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:time_zone"
+      },
+      {
+        "source": "domain:time_zone",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "name"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:timestamp"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:duration"
+      },
+      {
+        "source": "domain:duration",
+        "relation": "has_field_of_type",
+        "target": "domain:number",
+        "field": "minutes"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:date_range"
+      },
+      {
+        "source": "domain:date_range",
+        "relation": "has_field_of_type",
+        "target": "domain:date",
+        "field": "from"
+      },
+      {
+        "source": "domain:date_range",
+        "relation": "has_field_of_type",
+        "target": "domain:date",
+        "field": "to"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:time_range"
+      },
+      {
+        "source": "domain:time_range",
+        "relation": "has_field_of_type",
+        "target": "domain:timestamp",
+        "field": "starts_at"
+      },
+      {
+        "source": "domain:time_range",
+        "relation": "has_field_of_type",
+        "target": "domain:timestamp",
+        "field": "ends_at"
+      },
+      {
+        "source": "domain:time_range",
+        "relation": "has_field_of_type",
+        "target": "domain:time_zone",
+        "field": "zone"
+      },
+      {
+        "source": "domain:time_range",
+        "relation": "has_field_of_type",
+        "target": "domain:duration",
+        "field": "duration"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:appointment"
+      },
+      {
+        "source": "domain:appointment",
+        "relation": "has_field_of_type",
+        "target": "domain:identifier",
+        "field": "id"
+      },
+      {
+        "source": "domain:appointment",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "resource"
+      },
+      {
+        "source": "domain:appointment",
+        "relation": "has_field_of_type",
+        "target": "domain:time_range",
+        "field": "window"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "uses",
+        "target": "domain:stock_movement"
+      },
+      {
+        "source": "domain:stock_movement",
+        "relation": "references",
+        "target": "domain:inventory_item",
+        "field": "item"
+      },
+      {
+        "source": "domain:stock_movement",
+        "relation": "has_field_of_type",
+        "target": "domain:quantity",
+        "field": "quantity"
+      },
+      {
+        "source": "domain:stock_movement",
+        "relation": "references",
+        "target": "domain:stock_location",
+        "field": "source"
+      },
+      {
+        "source": "domain:stock_movement",
+        "relation": "references",
+        "target": "domain:stock_location",
+        "field": "destination"
+      },
+      {
+        "source": "domain:stock_movement",
+        "relation": "has_field_of_type",
+        "target": "domain:timestamp",
+        "field": "occurred_at"
+      },
+      {
+        "source": "domain:stock_movement",
+        "relation": "has_field_of_type",
+        "target": "domain:timestamp",
+        "field": "recorded_at"
+      },
+      {
+        "source": "domain:stock_movement",
+        "relation": "has_field_of_type",
+        "target": "domain:text",
+        "field": "reference"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "offers",
+        "target": "command:receive_materials"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "offers",
+        "target": "command:schedule_warehouse_work"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "offers",
+        "target": "command:check_packaging"
+      },
+      {
+        "source": "command:receive_materials",
+        "relation": "records",
+        "target": "event:materials_received"
+      },
+      {
+        "source": "event:materials_received",
+        "relation": "describes",
+        "target": "domain:receipt"
+      },
+      {
+        "source": "command:schedule_warehouse_work",
+        "relation": "applies",
+        "target": "policy:crew_overlap"
+      },
+      {
+        "source": "transition:partial_receipt",
+        "relation": "triggered_by",
+        "target": "command:receive_materials"
+      },
+      {
+        "source": "transition:partial_receipt",
+        "relation": "affects",
+        "target": "domain:purchase_order_line"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "constrained_by",
+        "target": "rule:receiving_1"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "constrained_by",
+        "target": "rule:receiving_2"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "constrained_by",
+        "target": "rule:receiving_3"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "constrained_by",
+        "target": "rule:receiving_4"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "constrained_by",
+        "target": "rule:receiving_5"
+      },
+      {
+        "source": "query:stock_choices",
+        "relation": "returns",
+        "target": "projection:stock_choices"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "offers",
+        "target": "query:stock_choices"
+      },
+      {
+        "source": "projection:stock_choices",
+        "relation": "describes",
+        "target": "domain:inventory_item"
+      },
+      {
+        "source": "projection:stock_choices",
+        "relation": "describes",
+        "target": "domain:stock_position"
+      },
+      {
+        "source": "binding:choose_inventory_item",
+        "relation": "reads_through",
+        "target": "projection:stock_choices"
+      },
+      {
+        "source": "binding:choose_inventory_item",
+        "relation": "supports",
+        "target": "interaction:inspect_stock"
+      },
+      {
+        "source": "binding:choose_inventory_item",
+        "relation": "connects",
+        "target": "component:inventory-picker"
+      },
+      {
+        "source": "binding:choose_inventory_item",
+        "relation": "connects",
+        "target": "component:select"
+      },
+      {
+        "source": "binding:choose_inventory_item",
+        "relation": "connects",
+        "target": "component:search"
+      },
+      {
+        "source": "binding:choose_inventory_item",
+        "relation": "connects",
+        "target": "component:split"
+      },
+      {
+        "source": "binding:choose_inventory_item",
+        "relation": "connects",
+        "target": "component:table"
+      },
+      {
+        "source": "query:stock_detail",
+        "relation": "returns",
+        "target": "projection:stock_detail"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "offers",
+        "target": "query:stock_detail"
+      },
+      {
+        "source": "projection:stock_detail",
+        "relation": "describes",
+        "target": "domain:inventory_item"
+      },
+      {
+        "source": "projection:stock_detail",
+        "relation": "describes",
+        "target": "domain:stock_position"
+      },
+      {
+        "source": "binding:inspect_stock",
+        "relation": "reads_through",
+        "target": "projection:stock_detail"
+      },
+      {
+        "source": "binding:inspect_stock",
+        "relation": "supports",
+        "target": "interaction:inspect_stock"
+      },
+      {
+        "source": "binding:inspect_stock",
+        "relation": "connects",
+        "target": "component:table"
+      },
+      {
+        "source": "binding:inspect_stock",
+        "relation": "connects",
+        "target": "component:inspector"
+      },
+      {
+        "source": "binding:inspect_stock",
+        "relation": "connects",
+        "target": "component:photo"
+      },
+      {
+        "source": "binding:inspect_stock",
+        "relation": "connects",
+        "target": "component:split"
+      },
+      {
+        "source": "query:receiving_context",
+        "relation": "returns",
+        "target": "projection:receiving_context"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "offers",
+        "target": "query:receiving_context"
+      },
+      {
+        "source": "projection:receiving_context",
+        "relation": "describes",
+        "target": "domain:receipt"
+      },
+      {
+        "source": "projection:receiving_context",
+        "relation": "describes",
+        "target": "domain:purchase_order_line"
+      },
+      {
+        "source": "projection:receiving_context",
+        "relation": "describes",
+        "target": "domain:stock_position"
+      },
+      {
+        "source": "binding:record_receipt",
+        "relation": "reads_through",
+        "target": "projection:receiving_context"
+      },
+      {
+        "source": "binding:record_receipt",
+        "relation": "supports",
+        "target": "interaction:receive_delivery"
+      },
+      {
+        "source": "binding:record_receipt",
+        "relation": "submits_to",
+        "target": "command:receive_materials"
+      },
+      {
+        "source": "binding:record_receipt",
+        "relation": "connects",
+        "target": "component:input"
+      },
+      {
+        "source": "binding:record_receipt",
+        "relation": "connects",
+        "target": "component:button"
+      },
+      {
+        "source": "binding:record_receipt",
+        "relation": "connects",
+        "target": "component:record"
+      },
+      {
+        "source": "query:crew_agenda",
+        "relation": "returns",
+        "target": "projection:crew_agenda"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "offers",
+        "target": "query:crew_agenda"
+      },
+      {
+        "source": "projection:crew_agenda",
+        "relation": "describes",
+        "target": "domain:appointment"
+      },
+      {
+        "source": "projection:crew_agenda",
+        "relation": "describes",
+        "target": "domain:time_range"
+      },
+      {
+        "source": "binding:schedule_work",
+        "relation": "reads_through",
+        "target": "projection:crew_agenda"
+      },
+      {
+        "source": "binding:schedule_work",
+        "relation": "supports",
+        "target": "interaction:schedule_work"
+      },
+      {
+        "source": "binding:schedule_work",
+        "relation": "submits_to",
+        "target": "command:schedule_warehouse_work"
+      },
+      {
+        "source": "binding:schedule_work",
+        "relation": "connects",
+        "target": "component:date-field"
+      },
+      {
+        "source": "binding:schedule_work",
+        "relation": "connects",
+        "target": "component:time-field"
+      },
+      {
+        "source": "binding:schedule_work",
+        "relation": "connects",
+        "target": "component:time-range"
+      },
+      {
+        "source": "binding:schedule_work",
+        "relation": "connects",
+        "target": "component:duration-display"
+      },
+      {
+        "source": "binding:schedule_work",
+        "relation": "connects",
+        "target": "component:schedule"
+      },
+      {
+        "source": "query:receipt_times",
+        "relation": "returns",
+        "target": "projection:receipt_times"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "offers",
+        "target": "query:receipt_times"
+      },
+      {
+        "source": "projection:receipt_times",
+        "relation": "describes",
+        "target": "domain:receipt"
+      },
+      {
+        "source": "projection:receipt_times",
+        "relation": "describes",
+        "target": "domain:stock_movement"
+      },
+      {
+        "source": "binding:time_stock_event",
+        "relation": "reads_through",
+        "target": "projection:receipt_times"
+      },
+      {
+        "source": "binding:time_stock_event",
+        "relation": "supports",
+        "target": "interaction:receive_delivery"
+      },
+      {
+        "source": "binding:time_stock_event",
+        "relation": "submits_to",
+        "target": "command:receive_materials"
+      },
+      {
+        "source": "binding:time_stock_event",
+        "relation": "connects",
+        "target": "component:timestamp-field"
+      },
+      {
+        "source": "binding:time_stock_event",
+        "relation": "connects",
+        "target": "component:record"
+      },
+      {
+        "source": "binding:time_stock_event",
+        "relation": "connects",
+        "target": "component:timestamp-display"
+      },
+      {
+        "source": "query:movement_history",
+        "relation": "returns",
+        "target": "projection:movement_history"
+      },
+      {
+        "source": "capability:receiving",
+        "relation": "offers",
+        "target": "query:movement_history"
+      },
+      {
+        "source": "projection:movement_history",
+        "relation": "describes",
+        "target": "domain:date_range"
+      },
+      {
+        "source": "projection:movement_history",
+        "relation": "describes",
+        "target": "domain:stock_movement"
+      },
+      {
+        "source": "binding:filter_movement_dates",
+        "relation": "reads_through",
+        "target": "projection:movement_history"
+      },
+      {
+        "source": "binding:filter_movement_dates",
+        "relation": "supports",
+        "target": "interaction:review_movements"
+      },
+      {
+        "source": "binding:filter_movement_dates",
+        "relation": "connects",
+        "target": "component:date-range"
+      },
+      {
+        "source": "binding:filter_movement_dates",
+        "relation": "connects",
+        "target": "component:movement-history"
+      },
+      {
+        "source": "binding:check_packaging",
+        "relation": "reads_through",
+        "target": "projection:packaging_check"
+      },
+      {
+        "source": "binding:check_packaging",
+        "relation": "submits_to",
+        "target": "command:check_packaging"
+      },
+      {
+        "source": "binding:check_packaging",
+        "relation": "supports",
+        "target": "interaction:check_packaging"
+      },
+      {
+        "source": "binding:check_packaging",
+        "relation": "connects",
+        "target": "component:task"
+      },
+      {
+        "source": "component:record",
+        "relation": "supports",
+        "target": "interaction:receive_delivery"
+      },
+      {
+        "source": "workspace:warehouse",
+        "relation": "contains",
+        "target": "component:record"
+      },
+      {
+        "source": "blueprint:materials_receiving",
+        "relation": "includes",
+        "target": "component:record"
+      },
+      {
+        "source": "component:record",
+        "relation": "bound_by",
+        "target": "binding:record_receipt"
+      },
+      {
+        "source": "component:record",
+        "relation": "bound_by",
+        "target": "binding:time_stock_event"
+      },
+      {
+        "source": "component:split",
+        "relation": "supports",
+        "target": "interaction:inspect_stock"
+      },
+      {
+        "source": "workspace:warehouse",
+        "relation": "contains",
+        "target": "component:split"
+      },
+      {
+        "source": "blueprint:materials_receiving",
+        "relation": "includes",
+        "target": "component:split"
+      },
+      {
+        "source": "component:split",
+        "relation": "bound_by",
+        "target": "binding:choose_inventory_item"
+      },
+      {
+        "source": "component:split",
+        "relation": "bound_by",
+        "target": "binding:inspect_stock"
+      },
+      {
+        "source": "component:task",
+        "relation": "supports",
+        "target": "interaction:check_packaging"
+      },
+      {
+        "source": "workspace:warehouse",
+        "relation": "contains",
+        "target": "component:task"
+      },
+      {
+        "source": "blueprint:materials_receiving",
+        "relation": "includes",
+        "target": "component:task"
+      },
+      {
+        "source": "component:task",
+        "relation": "bound_by",
+        "target": "binding:check_packaging"
+      },
+      {
+        "source": "component:schedule",
+        "relation": "supports",
+        "target": "interaction:schedule_work"
+      },
+      {
+        "source": "workspace:warehouse",
+        "relation": "contains",
+        "target": "component:schedule"
+      },
+      {
+        "source": "blueprint:materials_receiving",
+        "relation": "includes",
+        "target": "component:schedule"
+      },
+      {
+        "source": "component:schedule",
+        "relation": "bound_by",
+        "target": "binding:schedule_work"
+      },
+      {
+        "source": "component:movement-history",
+        "relation": "supports",
+        "target": "interaction:review_movements"
+      },
+      {
+        "source": "workspace:warehouse",
+        "relation": "contains",
+        "target": "component:movement-history"
+      },
+      {
+        "source": "blueprint:materials_receiving",
+        "relation": "includes",
+        "target": "component:movement-history"
+      },
+      {
+        "source": "component:movement-history",
+        "relation": "bound_by",
+        "target": "binding:filter_movement_dates"
+      },
+      {
+        "source": "component:task",
+        "relation": "submits_to",
+        "target": "command:check_packaging"
+      },
+      {
+        "source": "evidence:catalogue",
+        "relation": "checks",
+        "target": "blueprint:materials_receiving"
+      },
+      {
+        "source": "actor:warehouse_staff",
+        "relation": "undertakes",
+        "target": "journey:receive_and_review"
+      },
+      {
+        "source": "journey:receive_and_review",
+        "relation": "pursues",
+        "target": "goal:reliable_stock"
+      }
+    ]
+  },
+  "source": "bedrock/blueprints/receiving.v5.json",
+  "source_sha256": "c987f7aaaf10a33206d4183f2516bbb072304e3a01357d207186dcf82e7c34bb"
+}

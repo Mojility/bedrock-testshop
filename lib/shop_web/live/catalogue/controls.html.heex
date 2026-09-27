@@ -1,0 +1,71 @@
+<div>
+  <section class="catalogue-intro">
+    <h2>Small controls. Complete behaviours.</h2><p>
+      Submit an empty name to exercise validation. Correct it and save. Errors retain your choices; the example never writes to a database.
+    </p>
+  </section>
+  <div class="catalogue-grid">
+    <section class="catalogue-panel">
+      <h2>Actions</h2><div class="wb-actions catalogue-space">
+        <.button phx-click="exercise" class="wb-button">Primary action</.button><.button
+          phx-click={JS.focus(to: "#example_name")}
+          class="wb-button secondary"
+        >Focus name field</.button><.button disabled class="wb-button">Unavailable</.button>
+      </div><p>
+        Primary actions commit the current task. Secondary actions retain context. Unavailable actions remain identifiable.
+      </p>
+    </section>
+    <section class="catalogue-panel">
+      <h2>Named states</h2><div class="wb-actions catalogue-space">
+        <Workbench.status label="Draft" /><Workbench.status label="Received" tone="success" /><Workbench.status
+          label="Part received"
+          tone="warning"
+        /><Workbench.status label="Needs correction" tone="error" />
+      </div><Workbench.notice id="control-notice" tone="warning">
+        8 of 24 units received. The order stays open for the remaining 16.
+      </Workbench.notice>
+    </section>
+    <section class="catalogue-panel">
+      <h2>Fields & validation</h2><.form
+        for={@form}
+        id="example-form"
+        phx-submit="control_submit"
+        class="wb-form"
+      >
+        <.input
+          field={@form[:name]}
+          label="Customer name"
+          class="wb-input"
+          error_class="wb-input wb-invalid"
+        />
+        <.input
+          field={@form[:status]}
+          label="Status"
+          type="select"
+          options={~w(Draft Ready)}
+          class="wb-input"
+        />
+        <.button class="wb-button" phx-disable-with="Saving…">Save example</.button>
+      </.form><Workbench.notice :if={@result} id="control-result" tone="success">
+        {@result}
+      </Workbench.notice>
+    </section>
+    <section class="catalogue-panel">
+      <h2>State conventions</h2><dl class="wb-facts">
+        <div>
+          <dt>Empty</dt><dd>Explain the next action</dd>
+        </div><div>
+          <dt>Invalid</dt><dd>Keep input; name the problem</dd>
+        </div><div>
+          <dt>Pending</dt><dd>Show progress</dd>
+        </div><div>
+          <dt>Success</dt><dd>Show the changed result</dd>
+        </div><div>
+          <dt>Conflict</dt><dd>Preserve and reconcile</dd>
+        </div>
+      </dl><p>
+        Pending and cross-session conflict examples will need their own demonstrated stories before those patterns are marked verified.
+      </p>
+    </section>
+  </div>
+</div>

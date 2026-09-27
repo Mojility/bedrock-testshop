@@ -1,0 +1,15 @@
+<section class="catalogue-binding-section" id={"contract-#{@contract["component"]}"}>
+  <h3>Composition contract</h3>
+  <p>{@contract["purpose"]}</p>
+  <.link
+    patch={"/dev/catalogue/model?node=#{@contract["interaction"]}"}
+    class="catalogue-relation"
+  >Supports: {Shop.Catalogue.Model.get(@contract["interaction"])["name"]}</.link>
+  <dl class="catalogue-binding-facts">
+    <div :for={key <- ~w(inputs regions state outputs variants recovery gaps)}>
+      <dt>{Shop.Catalogue.Model.label(key)}</dt><dd>
+        {Shop.Catalogue.Model.describe(@contract[key])}
+      </dd>
+    </div>
+  </dl>
+</section>

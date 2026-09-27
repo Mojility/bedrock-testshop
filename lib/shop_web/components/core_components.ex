@@ -92,17 +92,24 @@ defmodule ShopWeb.CoreComponents do
       <.button phx-click="go" variant="primary">Send!</.button>
       <.button navigate={~p"/"}>Home</.button>
   """
-  attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
+  attr :rest, :global, include: ~w(href navigate patch method download name value disabled type)
   attr :class, :string
-  attr :variant, :string, values: ~w(primary)
+  attr :variant, :string, values: ~w(primary danger)
   slot :inner_block, required: true
 
   def button(%{rest: rest} = assigns) do
-    variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
+    variants = %{
+      "primary" => "btn-primary",
+      "danger" => "border-error bg-base-100 text-base-content hover:bg-base-200",
+      nil => "border-base-300 bg-base-200 text-base-content hover:bg-base-300"
+    }
 
     assigns =
       assign_new(assigns, :class, fn ->
-        ["btn", Map.fetch!(variants, assigns[:variant])]
+        [
+          "btn min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+          Map.fetch!(variants, assigns[:variant])
+        ]
       end)
 
     if rest[:href] || rest[:navigate] || rest[:patch] do
@@ -200,11 +207,13 @@ defmodule ShopWeb.CoreComponents do
             value="true"
             checked={@checked}
             class={@class || "checkbox checkbox-sm"}
-            {@rest}
+            {input_accessibility(@rest, @id, @errors)}
           />{@label}
         </span>
       </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <div :if={@errors != []} id={@id && "#{@id}-errors"} role="alert">
+        <.error :for={msg <- @errors}>{msg}</.error>
+      </div>
     </div>
     """
   end
@@ -219,13 +228,15 @@ defmodule ShopWeb.CoreComponents do
           name={@name}
           class={[@class || "w-full select", @errors != [] && (@error_class || "select-error")]}
           multiple={@multiple}
-          {@rest}
+          {input_accessibility(@rest, @id, @errors)}
         >
           <option :if={@prompt} value="">{@prompt}</option>
           {Form.options_for_select(@options, @value)}
         </select>
       </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <div :if={@errors != []} id={@id && "#{@id}-errors"} role="alert">
+        <.error :for={msg <- @errors}>{msg}</.error>
+      </div>
     </div>
     """
   end
@@ -242,10 +253,12 @@ defmodule ShopWeb.CoreComponents do
             @class || "w-full textarea",
             @errors != [] && (@error_class || "textarea-error")
           ]}
-          {@rest}
+          {input_accessibility(@rest, @id, @errors)}
         >{Form.normalize_value("textarea", @value)}</textarea>
       </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <div :if={@errors != []} id={@id && "#{@id}-errors"} role="alert">
+        <.error :for={msg <- @errors}>{msg}</.error>
+      </div>
     </div>
     """
   end
@@ -265,12 +278,26 @@ defmodule ShopWeb.CoreComponents do
             @class || "w-full input",
             @errors != [] && (@error_class || "input-error")
           ]}
-          {@rest}
+          {input_accessibility(@rest, @id, @errors)}
         />
       </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <div :if={@errors != []} id={@id && "#{@id}-errors"} role="alert">
+        <.error :for={msg <- @errors}>{msg}</.error>
+      </div>
     </div>
     """
+  end
+
+  defp input_accessibility(rest, id, errors) do
+    if errors == [] do
+      rest
+    else
+      description = Enum.reject([rest[:"aria-describedby"], id && "#{id}-errors"], &is_nil/1)
+
+      rest
+      |> Map.put(:"aria-invalid", "true")
+      |> Map.put(:"aria-describedby", Enum.join(description, " "))
+    end
   end
 
   # Helper used by inputs to generate form errors
@@ -419,7 +446,7 @@ defmodule ShopWeb.CoreComponents do
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
-    <span class={[@name, @class]} />
+    <span class={[@name, @class]} aria-hidden="true" />
     """
   end
 
