@@ -5,19 +5,55 @@ defmodule Shop.Leads do
   alias Shop.Leads.{Activity, Lead}
   alias Shop.Repo
 
-  # Keep the original terminal values valid for trusted legacy workflows while the
-  # staff UI uses the more descriptive pipeline stages.
-  @statuses ~w(new contacted closed conversation survey quote job_closed lost)
-
   def submit(attrs) do
     result = %Lead{} |> Lead.changeset(attrs) |> Repo.insert()
     if match?({:ok, _}, result), do: broadcast()
     result
   end
 
-  def list(scope) do
+  def list(scope, trash? \\ false) do
     Staff.authorize!(scope)
-    Repo.all(from l in Lead, order_by: [desc: l.inserted_at], limit: 200)
+
+    visibility =
+      if trash? do
+        dynamic([lead], not is_nil(lead.trashed_at))
+      else
+        dynamic([lead], is_nil(lead.trashed_at) and lead.status != "lost")
+      end
+
+    Repo.all(
+      from lead in Lead,
+        where: ^visibility,
+        order_by: [desc: lead.inserted_at],
+        limit: 200
+    )
+  end
+
+  def get!(scope, id) do
+    Staff.authorize!(scope)
+    lead = Repo.get!(Lead, id) |> Repo.preload(activities: [:user])
+
+    matching_contact =
+      case {lead.email, lead.phone} do
+        {email, phone} when is_binary(email) and is_binary(phone) ->
+          dynamic([other], other.email == ^email or other.phone == ^phone)
+
+        {email, _phone} when is_binary(email) ->
+          dynamic([other], other.email == ^email)
+
+        {_email, phone} when is_binary(phone) ->
+          dynamic([other], other.phone == ^phone)
+      end
+
+    history =
+      Repo.all(
+        from other in Lead,
+          where: other.id != ^lead.id,
+          where: ^matching_contact,
+          order_by: [desc: other.inserted_at]
+      )
+
+    {lead, history}
   end
 
   def stats(scope) do
@@ -25,10 +61,11 @@ defmodule Shop.Leads do
 
     Repo.one(
       from l in Lead,
-        where: l.source == "site",
+        where: l.source == "site" and is_nil(l.trashed_at),
         select: %{
           leads: count(l.id),
           awaiting_response: filter(count(l.id), l.status == "new"),
+          conversations: filter(count(l.id), not is_nil(l.responded_at)),
           surveys: filter(count(l.id), not is_nil(l.surveyed_at)),
           quotes: filter(count(l.id), not is_nil(l.quoted_at)),
           closed_jobs: filter(count(l.id), not is_nil(l.job_closed_at))
@@ -44,63 +81,141 @@ defmodule Shop.Leads do
   def follow_up(scope, id, attrs) do
     user = Staff.authorize!(scope)
 
-    with {:ok, uuid} <- Ecto.UUID.cast(id),
-         status when status in @statuses <- attrs["status"] do
-      uuid
-      |> transact_follow_up(user, attrs, status, DateTime.utc_now())
-      |> finish_follow_up()
-    else
-      _ -> {:error, :invalid_input}
+    with {:ok, status} <- follow_up_status(attrs) do
+      do_follow_up(user, id, attrs, status)
     end
   end
 
-  defp transact_follow_up(uuid, user, attrs, status, now) do
+  defp follow_up_status(%{"status" => status})
+       when status not in ["contacted", "closed", "conversation", "survey"],
+       do: {:error, :invalid_status}
+
+  defp follow_up_status(%{"survey_date" => date}) when date not in [nil, ""], do: {:ok, "survey"}
+  defp follow_up_status(%{"status" => "survey"}), do: {:ok, "survey"}
+  defp follow_up_status(%{"status" => "closed"}), do: {:ok, "closed"}
+  defp follow_up_status(_attrs), do: {:ok, "conversation"}
+
+  defp validate_follow_up_notes(changeset, status) when status in ["conversation", "survey"],
+    do: Ecto.Changeset.validate_required(changeset, [:notes])
+
+  defp validate_follow_up_notes(changeset, _status), do: changeset
+
+  defp do_follow_up(user, id, attrs, status) do
     Repo.transaction(fn ->
-      with {:ok, {updated, from_status}} <- update_lead(Repo, uuid, attrs, status, now),
-           {:ok, _activity} <-
-             record_activity(Repo, %{change: {updated, from_status}}, uuid, user, attrs) do
+      lead =
+        Repo.one!(from l in Lead, where: l.id == ^id and is_nil(l.trashed_at), lock: "FOR UPDATE")
+
+      now = DateTime.utc_now()
+
+      changeset =
+        lead
+        |> Ecto.Changeset.cast(attrs, [:notes, :survey_date])
+        |> validate_follow_up_notes(status)
+        |> Ecto.Changeset.validate_length(:notes, max: 4000)
+        |> Ecto.Changeset.put_change(:status, status)
+        |> put_stage_times(status, now)
+
+      with {:ok, updated} <- Repo.update(changeset),
+           {:ok, _} <- record_activity(updated, lead.status, user, attrs["notes"]) do
         updated
       else
         {:error, reason} -> Repo.rollback(reason)
       end
     end)
+    |> finish()
   end
 
-  defp update_lead(repo, uuid, attrs, status, now) do
-    lead = repo.one!(from l in Lead, where: l.id == ^uuid, lock: "FOR UPDATE")
-
-    case lead
-         |> Ecto.Changeset.cast(attrs, [:status, :notes])
-         |> Ecto.Changeset.validate_required([:status])
-         |> Ecto.Changeset.validate_inclusion(:status, @statuses)
-         |> Ecto.Changeset.validate_length(:notes, max: 4000)
-         |> put_stage_times(status, now)
-         |> repo.update() do
-      {:ok, updated} -> {:ok, {updated, lead.status}}
-      {:error, changeset} -> {:error, changeset}
-    end
+  def dismiss(scope, id, notes) do
+    user = Staff.authorize!(scope)
+    change_status(id, user, "lost", notes || "Dismissed — not an opportunity")
   end
 
-  defp record_activity(repo, %{change: {updated, from_status}}, uuid, user, attrs) do
+  def trash(scope, id) do
+    Staff.authorize!(scope)
+
+    Lead
+    |> Repo.get!(id)
+    |> Ecto.Changeset.change(trashed_at: DateTime.utc_now())
+    |> Repo.update()
+    |> finish()
+  end
+
+  def restore(scope, id) do
+    Staff.authorize!(scope, ["owner", "office_manager"])
+
+    Lead
+    |> Repo.get!(id)
+    |> Ecto.Changeset.change(trashed_at: nil)
+    |> Repo.update()
+    |> finish()
+  end
+
+  def empty_trash(scope) do
+    Staff.authorize!(scope, ["owner", "office_manager"])
+    {count, _} = Repo.delete_all(from l in Lead, where: not is_nil(l.trashed_at))
+    broadcast()
+    {:ok, count}
+  end
+
+  defp change_status(id, user, status, reason) do
+    Repo.transaction(fn ->
+      lead =
+        Repo.one!(from l in Lead, where: l.id == ^id and is_nil(l.trashed_at), lock: "FOR UPDATE")
+
+      {:ok, updated} =
+        Repo.update(
+          Ecto.Changeset.change(lead,
+            status: status,
+            notes: reason,
+            responded_at: lead.responded_at || DateTime.utc_now()
+          )
+        )
+
+      {:ok, _} = record_activity(updated, lead.status, user, reason)
+      updated
+    end)
+    |> finish()
+  end
+
+  defp record_activity(lead, from_status, user, reason) do
     %Activity{}
     |> Ecto.Changeset.change(%{
-      lead_id: uuid,
+      lead_id: lead.id,
       user_id: user.id,
       from_status: from_status,
-      to_status: updated.status,
-      reason: attrs["notes"]
+      to_status: lead.status,
+      reason: reason
     })
-    |> repo.insert()
+    |> Repo.insert()
   end
 
-  defp finish_follow_up({:ok, lead}) do
+  defp put_stage_times(changeset, status, now) do
+    changeset
+    |> Ecto.Changeset.put_change(
+      :responded_at,
+      Ecto.Changeset.get_field(changeset, :responded_at) || now
+    )
+    |> maybe_timestamp(:surveyed_at, status == "survey", now)
+    |> Ecto.Changeset.put_change(:seen_at, Ecto.Changeset.get_field(changeset, :seen_at) || now)
+  end
+
+  defp maybe_timestamp(changeset, field, true, now),
+    do:
+      Ecto.Changeset.put_change(
+        changeset,
+        field,
+        Ecto.Changeset.get_field(changeset, field) || now
+      )
+
+  defp maybe_timestamp(changeset, _field, false, _now), do: changeset
+
+  defp finish({:ok, value}) do
     broadcast()
-    {:ok, lead}
+    {:ok, value}
   end
 
-  defp finish_follow_up({:error, reason}), do: {:error, reason}
+  defp finish({:error, reason}), do: {:error, reason}
 
-  # Trusted cutover input only. Replays preserve ids/times and never replace follow-up.
   def import_legacy(rows) when is_list(rows) do
     Repo.transact(fn ->
       Enum.each(rows, &import_row/1)
@@ -108,38 +223,10 @@ defmodule Shop.Leads do
     end)
   end
 
-  defp put_stage_times(changeset, status, now) do
-    changeset
-    |> maybe_timestamp(:responded_at, status != "new", now)
-    |> maybe_timestamp(:surveyed_at, status == "survey", now)
-    |> maybe_timestamp(:quoted_at, status == "quote", now)
-    |> maybe_timestamp(:job_closed_at, status == "job_closed", now)
-    |> Ecto.Changeset.put_change(:seen_at, Ecto.Changeset.get_field(changeset, :seen_at) || now)
-  end
-
-  defp maybe_timestamp(changeset, field, true, now) do
-    if Ecto.Changeset.get_field(changeset, field) do
-      changeset
-    else
-      Ecto.Changeset.put_change(changeset, field, now)
-    end
-  end
-
-  defp maybe_timestamp(changeset, _field, false, _now), do: changeset
-
   defp import_row(row) do
     {:ok, id} = Ecto.UUID.cast(row["id"])
     {:ok, inserted, _} = DateTime.from_iso8601(row["inserted_at"])
-
-    seen =
-      case row["seen_at"] do
-        nil ->
-          nil
-
-        value ->
-          {:ok, at, _} = DateTime.from_iso8601(value)
-          at
-      end
+    seen = if row["seen_at"], do: elem(DateTime.from_iso8601(row["seen_at"]), 1)
 
     changeset =
       %Lead{

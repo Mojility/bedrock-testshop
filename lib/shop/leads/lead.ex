@@ -26,7 +26,11 @@ defmodule Shop.Leads.Lead do
     field :surveyed_at, :utc_datetime_usec
     field :quoted_at, :utc_datetime_usec
     field :job_closed_at, :utc_datetime_usec
+    field :survey_date, :date
+    field :trashed_at, :utc_datetime_usec
     field :legacy_id, :binary_id
+
+    has_many :activities, Shop.Leads.Activity
 
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end

@@ -5,141 +5,181 @@ defmodule ShopWeb.LeadsLive do
   def mount(_, _, socket) do
     scope = socket.assigns.current_scope
     if connected?(socket), do: Leads.subscribe(scope)
-
-    {:ok,
-     socket
-     |> assign(:page_title, "Sales pipeline")
-     |> assign(:stats, Leads.stats(scope))
-     |> stream(:leads, Leads.list(scope))}
+    {:ok, load(socket, false)}
   end
 
-  def handle_info(:leads_updated, socket) do
-    scope = socket.assigns.current_scope
+  def handle_info(:leads_updated, socket), do: {:noreply, load(socket, socket.assigns.trash?)}
 
-    {:noreply,
-     socket
-     |> assign(:stats, Leads.stats(scope))
-     |> stream(:leads, Leads.list(scope), reset: true)}
-  end
+  def handle_event("show_pipeline", _, socket), do: {:noreply, load(socket, false)}
+  def handle_event("show_trash", _, socket), do: {:noreply, load(socket, true)}
 
   def handle_event("save", %{"id" => id, "lead" => attrs}, socket) do
     case Leads.follow_up(socket.assigns.current_scope, id, attrs) do
-      {:ok, lead} ->
+      {:ok, _lead} ->
         {:noreply,
          socket
-         |> assign(:stats, Leads.stats(socket.assigns.current_scope))
-         |> stream_insert(:leads, lead)
-         |> put_flash(:info, "Pipeline stage and follow-up saved.")}
+         |> load(false)
+         |> put_flash(:info, "Pipeline activity saved.")}
 
-      {:error, _} ->
-        {:noreply,
-         put_flash(
-           socket,
-           :error,
-           "Choose a pipeline stage and keep notes under 4,000 characters."
-         )}
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Add follow-up notes and a valid survey date.")}
     end
+  end
+
+  def handle_event("trash", %{"id" => id}, socket) do
+    case Leads.trash(socket.assigns.current_scope, id) do
+      {:ok, _} ->
+        {:noreply, socket |> load(false) |> put_flash(:info, "Junk submission moved to trash.")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Could not move this submission to trash.")}
+    end
+  end
+
+  def handle_event("restore", %{"id" => id}, socket) do
+    case Leads.restore(socket.assigns.current_scope, id) do
+      {:ok, _} ->
+        {:noreply, socket |> load(true) |> put_flash(:info, "Submission restored.")}
+
+      _ ->
+        {:noreply,
+         put_flash(socket, :error, "Only an office manager or owner can restore submissions.")}
+    end
+  end
+
+  def handle_event("empty_trash", _, socket) do
+    {:ok, count} = Leads.empty_trash(socket.assigns.current_scope)
+
+    {:noreply,
+     socket
+     |> load(true)
+     |> put_flash(:info, "Permanently deleted #{count} junk submission(s).")}
   end
 
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <section id="leads" class="space-y-8">
-        <div>
-          <h1 class="text-3xl font-bold">Sales pipeline</h1>
-          <p class="mt-2 text-base-content/70">
-            Track every website enquiry from first response through survey, quote, and closed job.
-          </p>
-        </div>
+        <header class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-3xl font-bold">Sales pipeline</h1><p class="mt-2 text-base-content/70">
+              Every genuine website enquiry, from response through closed job.
+            </p>
+          </div>
+          <div class="join">
+            <button id="show-pipeline" class="btn join-item" phx-click="show_pipeline">Pipeline</button><button
+              id="show-trash"
+              class="btn join-item"
+              phx-click="show_trash"
+            >Trash</button>
+          </div>
+        </header>
 
-        <dl id="pipeline-stats" class="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <.stat label="Website leads" value={@stats.leads} />
-          <.stat
+        <dl :if={!@trash?} id="pipeline-stats" class="grid grid-cols-2 gap-3 sm:grid-cols-6">
+          <.stat label="Website leads" value={@stats.leads} /><.stat
+            label="Conversations"
+            value={@stats.conversations}
+          /><.stat label="Surveys" value={@stats.surveys} /><.stat
+            label="Quotes"
+            value={@stats.quotes}
+          /><.stat label="Closed jobs" value={@stats.closed_jobs} /><.stat
             label="Awaiting response"
             value={@stats.awaiting_response}
             urgent={@stats.awaiting_response > 0}
           />
-          <.stat label="Surveys" value={@stats.surveys} />
-          <.stat label="Quotes" value={@stats.quotes} />
-          <.stat label="Closed jobs" value={@stats.closed_jobs} />
         </dl>
-
         <div
-          :if={@stats.awaiting_response > 0}
+          :if={!@trash? && @stats.awaiting_response > 0}
           id="response-alert"
           role="status"
           class="alert alert-warning"
         >
-          <.icon name="hero-exclamation-triangle" class="size-5" />
-          <span>{@stats.awaiting_response} lead(s) still need a response.</span>
+          <.icon name="hero-exclamation-triangle" class="size-5" /><span>{@stats.awaiting_response} genuine inquiry(s) still need a response.</span>
         </div>
 
-        <p class="text-sm text-base-content/70">Showing the latest 200 enquiries.</p>
-        <ol id="leads-list" phx-update="stream" class="space-y-6">
-          <li id="leads-empty" class="hidden only:block rounded-box bg-base-200 p-6">
-            No enquiries yet. Messages from your website will appear here.
-          </li>
-          <li
-            :for={{id, lead} <- @streams.leads}
-            id={id}
-            class="rounded-box border border-base-300 p-6 space-y-4"
-          >
-            <div class="flex flex-wrap justify-between gap-3">
-              <h2 class="text-xl font-semibold">{lead.name}</h2>
-              <span class={["badge badge-outline", lead.status == "new" && "badge-warning"]}>
-                {stage_label(lead.status)}
-              </span>
-            </div>
-            <time
-              class="text-sm text-base-content/70"
-              datetime={DateTime.to_iso8601(lead.inserted_at)}
-            >
-              {Calendar.strftime(lead.inserted_at, "%b %-d, %Y · %H:%M UTC")}
-            </time>
-            <div class="flex flex-wrap gap-4">
-              <.link
-                :if={lead.phone}
-                href={"tel:#{lead.phone}"}
-                class="link inline-flex min-h-11 items-center gap-2"
-              >
-                <.icon name="hero-phone" class="size-5" />{lead.phone}
-              </.link>
-              <.link
-                :if={lead.email}
-                href={"mailto:#{lead.email}"}
-                class="link inline-flex min-h-11 items-center gap-2"
-              >
-                <.icon name="hero-envelope" class="size-5" />{lead.email}
-              </.link>
-            </div>
-            <p class="whitespace-pre-line">{lead.message}</p>
-            <.form
-              for={to_form(%{"status" => lead.status, "notes" => lead.notes}, as: :lead)}
-              id={"follow-up-#{lead.id}"}
-              phx-submit="save"
-              phx-value-id={lead.id}
-            >
-              <.input
-                name="lead[status]"
-                value={lead.status}
-                type="select"
-                label="Pipeline stage"
-                options={stage_options()}
-              />
-              <.input
-                name="lead[notes]"
-                value={lead.notes}
-                type="textarea"
-                label="Follow-up notes"
-                maxlength="4000"
-              />
-              <.button phx-disable-with="Saving…" variant="primary">Save follow-up</.button>
-            </.form>
-          </li>
-        </ol>
+        <div :if={@trash?} class="flex items-center justify-between">
+          <p>Junk submissions are excluded from pipeline statistics and response tracking.</p><button
+            :if={@manager?}
+            id="empty-trash"
+            class="btn btn-error"
+            phx-click="empty_trash"
+            data-confirm="Permanently delete every trashed submission? This cannot be undone."
+          >Empty trash</button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table id="leads-table" class="table">
+            <caption class="sr-only">
+              {if @trash?, do: "Trashed submissions", else: "Active sales leads"}
+            </caption><thead>
+              <tr>
+                <th scope="col">Prospect</th><th scope="col">Received</th><th scope="col">State</th><th scope="col">
+                  Contact
+                </th><th scope="col">Actions</th>
+              </tr>
+            </thead><tbody id="leads-list" phx-update="stream">
+              <tr id="leads-empty" class="hidden only:table-row">
+                <td colspan="5">{if @trash?, do: "Trash is empty.", else: "No active enquiries."}</td>
+              </tr><tr :for={{id, lead} <- @streams.leads} id={id}>
+                <th scope="row">
+                  <.link navigate={~p"/app/leads/#{lead.id}"} class="link">{lead.name}</.link>
+                </th><td>
+                  <time datetime={DateTime.to_iso8601(lead.inserted_at)}>{Calendar.strftime(
+                    lead.inserted_at,
+                    "%b %-d, %Y"
+                  )}</time>
+                </td><td>
+                  <span class={["badge badge-outline", lead.status == "new" && "badge-warning"]}>{state_indicator(
+                    lead
+                  )}</span>
+                </td><td>{lead.email || lead.phone}</td><td>
+                  <.form
+                    :if={!@trash?}
+                    for={to_form(%{"status" => lead.status, "notes" => ""}, as: :lead)}
+                    id={"follow-up-#{lead.id}"}
+                    phx-submit="save"
+                    phx-value-id={lead.id}
+                    class="inline"
+                  >
+                    <input type="hidden" name="lead[status]" value="survey" /><input
+                      type="hidden"
+                      name="lead[notes]"
+                      value="Survey booked"
+                    /><button class="btn btn-sm" type="submit">Mark survey</button>
+                  </.form><button
+                    :if={!@trash?}
+                    id={"trash-#{lead.id}"}
+                    class="btn btn-sm"
+                    phx-click="trash"
+                    phx-value-id={lead.id}
+                  >Move junk to trash</button><button
+                    :if={@trash? && @manager?}
+                    id={"restore-#{lead.id}"}
+                    class="btn btn-sm"
+                    phx-click="restore"
+                    phx-value-id={lead.id}
+                  >Restore</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
     </Layouts.app>
     """
+  end
+
+  defp load(socket, trash?) do
+    scope = socket.assigns.current_scope
+
+    socket
+    |> assign(
+      page_title: "Sales pipeline",
+      stats: Leads.stats(scope),
+      trash?: trash?,
+      manager?: scope.user.role in ["owner", "office_manager"]
+    )
+    |> stream(:leads, Leads.list(scope, trash?), reset: true)
   end
 
   attr :label, :string, required: true
@@ -158,19 +198,12 @@ defmodule ShopWeb.LeadsLive do
     """
   end
 
-  defp stage_options do
-    [
-      {"Needs response", "new"},
-      {"Conversation", "conversation"},
-      {"Site survey", "survey"},
-      {"Quote", "quote"},
-      {"Closed job", "job_closed"},
-      {"Lost / not proceeding", "lost"}
-    ]
-  end
+  defp state_indicator(%{status: "new"}), do: "New"
+  defp state_indicator(%{status: "survey"}), do: "Site survey"
+  defp state_indicator(%{status: "lost"}), do: "Dismissed — not an opportunity"
 
-  defp stage_label(status),
-    do:
-      stage_options()
-      |> Enum.find_value(status, fn {label, value} -> if value == status, do: label end)
+  defp state_indicator(%{responded_at: %DateTime{} = at}),
+    do: "Responded #{Calendar.strftime(at, "%b %-d, %Y")}"
+
+  defp state_indicator(lead), do: String.capitalize(lead.status)
 end

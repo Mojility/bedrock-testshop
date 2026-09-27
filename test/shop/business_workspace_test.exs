@@ -80,6 +80,52 @@ defmodule Shop.BusinessWorkspaceTest do
     assert Repo.aggregate(Leads.Lead, :count) == 1
   end
 
+  test "pipeline records history, dismissal, and role-protected trash operations" do
+    {:ok, owner} = Staff.bootstrap_owner("owner@example.com")
+    owner_scope = Scope.for_user(owner)
+    staff_scope = Scope.for_user(user_fixture())
+
+    {:ok, earlier} =
+      Leads.submit(%{"name" => "Earlier", "email" => "same@example.com", "message" => "First"})
+
+    {:ok, lead} =
+      Leads.submit(%{"name" => "Current", "email" => "same@example.com", "message" => "Second"})
+
+    assert {loaded, [%{id: earlier_id}]} = Leads.get!(staff_scope, lead.id)
+    assert loaded.id == lead.id
+    assert earlier_id == earlier.id
+
+    assert {:ok, surveyed} =
+             Leads.follow_up(staff_scope, lead.id, %{
+               "notes" => "Spoke with prospect",
+               "survey_date" => "2026-10-10"
+             })
+
+    assert surveyed.status == "survey"
+    assert surveyed.survey_date == ~D[2026-10-10]
+    assert surveyed.responded_at
+    assert surveyed.surveyed_at
+
+    stats = Leads.stats(staff_scope)
+    assert stats.leads == 2
+    assert stats.conversations == 1
+    assert stats.surveys == 1
+    assert stats.awaiting_response == 1
+
+    assert {:ok, dismissed} = Leads.dismiss(staff_scope, lead.id, nil)
+    assert dismissed.status == "lost"
+    refute Enum.any?(Leads.list(staff_scope), &(&1.id == lead.id))
+
+    assert {:ok, _} = Leads.trash(staff_scope, earlier.id)
+    assert [%{id: ^earlier_id}] = Leads.list(staff_scope, true)
+    assert_raise Ecto.NoResultsError, fn -> Leads.restore(staff_scope, earlier.id) end
+    assert {:ok, _} = Leads.restore(owner_scope, earlier.id)
+
+    assert {:ok, _} = Leads.trash(staff_scope, earlier.id)
+    assert {:ok, 1} = Leads.empty_trash(owner_scope)
+    assert is_nil(Repo.get(Leads.Lead, earlier.id))
+  end
+
   test "pending notifications wait for a confirmed owner and survive until delivered" do
     {:ok, owner} = Staff.bootstrap_owner("owner@example.com")
     {:ok, lead} = Leads.submit(%{"name" => "Jo", "phone" => "555"})

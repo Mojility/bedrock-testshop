@@ -38,6 +38,58 @@ defmodule ShopWeb.BusinessWorkspaceTest do
     refute has_element?(view, "a[href='/app/team']")
   end
 
+  test "staff use lead details for follow-up, survey booking, history, and dismissal", %{
+    conn: conn
+  } do
+    user = user_fixture()
+
+    {:ok, earlier} =
+      Leads.submit(%{
+        "name" => "Earlier Jo",
+        "email" => "jo@example.com",
+        "message" => "Earlier enquiry"
+      })
+
+    {:ok, lead} =
+      Leads.submit(%{
+        "name" => "Jo",
+        "email" => "jo@example.com",
+        "message" => "Current enquiry"
+      })
+
+    {:ok, view, _} = live(log_in_user(conn, user), "/app/leads/#{lead.id}")
+    assert has_element?(view, "#contact-history-#{earlier.id}", "Earlier enquiry")
+    assert has_element?(view, "#lead-state", "New")
+
+    view
+    |> form("#follow-up-form",
+      lead: %{notes: "Good initial call", survey_date: "2026-10-10"}
+    )
+    |> render_submit()
+
+    assert has_element?(view, "#lead-state", "Site survey")
+    assert has_element?(view, "#activity-history", "Good initial call")
+
+    view
+    |> form("#dismiss-form", lead: %{notes: "Outside service area"})
+    |> render_submit()
+
+    assert has_element?(view, "#lead-state", "Dismissed — not an opportunity")
+    refute has_element?(view, "#follow-up-form")
+  end
+
+  test "lead detail keeps invalid follow-up recoverable", %{conn: conn} do
+    {:ok, lead} = Leads.submit(%{"name" => "Jo", "phone" => "555"})
+    {:ok, view, _} = live(log_in_user(conn, user_fixture()), "/app/leads/#{lead.id}")
+
+    view
+    |> form("#follow-up-form", lead: %{notes: "", survey_date: ""})
+    |> render_submit()
+
+    assert render(view) =~ "Add follow-up notes and choose a valid survey date."
+    assert has_element?(view, "#lead-state", "New")
+  end
+
   test "owner invites staff and revokes access", %{conn: conn} do
     {:ok, owner} = Staff.bootstrap_owner("owner@example.com")
     {:ok, view, _} = live(log_in_user(conn, owner), "/app/team")

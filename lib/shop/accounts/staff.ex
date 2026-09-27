@@ -4,7 +4,7 @@ defmodule Shop.Accounts.Staff do
   alias Shop.{Accounts, Repo}
   alias Shop.Accounts.{Scope, User, UserToken}
 
-  def authorize!(%Scope{user: %User{id: id}}, roles \\ ["owner", "staff"]) do
+  def authorize!(%Scope{user: %User{id: id}}, roles \\ ["owner", "office_manager", "staff"]) do
     case Repo.get(User, id) do
       %User{disabled_at: nil, role: role} = user ->
         if role in roles, do: user, else: raise(Ecto.NoResultsError, queryable: User)
