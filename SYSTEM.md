@@ -23,9 +23,13 @@ from the `Dockerfile` here, in front of one PostgreSQL database.
   application's database through `Shop.Website.Content`. See `WEBSITE.md`.
   Publishing updates scene/assets; it never replaces component implementations.
 
-- **Leads** (`lib/shop/leads/`): public enquiry submission and authenticated
-  follow-up at `/app/leads`. Pending email notifications retry independently.
-  `/app/team` lets the owner invite staff and revoke access. Tables: `leads`.
+- **Sales pipeline** (`lib/shop/leads/`): public website enquiry submission and
+  authenticated follow-up at `/app/leads`, with counts for website leads, surveys,
+  quotes, and closed jobs plus a visible queue of enquiries awaiting a response.
+  Staff move leads through conversation, optional site survey, quote, closed job,
+  or lost stages; stage milestones and an attributed change history are retained.
+  Pending email notifications retry independently. `/app/team` lets the owner
+  invite staff and revoke access. Tables: `leads`, `lead_activities`.
 
 Private photographs are served from this application's Canadian S3 bucket.
 The runtime reads short-lived credentials from `AWS_CREDENTIALS_FILE` on each

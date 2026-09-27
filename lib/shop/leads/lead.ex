@@ -1,9 +1,7 @@
 defmodule Shop.Leads.Lead do
   @moduledoc """
-  Someone who asked to be contacted through a shop's website: who they are,
-  how to reach them, and what they need. Written once; the only thing that
-  changes afterwards is `seen_at`, the moment the owner first looked at it
-  in the console.
+  Someone who asked to be contacted through a shop's website, including their
+  contact details and progress through the business's sales pipeline.
   """
   use Ecto.Schema
 
@@ -24,6 +22,10 @@ defmodule Shop.Leads.Lead do
     field :seen_at, :utc_datetime_usec
     field :status, :string, default: "new"
     field :notes, :string
+    field :responded_at, :utc_datetime_usec
+    field :surveyed_at, :utc_datetime_usec
+    field :quoted_at, :utc_datetime_usec
+    field :job_closed_at, :utc_datetime_usec
     field :legacy_id, :binary_id
 
     timestamps(type: :utc_datetime_usec, updated_at: false)

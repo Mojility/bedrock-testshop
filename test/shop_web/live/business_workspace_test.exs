@@ -16,12 +16,25 @@ defmodule ShopWeb.BusinessWorkspaceTest do
     {:ok, view, _} = live(log_in_user(conn, user_fixture()), "/app/leads")
     assert has_element?(view, "#leads-#{lead.id}", "Jo")
 
+    assert has_element?(view, "#pipeline-stats")
+    assert has_element?(view, "#response-alert")
+
     view
-    |> form("#follow-up-#{lead.id}", lead: %{status: "contacted", notes: "Called today"})
+    |> form("#follow-up-#{lead.id}", lead: %{status: "survey", notes: "Survey booked"})
     |> render_submit()
 
-    assert has_element?(view, "#leads-#{lead.id} .badge", "contacted")
-    assert Shop.Repo.get!(Leads.Lead, lead.id).notes == "Called today"
+    assert has_element?(view, "#leads-#{lead.id} .badge", "Site survey")
+    refute has_element?(view, "#response-alert")
+
+    saved = Shop.Repo.get!(Leads.Lead, lead.id)
+    assert saved.notes == "Survey booked"
+    assert saved.responded_at
+    assert saved.surveyed_at
+
+    activity = Shop.Repo.get_by!(Leads.Activity, lead_id: lead.id)
+    assert activity.from_status == "new"
+    assert activity.to_status == "survey"
+    assert activity.user_id
     refute has_element?(view, "a[href='/app/team']")
   end
 
