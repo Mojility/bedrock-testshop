@@ -1,5 +1,7 @@
 {
-  "starter_revision": "a886982",
+  "starter_revision": "6d59f25",
   "starter_base": "a886982",
-  "decisions": []
+  "decisions": [
+    {"path": ".gitignore", "action": "adopted"}
+  ]
 }
