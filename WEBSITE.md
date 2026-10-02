@@ -16,12 +16,13 @@ consumer; it does not contain that editor's live authoring database.
 | Change or file | Editable authority | How it reaches the website |
 | --- | --- | --- |
 | Composition, design facts and theme | Bedrock design document | Publish a validated design |
-| `priv/published_site/scene.json` | Published output of that document and theme | `Shop.Website.read_scene/0` reads it |
+| `priv/business.json` | Authored system identity; JSON string `name` | Startup resolves it through `Business.name()` for the root title and existing naming consumers; separate from publication |
+| `priv/published_site/scene.json` | Published output of that document and theme | `Business.Website.read_scene/0` reads it |
 | `priv/published_site/media.json` | Ready photograph metadata in the publisher | Publication exports the referenced variants |
 | `priv/static/assets/published/` | Publisher CSS and font sources | Publication copies CSS/fonts and rewrites font URLs |
 | `priv/website/components.json` | Customer extension declarations | Commit, refresh the editor's component model, then publish |
-| `lib/shop/website/` | Customer definitions, expansion and public-content code | Application build and release |
-| `lib/shop_web/website_html.ex` | Customer HTML renderer | Application build and release |
+| `lib/business/website/` | Customer definitions, expansion and public-content code | Application build and release |
+| `lib/business_web/website_html.ex` | Customer HTML renderer | Application build and release |
 | `test/fixtures/website_scene.json` | Deliberate test scenario | Tests consume it; publication does not update it |
 
 The producer is `Bedrock.Publishing.Export.files/1`. Publishing updates only its
@@ -47,7 +48,7 @@ For example, a reusable announcement:
 {
   "version": 1,
   "components": [{
-    "name": "shop_notice",
+    "name": "business_notice",
     "level": "organism",
     "purpose": "A public announcement",
     "props": {"message": {"type": "string", "required": true}},
@@ -67,8 +68,8 @@ For example, a reusable announcement:
 loads a module, or executes a query. Recursive definitions are rejected.
 
 For application-backed behavior, add `"native": true` to the declaration and
-register an explicit function in `Shop.Website.Components.native/0`, for example
-`%{"shop_notice" => &ShopWeb.ShopNotice.render/1}`. Its Phoenix assigns include
+register an explicit function in `Business.Website.Components.native/0`, for example
+`%{"business_notice" => &BusinessWeb.BusinessNotice.render/1}`. Its Phoenix assigns include
 `node` (ID, props, children) and `state.content`. Use normal escaped HEEx
 output.
 The declared template supports structural checks. A native registration is
@@ -76,7 +77,7 @@ required for rendering and preview; no static substitute is silently served.
 
 ## Application content
 
-`Shop.Website.Content.load/0` runs for each page request. Return a map of public
+`Business.Website.Content.load/0` runs for each page request. Return a map of public
 content for native components, using this application's own contexts and
 queries. A change to a service, project, or announcement can then update the
 website without modifying the scene. Do not return private records or secrets.

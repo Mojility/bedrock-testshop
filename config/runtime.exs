@@ -16,18 +16,36 @@ end
 # If you use `mix release`, you need to explicitly enable the server
 # by passing the PHX_SERVER=true when you start it:
 #
-#     PHX_SERVER=true bin/shop start
+#     PHX_SERVER=true bin/business start
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 if System.get_env("PHX_SERVER") == "true" do
-  config :shop, ShopWeb.Endpoint, server: true
+  config :business, BusinessWeb.Endpoint, server: true
 end
 
-# The shop's name, shown in the header, page titles and email. The default
-# is set in config/config.exs; SHOP_NAME overrides it in any environment.
-if shop_name = System.get_env("SHOP_NAME") do
-  config :shop, :shop_name, shop_name
+# The business's name, shown in the header, page titles and email.
+# SHOP_NAME is the older spelling, honoured only when BUSINESS_NAME is absent.
+# Both environment overrides take precedence over the optional generated data.
+if business_name = System.get_env("BUSINESS_NAME") || System.get_env("SHOP_NAME") do
+  config :business, :business_name, business_name
+else
+  case File.read(Application.app_dir(:business, "priv/business.json")) do
+    {:ok, json} ->
+      case Jason.decode!(json) do
+        %{"name" => name} when is_binary(name) ->
+          config :business, :business_name, name
+
+        _other ->
+          raise "priv/business.json must contain a string name"
+      end
+
+    {:error, :enoent} ->
+      :ok
+
+    {:error, reason} ->
+      raise "Cannot read priv/business.json: #{:file.format_error(reason)}"
+  end
 end
 
 if config_env() == :prod and System.get_env("CUSTOMER_EXPLORATION") != "true" do
@@ -48,7 +66,7 @@ if config_env() == :prod and System.get_env("CUSTOMER_EXPLORATION") != "true" do
     else
       ca_path =
         System.get_env("DATABASE_CA_CERT_PATH") ||
-          Application.app_dir(:shop, "priv/cert/ca-central-1-bundle.pem")
+          Application.app_dir(:business, "priv/cert/ca-central-1-bundle.pem")
 
       [
         verify: :verify_peer,
@@ -58,7 +76,7 @@ if config_env() == :prod and System.get_env("CUSTOMER_EXPLORATION") != "true" do
       ]
     end
 
-  config :shop, Shop.Repo,
+  config :business, Business.Repo,
     ssl: database_tls,
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
@@ -93,9 +111,9 @@ if config_env() == :prod and System.get_env("CUSTOMER_EXPLORATION") != "true" do
 
   port = String.to_integer(System.get_env("PORT") || "4000")
 
-  config :shop, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+  config :business, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
-  config :shop, ShopWeb.Endpoint,
+  config :business, BusinessWeb.Endpoint,
     url: url_config,
     http: [
       # Enable IPv6 and bind on all interfaces.
@@ -112,7 +130,7 @@ if config_env() == :prod and System.get_env("CUSTOMER_EXPLORATION") != "true" do
   # To get SSL working, you will need to add the `https` key
   # to your endpoint configuration:
   #
-  #     config :shop, ShopWeb.Endpoint,
+  #     config :business, BusinessWeb.Endpoint,
   #       https: [
   #         ...,
   #         port: 443,
@@ -134,7 +152,7 @@ if config_env() == :prod and System.get_env("CUSTOMER_EXPLORATION") != "true" do
   # We also recommend setting `force_ssl` in your config/prod.exs,
   # ensuring no data is ever sent via http, always redirecting to https:
   #
-  #     config :shop, ShopWeb.Endpoint,
+  #     config :business, BusinessWeb.Endpoint,
   #       force_ssl: [hsts: true]
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
@@ -146,11 +164,11 @@ if config_env() == :prod and System.get_env("CUSTOMER_EXPLORATION") != "true" do
   # MAIL_ADAPTER=logger prints outgoing mail (sign-in links included) to the
   # log instead of sending it: what docker-compose.yml uses on a laptop.
   case System.get_env("MAIL_ADAPTER") do
-    "logger" -> config :shop, Shop.Mailer, adapter: Swoosh.Adapters.Logger, level: :info
-    _ -> config :shop, Shop.Mailer, adapter: Swoosh.Adapters.ExAwsAmazonSES
+    "logger" -> config :business, Business.Mailer, adapter: Swoosh.Adapters.Logger, level: :info
+    _ -> config :business, Business.Mailer, adapter: Swoosh.Adapters.ExAwsAmazonSES
   end
 
-  config :shop, :mail_from, System.get_env("MAIL_FROM") || "noreply@#{host}"
+  config :business, :mail_from, System.get_env("MAIL_FROM") || "noreply@#{host}"
 
   config :ex_aws,
     http_client: ExAws.Request.Req,
@@ -160,24 +178,24 @@ if config_env() == :prod and System.get_env("CUSTOMER_EXPLORATION") != "true" do
     region: System.get_env("AWS_REGION") || "ca-central-1"
 end
 
-config :shop, :website_preview_secret, System.get_env("WEBSITE_PREVIEW_SECRET")
+config :business, :website_preview_secret, System.get_env("WEBSITE_PREVIEW_SECRET")
 
-config :shop, :media_bucket, System.get_env("MEDIA_BUCKET")
-config :shop, :aws_credentials_file, System.get_env("AWS_CREDENTIALS_FILE")
+config :business, :media_bucket, System.get_env("MEDIA_BUCKET")
+config :business, :aws_credentials_file, System.get_env("AWS_CREDENTIALS_FILE")
 
-config :shop,
+config :business,
        :trusted_proxy_ips,
        String.split(System.get_env("TRUSTED_PROXY_IPS") || "", ",", trim: true)
 
 if not is_nil(System.get_env("AWS_CREDENTIALS_FILE")) and
      System.get_env("MAIL_ADAPTER") not in ["logger", "disabled"] do
-  config :shop, Shop.Mailer, adapter: Shop.MailAdapter
+  config :business, Business.Mailer, adapter: Business.MailAdapter
 end
 
-config :shop, :lead_notifications, System.get_env("LEAD_NOTIFICATIONS") != "false"
+config :business, :lead_notifications, System.get_env("LEAD_NOTIFICATIONS") != "false"
 
 if System.get_env("MAIL_ADAPTER") == "disabled" do
-  config :shop, Shop.Mailer, adapter: Shop.DisabledMailAdapter
+  config :business, Business.Mailer, adapter: Business.DisabledMailAdapter
 end
 
 # An isolated local working copy never inherits production endpoints or credentials.
@@ -199,13 +217,13 @@ if System.get_env("CUSTOMER_EXPLORATION") == "true" do
     end
   end
 
-  config :shop, :exploration, %{
+  config :business, :exploration, %{
     parent_origin: parent,
     platform_origin: platform,
     media_origin: media
   }
 
-  config :shop, Shop.Repo,
+  config :business, Business.Repo,
     url: nil,
     hostname: nil,
     username: "developer",
@@ -215,17 +233,17 @@ if System.get_env("CUSTOMER_EXPLORATION") == "true" do
     ssl: false,
     pool_size: 2
 
-  config :shop, ShopWeb.Endpoint,
+  config :business, BusinessWeb.Endpoint,
     http: [ip: {127, 0, 0, 1}, port: 4000],
     url: [host: host, scheme: "https", port: 443],
     check_origin: ["https://" <> host],
     secret_key_base: secret,
     server: System.get_env("PHX_SERVER") == "true"
 
-  config :shop, Shop.Mailer, adapter: Shop.DisabledMailAdapter
-  config :shop, :lead_notifications, false
-  config :shop, :aws_credentials_file, nil
-  config :shop, :media_bucket, nil
-  config :shop, :dns_cluster_query, nil
+  config :business, Business.Mailer, adapter: Business.DisabledMailAdapter
+  config :business, :lead_notifications, false
+  config :business, :aws_credentials_file, nil
+  config :business, :media_bucket, nil
+  config :business, :dns_cluster_query, nil
   config :ex_aws, access_key_id: [], secret_access_key: []
 end

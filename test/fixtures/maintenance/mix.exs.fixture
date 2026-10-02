@@ -10,7 +10,7 @@ defmodule Fixture.MixProject do
     [
       {:phoenix, "~> 1.8.0"},
       {:phoenix_live_view, "~> 1.1.0", override: true},
-      # Only in this shop; not part of the baseline.
+      # Only in this business's system; not part of the baseline.
       {:nimble_csv, "~> 1.2.3", only: [:dev, :test], runtime: false},
       {:decimal, "~> 2.1"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},

@@ -28,7 +28,7 @@ states. A download with a different digest is refused, and nothing is written.
 ## What maintenance never touches
 
 Maintenance never adds or removes a dependency and never copies code from the
-template. It does not change the shop's code, tests, migrations, scene,
+template. It does not change the business's code, tests, migrations, scene,
 components, assets, documents, or GitHub workflows. It reads no business
 records. The publish job checks the patch and refuses any change outside the
 files in the table above.

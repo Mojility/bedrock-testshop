@@ -1,0 +1,71 @@
+{
+  "9bfe35ffc6cca45fc83d260193208d44fd934cc7": {
+    "command": [
+      "git",
+      "-C",
+      "/home/svetzal/Work/Projects/Mojility/bedrock-workshop",
+      "archive",
+      "9bfe35ffc6cca45fc83d260193208d44fd934cc7"
+    ],
+    "differences": {}
+  },
+  "6dc82a749f77548ed5488b7fa25d303d0c655795": {
+    "command": [
+      "git",
+      "-C",
+      "/home/svetzal/Work/Projects/Mojility/bedrock-workshop",
+      "archive",
+      "6dc82a749f77548ed5488b7fa25d303d0c655795"
+    ],
+    "differences": {
+      "lib/workshop_executive/journal.ex": {
+        "cycle_4": "0d90356f3c50a5c8e422ac829dcd5a656bc1753a2bb6f945adee855e2c361d46",
+        "committed": "a9aeca2db7e1ced55b234244c504ff5d6802cc60e94d520f278c64fc87fcad2f"
+      },
+      "lib/workshop_executive/coordinator.ex": {
+        "cycle_4": "46f9ebbd753d88a6d470c5200b8734ce88d63e0b366c605ea21b646b3d1e5bd8",
+        "committed": "aaff6c8130ac5c3267968a7ed86cc85205ff40bf7464f4ead9bc710208677300"
+      },
+      "lib/workshop_executive/engine.ex": {
+        "cycle_4": "a343e700f04f11765d988a19cb552a16bec5706a7eb1799fbc3926ccd6158b89",
+        "committed": "a7e2edcfa67e1248a06d07e953e0805c7207d559a97928df9d1788cd532a5f8b"
+      },
+      "lib/workshop_executive/bridge.ex": {
+        "cycle_4": "25552baf1ca1746e9be606cd5e51d45acb985b3a45797668880c2f2b6e01eb06",
+        "committed": "0fcf28a3958d3bf9e18ec4ede2f92a030fd8a1e9502bcbc789c8e5f487c10e96"
+      },
+      "lib/workshop_executive/runner.ex": {
+        "cycle_4": "6f834ac1e5421b7385dd1aafd2ae894dd96e638fb966dae3807ad5421a98a136",
+        "committed": "7480d26953a0b29ee3b9c5b0e400234e2d93d8fd7d45687da665cd0b44ab2bcb"
+      },
+      "lib/workshop_executive/source.ex": {
+        "cycle_4": "8e61ad73a884bfe84e8cd2e8ee24430b2eb7a9ad81a074ec5214b9486feb8ee5",
+        "committed": "c58b2dc51e92746fd6d7fe417fafe45083aa17979a34fd726c3cc385b01ecd51"
+      },
+      "lib/workshop_executive/codex_gateway.ex": {
+        "cycle_4": "6d9dcdf4e45c289830be0035d4abd9587b37b8eff77a9d886cc9e47ae1e781da",
+        "committed": "5df81f317d71032107efd6c86c0bf2f778da0650f5c9226459d29a0d642a0753"
+      },
+      "lib/workshop_executive/http_client.ex": {
+        "cycle_4": "c5a848796698ba176a2bbeb9db28eef0cf7dd5e157ed112d14ccae6ac015d88e",
+        "committed": "ffd2c59687ef21b01c76c21de497ac5f7f33deea2379b21f1ae593c1f7a50ed7"
+      },
+      "lib/workshop_executive/lifecycle.ex": {
+        "cycle_4": "8671edfab8c08eef3ef8cb1077bb0303cbe477f28d2470fc4c45c0c101bec2cd",
+        "committed": "a70da24edd5a66d1d79984735bf25c1274666e0e4631c0bbd32994455d6591cd"
+      },
+      "lib/workshop_executive/local_command.ex": {
+        "cycle_4": "7475b31d4db83ebe30512a201a5bf27c2f61f580ab81fb03ebc8f2a53f4a7689",
+        "committed": "7a7de865cdd163db7a8e58132248e38f1069f5a80627b14d75077c9c1845dcac"
+      },
+      "scripts/qualify_starter.exs": {
+        "cycle_4": "e9daf3b300930d3a26f7dedf22aa41d971e2eadfc0d9abb680d4483c0106e575",
+        "committed": "4a8b68479f938279dfa4c5693d2a9ace4b086362150f9a8afe6f0294835c4c13"
+      },
+      "scripts/qualify_starter.py": {
+        "cycle_4": "0780cec7e65ec9cd0865fd8533b64ce0cb89f504a34254a99ba7b3424ee8dab8",
+        "committed": "0dd51fcc569de5245a6e4361c735eb857645fcda7e22aa78bc647dd5c8284c4a"
+      }
+    }
+  }
+}

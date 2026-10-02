@@ -65,6 +65,24 @@ vulnerability
 and security checks are required. A failed quality job blocks image publication.
 Pull requests and scheduled runs cannot publish images or deploy.
 
+Starter pushes and manual runs in `Mojility/bedrock-system-template` also invoke
+`Mojility/bedrock/.github/workflows/integration.yml@main` with inherited secrets.
+The integration call explicitly grants `contents: read` and `id-token: write`
+for the producer's requested permissions; workflow defaults and the existing
+image job's grant remain unchanged. The regression compares every producer
+job's effective permissions against that grant; job declarations replace
+workflow defaults and omitted permissions become `none`. The byte-identical
+producer fixture comes from Bedrock commit
+`78767528c45c0d9412c4cbc90d395c724ed1c5ee`; refresh it deliberately when
+reviewing future producer changes. Conditional steps do not remove permission
+requirements from reusable workflow validation.
+Starter image publication requires successful quality, release acceptance and
+platform integration. Generated customer repositories skip platform integration;
+their image publication still requires quality and release acceptance, without
+platform source keys. The workflow contract tests exercise both repository
+contexts and failed, cancelled and skipped dependency results locally. GitHub
+execution remains a separate verification step.
+
 Run `mix precommit` before committing. A passing check applies to the tested
 revision; it does not prove untested behavior, replace code review, or make
 future

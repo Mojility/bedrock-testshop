@@ -1,0 +1,14 @@
+{
+  "kind": "behavioral",
+  "source_change": "Reword blueprint boundary prose and resolve smoke-regression fixtures through Application.app_dir/2 so actual Workshop protected coverage and all fourteen completion gates accept untouched candidate source.",
+  "rejecting": {
+    "command": "env MIX_HOME=/tmp/starter-c3-tools/mix HEX_HOME=/tmp/starter-c3-tools/hex python3 scripts/qualify_workshop.py --workshop /tmp/starter-workshop-trunk --workshop-revision 9bfe35ffc6cca45fc83d260193208d44fd934cc7 --bedrock /tmp/starter-bedrock-trunk --bedrock-revision 12d15697b629235d7c4bfeaf4753ff2f899a1ed5",
+    "exit_code": 1,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790881972890438388.stdout.log"
+  },
+  "corrected": {
+    "command": "env MIX_HOME=/tmp/starter-c3-tools/mix HEX_HOME=/tmp/starter-c3-tools/hex python3 scripts/qualify_workshop.py --workshop /tmp/starter-workshop-trunk --workshop-revision 9bfe35ffc6cca45fc83d260193208d44fd934cc7 --bedrock /tmp/starter-bedrock-trunk --bedrock-revision 12d15697b629235d7c4bfeaf4753ff2f899a1ed5",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790882945019975639.stdout.log"
+  }
+}

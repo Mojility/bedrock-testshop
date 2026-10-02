@@ -6,7 +6,7 @@ implementations. Publication reads it; publication does not generate or replace
 it.
 
 Use new component names; built-in names cannot be shadowed. Native components
-also need registration in `lib/shop/website/components.ex` and a customer-owned
+also need registration in `lib/business/website/components.ex` and a customer-owned
 renderer. See `WEBSITE.md` for the declaration format and preview requirements.
 Commit component changes, refresh the component model in the Bedrock design
 editor, and publish a compatible scene through the normal workflow.

@@ -1,0 +1,277 @@
+{
+  "environment": {
+    "MIX_ENV": "test",
+    "ERL_FLAGS": "+S 4:4 -home /tmp/starter-c5-audit-home-ux7_e7rb",
+    "HEX_HOME": "/tmp/starter-c5-quality-hex-rapzhj05",
+    "MIX_HOME": "/tmp/starter-c3-tools/mix",
+    "MIX_TEST_PARTITION": "_c5_1790e0ad48c8"
+  },
+  "help": [
+    {
+      "command": [
+        "mix",
+        "help",
+        "deps.get"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/83-1790888881977219747.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/83-1790888881977219747.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "format"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/131-1790888882492845815.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/131-1790888882492845815.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "compile"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/179-1790888883015027807.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/179-1790888883015027807.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "deps.unlock"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/227-1790888883542929606.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/227-1790888883542929606.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "test"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/275-1790888884054925154.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/275-1790888884054925154.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "credo"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/323-1790888884601403978.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/323-1790888884601403978.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "dialyzer"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/371-1790888885122270970.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/371-1790888885122270970.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "docs"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/419-1790888885628340379.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/419-1790888885628340379.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "hex.audit"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/467-1790888886175188626.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/467-1790888886175188626.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "deps.audit"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/515-1790888886703215745.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/515-1790888886703215745.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "sobelow"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/563-1790888887309466401.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/563-1790888887309466401.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "hex.outdated"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/611-1790888887858613009.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/611-1790888887858613009.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "help",
+        "precommit"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/659-1790888888380018429.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/659-1790888888380018429.stderr.log"
+    }
+  ],
+  "results": [
+    {
+      "command": [
+        "mix",
+        "deps.get"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/31-1790888879678542673.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/31-1790888879678542673.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "format",
+        "--check-formatted"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/707-1790888888907472262.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/707-1790888888907472262.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "compile",
+        "--warnings-as-errors"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/757-1790888889575762863.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/757-1790888889575762863.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "deps.unlock",
+        "--check-unused"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/807-1790888890175438135.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/807-1790888890175438135.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "test",
+        "--cover"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/855-1790888890682819169.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/855-1790888890682819169.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "credo",
+        "--strict"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/991-1790888900303337663.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/991-1790888900303337663.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "dialyzer"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/1041-1790888902231005884.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/1041-1790888902231005884.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "docs",
+        "--warnings-as-errors"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/1093-1790888910756169281.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/1093-1790888910756169281.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "hex.audit"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/1143-1790888912086392731.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/1143-1790888912086392731.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "deps.audit"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/1195-1790888913510393277.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/1195-1790888913510393277.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "sobelow",
+        "--config"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/1249-1790888914245123535.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/1249-1790888914245123535.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "test"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/1299-1790888915045127928.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/1299-1790888915045127928.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "hex.outdated",
+        "--all"
+      ],
+      "exit_code": 1,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/1435-1790888920797945910.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/1435-1790888920797945910.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "precommit"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/1487-1790888922779890303.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/1487-1790888922779890303.stderr.log"
+    }
+  ]
+}

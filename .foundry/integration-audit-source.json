@@ -1,0 +1,12 @@
+{
+  "cached_revision": "935abf7410a2bbb18e12579dee6e31267c3ed244",
+  "remote_main_revision": "935abf7410a2bbb18e12579dee6e31267c3ed244",
+  "working_tree_clean": true,
+  "revision": "935abf7410a2bbb18e12579dee6e31267c3ed244",
+  "advisory_files_match_committed_archive": true,
+  "archive_sha256": "a4b6ba196ca1bf56f186d4a254f2e90c58405f8603a7ab170212edc814cb768e",
+  "repository": "https://github.com/mirego/elixir-security-advisories.git",
+  "freshness_log": "/home/svetzal/.foundry/tool-logs/2-1790895818838055972.stdout.log",
+  "archive_comparison_log": "/home/svetzal/.foundry/tool-logs/2-1790895851958743526.stdout.log",
+  "limitation": "MixAudit synchronize attempts a pull in a read-only cache and ignores its failure. The scanned cache was independently verified against current remote main and every loaded YAML byte. No advisory was suppressed and no cache or source ref was changed."
+}

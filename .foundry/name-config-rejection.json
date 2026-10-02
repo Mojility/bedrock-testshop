@@ -1,0 +1,59 @@
+{
+  "checks": [
+    {
+      "case": "malformed",
+      "command": "mix run --no-start --no-compile -e if Business.name() != System.fetch_env!(\"NAME_EXPECTED\"), do: raise(\"Name precedence changed\")",
+      "exit_code": 1,
+      "logs": {
+        "stdout": "/home/svetzal/.foundry/tool-logs/16-1790902063462472452.stdout.log",
+        "stderr": "/home/svetzal/.foundry/tool-logs/16-1790902063462472452.stderr.log"
+      }
+    },
+    {
+      "case": "missing-name",
+      "command": "mix run --no-start --no-compile -e if Business.name() != System.fetch_env!(\"NAME_EXPECTED\"), do: raise(\"Name precedence changed\")",
+      "exit_code": 1,
+      "logs": {
+        "stdout": "/home/svetzal/.foundry/tool-logs/66-1790902064061364431.stdout.log",
+        "stderr": "/home/svetzal/.foundry/tool-logs/66-1790902064061364431.stderr.log"
+      }
+    },
+    {
+      "case": "non-string",
+      "command": "mix run --no-start --no-compile -e if Business.name() != System.fetch_env!(\"NAME_EXPECTED\"), do: raise(\"Name precedence changed\")",
+      "exit_code": 1,
+      "logs": {
+        "stdout": "/home/svetzal/.foundry/tool-logs/116-1790902064642537643.stdout.log",
+        "stderr": "/home/svetzal/.foundry/tool-logs/116-1790902064642537643.stderr.log"
+      }
+    },
+    {
+      "case": "malformed-business-override",
+      "command": "mix run --no-start --no-compile -e if Business.name() != System.fetch_env!(\"NAME_EXPECTED\"), do: raise(\"Name precedence changed\")",
+      "exit_code": 0,
+      "logs": {
+        "stdout": "/home/svetzal/.foundry/tool-logs/166-1790902065289476449.stdout.log",
+        "stderr": "/home/svetzal/.foundry/tool-logs/166-1790902065289476449.stderr.log"
+      }
+    },
+    {
+      "case": "malformed-shop-override",
+      "command": "mix run --no-start --no-compile -e if Business.name() != System.fetch_env!(\"NAME_EXPECTED\"), do: raise(\"Name precedence changed\")",
+      "exit_code": 0,
+      "logs": {
+        "stdout": "/home/svetzal/.foundry/tool-logs/216-1790902065878595915.stdout.log",
+        "stderr": "/home/svetzal/.foundry/tool-logs/216-1790902065878595915.stderr.log"
+      }
+    },
+    {
+      "case": "malformed-empty-override",
+      "command": "mix run --no-start --no-compile -e if Business.name() != System.fetch_env!(\"NAME_EXPECTED\"), do: raise(\"Name precedence changed\")",
+      "exit_code": 0,
+      "logs": {
+        "stdout": "/home/svetzal/.foundry/tool-logs/266-1790902066457386593.stdout.log",
+        "stderr": "/home/svetzal/.foundry/tool-logs/266-1790902066457386593.stderr.log"
+      }
+    }
+  ],
+  "cleanup": "Snapshot removed; no database or listener started."
+}

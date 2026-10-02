@@ -6,7 +6,7 @@ defmodule BaselineMaintenance do
   PostgreSQL versions, the Debian base image, dependency requirements, asset
   tool versions, and vendored third-party files with their release digests.
   Maintenance changes only those declarations. It never adds or removes a
-  dependency and never touches the shop's own code, scene, or records.
+  dependency and never touches the business's own code, scene, or records.
 
   This module uses the Elixir standard library only, because it runs before
   the project's dependencies are fetched. `apply_baseline.exs` is its command

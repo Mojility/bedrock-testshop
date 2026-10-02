@@ -1,0 +1,50 @@
+{
+  "archives": [
+    {
+      "repository": "bedrock",
+      "revision": "69c7f88c796299f0a4c46a888dddb91c77cf70b3",
+      "archive_sha256": "b9aa069d17747bc2f243bad376175f1fb559d8b921be46b1528151e3f0af9f3c",
+      "acquisition": "git archive 69c7f88c796299f0a4c46a888dddb91c77cf70b3"
+    },
+    {
+      "repository": "roost",
+      "revision": "bb57e6d0bf2bff3af72d40ad9adb5fa7c34d81b8",
+      "archive_sha256": "71f3447a7bd11178662f614ca159ede11fcd6e119c3066248bc50ca90ab29f1a",
+      "acquisition": "git archive bb57e6d0bf2bff3af72d40ad9adb5fa7c34d81b8"
+    },
+    {
+      "repository": "bedrock-workshop",
+      "revision": "adfcae0a96c291ddebfd28a086e5464bf97c9376",
+      "archive_sha256": "50beb4a37fab827151b16211db09c8f0a0c35f4d8bc5f2064858cf76fba866cc",
+      "acquisition": "git archive adfcae0a96c291ddebfd28a086e5464bf97c9376"
+    }
+  ],
+  "unchanged_caller_sources_sha256": {
+    "scripts/integrate.py": "7bbe16da46480bcab5bcdb5b4dc0b669b79f0c1f4681fe323aec7a47c8df8758",
+    "scripts/qualify_owner_journey.py": "a5a864598c1941ebe361d79d3da707b1395a06b70b85395e93beadaf50287b2c",
+    "scripts/owner_journey_generation_test.exs": "d6ce838d118d0d976e829a137d65c671ef29fb0d7c15663fd572b3981713f9f1",
+    "scripts/owner_journey_commands.exs": "b767b965fcba5097a268393bfd4aa880c5fe7b25fdabdac143dd712bab913988",
+    "scripts/owner_journey_records.exs": "a4da5b46fbf5d75af5b3bf46813ff9ee348071720b76bcba569d2387b1434ffd",
+    "scripts/owner_journey_renderer.exs": "9ec61c7f4597d3202e27dcee2189f4882c07d21fed8e09ef0a2c51918b40ad7f",
+    "scripts/owner_journey_release.py": "04741b54ca2670f4ff2151a7acf269f40cfbc389c0c9bc71075403669d76e846",
+    "apps/bedrock/lib/bedrock/explorations/bootstrap.ex": "24be9947207a50d9f108c68960351a715cc49fb6cbfeeffaee099f309306ae84"
+  },
+  "transport": "Read-only Git commands map archive-root identity to committed Bedrock; HEAD is pinned for permitted sibling acquisition. Starter is the base archive plus the explicit workflow overlay and (only in rejecting run) the synthetic lead-controller fault.",
+  "mix_environment": "Only Bedrock generation receives a unique MIX_TEST_PARTITION through a local executable environment wrapper; the real pinned Mix executable runs every command.",
+  "unchanged_starter_scene_fixture_sha256": "d218c9f590f28e6d986348f32567ed654b81fada3bdf2fc0370633f89e8aaeb2",
+  "workflow_regression": {
+    "rejecting": {
+      "command": "foundry capture -- env MIX_ENV=test HEX_HOME=/tmp/starter-c6-tools/hex ERL_FLAGS=\"+S 2:2\" MIX_TEST_PARTITION=_workflow_c7_083990 BUILD_WORKFLOW_PATH=/tmp/starter-build-before-083990.yml mix test test/maintenance/build_workflow_test.exs",
+      "exit_code": 2,
+      "log": "/home/svetzal/.foundry/tool-logs/2-1790893704775019759.stdout.log"
+    },
+    "corrected": {
+      "command": "foundry capture -- env MIX_ENV=test HEX_HOME=/tmp/starter-c6-tools/hex ERL_FLAGS=\"+S 2:2\" MIX_TEST_PARTITION=_workflow_c7_083990 mix test test/maintenance/build_workflow_test.exs",
+      "exit_code": 0,
+      "log": "/home/svetzal/.foundry/tool-logs/2-1790893686200780630.stdout.log"
+    }
+  },
+  "workflow_before_sha256": "91ec2e3d745e9bade70b28a3b2bea6c442f597f6ad55ff2879948afa1690e67d",
+  "workflow_after_sha256": "f385efa2253329d0065816a9fced85ce961d06f7f6a5cabbe6ec9bc2c6ebe92c",
+  "caller_source_revalidated_after_execution": true
+}

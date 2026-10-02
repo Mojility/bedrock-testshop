@@ -6,7 +6,7 @@ import Config
 # which you should run after static files are built and
 # before starting your production server.
 # TLS terminates at the trusted edge. Health checks stay reachable over the private network.
-config :shop, ShopWeb.Endpoint,
+config :business, BusinessWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
   force_ssl: [rewrite_on: [:x_forwarded_proto], exclude: ["localhost", "127.0.0.1"]]
 

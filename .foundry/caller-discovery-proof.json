@@ -1,0 +1,14 @@
+{
+  "kind": "behavioral",
+  "source_change": "scripts/qualify_callers.py and scripts/verify_caller_discovery.py: real CLI discovery with meaningful inventory and qualification side effects denied; execution still requires caller source",
+  "rejecting": {
+    "command": "python3 -B - <<'PROBE'\nimport importlib.util\nfrom pathlib import Path\nimport subprocess\nimport tempfile\nimport unittest\nspec = importlib.util.spec_from_file_location('discovery', 'scripts/verify_caller_discovery.py')\ntests = importlib.util.module_from_spec(spec)\nspec.loader.exec_module(tests)\nwith tempfile.TemporaryDirectory(prefix='rejecting-discovery-') as directory:\n    scripts = Path(directory) / 'scripts'\n    scripts.mkdir()\n    tests.CLI = scripts / 'qualify_callers.py'\n    tests.CLI.write_bytes(subprocess.check_output(['git', 'show', 'HEAD:scripts/qualify_callers.py']))\n    result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromModule(tests))\n    raise SystemExit(not result.wasSuccessful())\nPROBE",
+    "exit_code": 1,
+    "log": "/home/svetzal/.foundry/tool-logs/3-1790903943766878267.stderr.log"
+  },
+  "corrected": {
+    "command": "python3 scripts/verify_caller_discovery.py",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790904475776713167.stderr.log"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "kind": "behavioral",
+  "source_change": "scripts/qualify_workshop.py defers SIGINT and SIGTERM across final owned-process and database cleanup before releasing the shared port lock; snapshot removal retains its existing protection.",
+  "rejecting": {
+    "command": "foundry capture -- python3 scripts/verify_workshop_cleanup.py --source /tmp/workshop-cleanup-preserved-c4.py --stage shutdown",
+    "exit_code": 1,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790885157603867015.stdout.log"
+  },
+  "corrected": {
+    "command": "foundry capture -- python3 scripts/verify_workshop_cleanup.py --stage shutdown",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790885195788449768.stdout.log"
+  }
+}

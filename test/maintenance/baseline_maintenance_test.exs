@@ -32,7 +32,7 @@ defmodule BaselineMaintenanceTest do
             "sha256" => @daisyui_sha256
           },
           %{
-            "path" => "assets/vendor/not-in-this-shop.js",
+            "path" => "assets/vendor/not-in-this-business.js",
             "url" => "https://github.com/example/tool/releases/download/v1.0.0/tool.js",
             "sha256" => String.duplicate("0", 64)
           }
@@ -136,7 +136,7 @@ defmodule BaselineMaintenanceTest do
       assert mix_exs =~ ~s|{:phoenix, "~> 1.8"},|
       assert mix_exs =~ ~s|{:phoenix_live_view, "~> 1.2", override: true},|
       assert mix_exs =~ ~s|{:esbuild, "~> 0.10", runtime: Mix.env() == :dev},|
-      assert mix_exs =~ "# Only in this shop; not part of the baseline."
+      assert mix_exs =~ "# Only in this business's system; not part of the baseline."
 
       assert changes["requirements"]["phoenix"] == ["~> 1.8.0", "~> 1.8"]
       assert changes["requirements"]["phoenix_live_view"] == ["~> 1.1.0", "~> 1.2"]
@@ -198,8 +198,13 @@ defmodule BaselineMaintenanceTest do
                []
     end
 
-    test "updates asset tool versions in config.exs", %{tmp_dir: tmp_dir} do
+    test "updates asset tools without rewriting legacy configuration or encoded names", %{
+      tmp_dir: tmp_dir
+    } do
       root = tenant(tmp_dir)
+      File.mkdir_p!(Path.join(root, "priv"))
+      name_data = Jason.encode!(%{"name" => ~S(Electric "北" \ #{literal} <&>)})
+      File.write!(Path.join(root, "priv/business.json"), name_data)
 
       assert {:ok, changes} =
                BaselineMaintenance.apply_baseline(root, baseline(), &fetch_daisyui/1)
@@ -207,7 +212,8 @@ defmodule BaselineMaintenanceTest do
       config = read(root, "config/config.exs")
       assert config =~ ~s|config :esbuild,\n  version: "0.28.2",|
       assert config =~ ~s|config :tailwind,\n  version: "4.3.3",|
-      assert config =~ ~s|config :shop, :shop_name, "Fixture"|
+      assert config =~ ~s|config :business, :business_name, "Fixture"|
+      assert read(root, "priv/business.json") == name_data
 
       assert changes["asset_tools"] == %{
                "esbuild" => ["0.25.4", "0.28.2"],
@@ -215,14 +221,14 @@ defmodule BaselineMaintenanceTest do
              }
     end
 
-    test "replaces vendored files the shop already has, and only those", %{tmp_dir: tmp_dir} do
+    test "replaces vendored files the business already has, and only those", %{tmp_dir: tmp_dir} do
       root = tenant(tmp_dir)
 
       assert {:ok, changes} =
                BaselineMaintenance.apply_baseline(root, baseline(), &fetch_daisyui/1)
 
       assert read(root, "assets/vendor/daisyui.js") == @daisyui
-      refute File.exists?(Path.join(root, "assets/vendor/not-in-this-shop.js"))
+      refute File.exists?(Path.join(root, "assets/vendor/not-in-this-business.js"))
       assert changes["vendored"] == ["assets/vendor/daisyui.js"]
 
       assert_received {:fetched,

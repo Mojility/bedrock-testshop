@@ -34,7 +34,8 @@
     {
       "name": "dialyzer",
       "command": "MIX_ENV=test mix dialyzer",
-      "required": true
+      "required": true,
+      "timeout": 1800
     },
     {
       "name": "docs",

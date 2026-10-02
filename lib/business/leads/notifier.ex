@@ -1,0 +1,72 @@
+defmodule Business.Leads.Notifier do
+  @moduledoc "Durable pending notifications. Delivery failures never lose accepted enquiries."
+  use GenServer
+  import Ecto.Query
+  import Swoosh.Email, except: [from: 2]
+  alias Business.Accounts.User
+  alias Business.Leads.Lead
+  alias Business.Mailer
+  alias Business.Repo
+
+  def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+
+  def init(_) do
+    if Application.get_env(:business, :lead_notifications, true),
+      do: Process.send_after(self(), :deliver, 30_000)
+
+    {:ok, nil}
+  end
+
+  def handle_info(:deliver, state) do
+    deliver_pending()
+    Process.send_after(self(), :deliver, 30_000)
+    {:noreply, state}
+  end
+
+  def deliver_pending(deliver \\ &Mailer.deliver/1) do
+    Repo.transact(fn ->
+      recipients =
+        Repo.all(
+          from u in User,
+            where: u.role == "owner" and is_nil(u.disabled_at) and not is_nil(u.confirmed_at),
+            select: u.email
+        )
+
+      if recipients != [] do
+        leads =
+          Repo.all(
+            from l in Lead,
+              where: is_nil(l.notified_at),
+              order_by: l.inserted_at,
+              limit: 20,
+              lock: "FOR UPDATE SKIP LOCKED"
+          )
+
+        Enum.each(leads, &deliver_lead(&1, recipients, deliver))
+      end
+
+      {:ok, :checked}
+    end)
+  rescue
+    _ -> {:error, :delivery_unavailable}
+  end
+
+  defp deliver_lead(lead, recipients, deliver) do
+    email =
+      new()
+      |> Swoosh.Email.from(Mailer.from_address())
+      |> to(recipients)
+      |> subject("New enquiry for #{Business.name()}")
+      |> text_body(
+        "A new enquiry is waiting in your business system. Sign in to read it and record your follow-up.\n\n#{BusinessWeb.Endpoint.url()}/app/leads#leads-#{lead.id}"
+      )
+
+    case deliver.(email) do
+      {:ok, _} ->
+        lead |> Ecto.Changeset.change(notified_at: DateTime.utc_now()) |> Repo.update!()
+
+      _ ->
+        :retry_later
+    end
+  end
+end

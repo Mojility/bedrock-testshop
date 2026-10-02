@@ -1,0 +1,19 @@
+{
+  "starter_revision": "f624a5ba331ce0e2354274e39f12fe52b7bf7c9c",
+  "bedrock_archive_revision": "78767528c45c0d9412c4cbc90d395c724ed1c5ee",
+  "candidate_materialization_sha256": "46e76e59298d22b5778f5e330c48ce989c6b2ced96ef59aca238b39ef19cff84",
+  "sha256": {
+    "config/config.exs": "0ee52c6cc88aff3f4962fea3e26920372fa44b6cab088f0b7539dd888a238b1b",
+    "config/runtime.exs": "fb86129ddad418a485228fabc5c8926ed9957e2ff77f918920bab99e89122f87",
+    "lib/business.ex": "6c1fe192d3b0e44e630db751f4473b433bb57a424fc9194ce261ef23c67a3686",
+    "lib/business_web/components/layouts.ex": "057c552ba21a72439c4cfcc2852bb814d456eddd354eaa7baa7fc313700d7e76",
+    "lib/business_web/components/layouts/root.html.heex": "5c434d6340ad6fa106b977182a6b7872aa1f06aef58b7aaa5ebcc0cf1afbbe90",
+    "lib/business_web/controllers/page_html/home.html.heex": "965fa3c1d0b37b9dfc222f9d036aa11594997485a5de50f970eeb4a9990ef578",
+    "test/business_web/controllers/page_controller_test.exs": "4db4e7a3d0be4059907ed59eedcbbb71ed16470b7525b4f828aca8aa38867871",
+    "test/maintenance/baseline_maintenance_test.exs": "500fdbb9494ca35e06118641d8fb54c714077fbdedf54bbedf4fe76b3b9d45cd",
+    "scripts/qualify_business_name.py": "0216d96d1f8b2ad2cf9096618869d201a0c2ef7c36de5fcb6aab871debb3cf6f",
+    "scripts/business_name_probe.exs": "4a6c03f7d6bd9a638f416b880decbe06e813fb3c7ce305485c05d7d8e12c0f9d",
+    "test/fixtures/website_scene.json": "d218c9f590f28e6d986348f32567ed654b81fada3bdf2fc0370633f89e8aaeb2"
+  },
+  "scene_component_model_hash": "704b1cb9a5421ef6593108152d8065afec9b070dd59a0d5fe085b0f92a99dbee"
+}

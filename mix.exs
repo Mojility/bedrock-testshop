@@ -1,9 +1,9 @@
-defmodule Shop.MixProject do
+defmodule Business.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :shop,
+      app: :business,
       version: "0.1.0",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -42,7 +42,7 @@ defmodule Shop.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Shop.Application, []},
+      mod: {Business.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -94,7 +94,7 @@ defmodule Shop.MixProject do
       {:bandit, "~> 1.5"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:sobelow, "~> 0.15", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.16", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40", only: [:dev, :test], runtime: false},
       {:mox, "~> 1.2", only: :test, runtime: false}
@@ -114,11 +114,11 @@ defmodule Shop.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["compile", "tailwind shop", "esbuild shop"],
+      "assets.build": ["compile", "tailwind business", "esbuild business"],
       "assets.deploy": [
         "compile",
-        "tailwind shop --minify",
-        "esbuild shop --minify",
+        "tailwind business --minify",
+        "esbuild business --minify",
         "phx.digest"
       ],
       precommit: ["quality"],

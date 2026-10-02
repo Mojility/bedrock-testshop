@@ -6,7 +6,7 @@
 @import "./catalogue.css";
 @source "../css";
 @source "../js";
-@source "../../lib/shop_web";
+@source "../../lib/business_web";
 
 /* A Tailwind plugin that makes "hero-#{ICON}" classes available.
    The heroicons installation itself is managed by your mix.exs */

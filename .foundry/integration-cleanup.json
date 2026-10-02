@@ -1,0 +1,25 @@
+{
+  "own_proof_snapshots_absent": [
+    "bedrock-owner-proof-gw2u43zf",
+    "bedrock-owner-proof-3auraiq4",
+    "bedrock-owner-proof-2td100i2",
+    "bedrock-owner-proof-6usy845u"
+  ],
+  "own_synthetic_databases_remaining": [],
+  "database_observation_command": "psql -X -At -d postgres -c SELECT datname FROM pg_database WHERE datname LIKE 'bedrock_test_starter_c7_083990_%' OR datname LIKE 'business_test_integration_c7_083990_%' OR datname = 'business_test_workflow_c7_083990'",
+  "partition_marker_absent": true,
+  "caller_source_revalidated": true,
+  "removed_archives_and_harness": [
+    "/tmp/starter-integration-sources-083990",
+    "/tmp/starter-integration-bin-083990",
+    "/tmp/starter-integration-probe-083990.py",
+    "/tmp/starter-integration-isolated-083990.py",
+    "/tmp/starter-integration-quality-083990.py",
+    "/tmp/starter-build-before-083990.yml",
+    "/tmp/bedrock-69c7f88c796299f0a4c46a888dddb91c77cf70b3.tar",
+    "/tmp/roost-bb57e6d0bf2bff3af72d40ad9adb5fa7c34d81b8.tar",
+    "/tmp/bedrock-workshop-adfcae0a96c291ddebfd28a086e5464bf97c9376.tar"
+  ],
+  "shared_cache_retained": "/tmp/starter-c6-tools/hex (pre-existing public dependency cache)",
+  "listener_shutdown": "The unchanged owner qualifier stopped each service process group before returning and before releasing the shared lock. Private PostgreSQL shutdown and snapshot removal completed."
+}

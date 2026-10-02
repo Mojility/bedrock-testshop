@@ -1,0 +1,119 @@
+<div class="catalogue-body">
+  <section class="catalogue-intro flush">
+    <h2>Trace an Actor’s Journey through the system.</h2>
+    <p>
+      Actors seek Goals through Interactions arranged into Journeys. Follow each stage to the compositions the person uses, then explore their components and business meaning.
+    </p>
+  </section>
+  <details class="catalogue-panel" open={@node["kind"] != "Journey"}>
+    <summary>Explore Actors, Goals, Interactions and Journeys</summary>
+    <nav aria-label="User-centric product model">
+      <section :for={kind <- ~w(Actor Goal Interaction Journey)}>
+        <h3>{kind}</h3><div class="wb-actions">
+          <.link
+            :for={concept <- Enum.filter(@nodes, &(&1["kind"] == kind))}
+            patch={"/dev/catalogue/model?node=#{concept["id"]}"}
+            class="catalogue-relation"
+            aria-current={if concept["id"] == @node["id"], do: "page"}
+          >{concept["name"]}</.link>
+        </div>
+      </section>
+    </nav>
+  </details>
+  <nav aria-label="Design concepts" class="catalogue-panel">
+    <details>
+      <summary>Explore supporting design concepts</summary>
+      <section :for={
+        {kind, concepts} <-
+          Enum.reject(@nodes, &(&1["kind"] in ~w(Actor Goal Interaction Journey)))
+          |> Enum.group_by(& &1["kind"])
+          |> Enum.sort()
+      }>
+        <h3>{kind}</h3><div class="wb-actions">
+          <.link
+            :for={concept <- concepts}
+            patch={"/dev/catalogue/model?node=#{concept["id"]}"}
+            aria-current={if concept["id"] == @node["id"], do: "page"}
+            class="catalogue-relation"
+          >{concept["name"]}</.link>
+        </div>
+      </section>
+    </details>
+  </nav>
+  <section class="catalogue-panel catalogue-space" id="design-concept">
+    <span class="catalogue-label">{@node["kind"]}</span>
+    <h2 id="component-heading" tabindex="-1">{@node["name"]}</h2>
+    <p>{@node["description"]}</p>
+    <dl class="catalogue-binding-facts">
+      <div :for={{key, value} <- Business.Catalogue.Model.details(@node)}>
+        <dt>{Business.Catalogue.Model.label(key)}</dt><dd>
+          {Business.Catalogue.Model.describe(value)}
+        </dd>
+      </div>
+    </dl>
+    <.link
+      :if={@node["domain_id"]}
+      patch={"/dev/catalogue/domain?node=#{@node["domain_id"]}"}
+      class="wb-button secondary"
+    >Explore fields and sample values</.link>
+    <.link
+      :if={@node["component_id"]}
+      patch={"/dev/catalogue/graph?node=#{@node["component_id"]}"}
+      class="wb-button secondary"
+    >Try the visual component</.link>
+    <.composition_contract
+      :if={Business.Catalogue.Domain.composition(@node["component_id"])}
+      contract={Business.Catalogue.Domain.composition(@node["component_id"])}
+    />
+  </section>
+  <nav
+    :if={length(Business.Catalogue.Model.journeys_for(@node["id"])) > 1}
+    aria-label="Choose a Journey"
+    class="wb-actions catalogue-space"
+  >
+    <.link
+      :for={journey <- Business.Catalogue.Model.journeys_for(@node["id"])}
+      patch={"/dev/catalogue/model?node=#{journey["id"]}"}
+      class="catalogue-relation"
+    >{journey["name"]}</.link>
+  </nav>
+  <.journey_trace
+    :for={journey <- Business.Catalogue.Model.journeys_for(@node["id"]) |> Enum.take(1)}
+    journey={journey}
+    story={@story}
+  />
+  <div class="catalogue-grid flush catalogue-space">
+    <section class="catalogue-panel" id="concept-outgoing">
+      <h3>Relationships from this concept</h3>
+      <p :if={Business.Catalogue.Model.outgoing(@node["id"]) == []}>
+        No outgoing relationships are declared.
+      </p>
+      <ul>
+        <li :for={edge <- Business.Catalogue.Model.outgoing(@node["id"])}>
+          {Business.Catalogue.Model.label(edge["relation"])}<span :if={edge["field"]}> ({edge[
+            "field"
+          ]})</span>
+          <.link patch={"/dev/catalogue/model?node=#{edge["target"]}"} class="wb-link">{Business.Catalogue.Model.get(
+            edge["target"]
+          )["name"]}</.link>
+          <small>({Business.Catalogue.Model.get(edge["target"])["kind"]})</small>
+        </li>
+      </ul>
+    </section>
+    <section class="catalogue-panel" id="concept-incoming">
+      <h3>Relationships to this concept</h3>
+      <p :if={Business.Catalogue.Model.incoming(@node["id"]) == []}>
+        No incoming relationships are declared.
+      </p>
+      <ul>
+        <li :for={edge <- Business.Catalogue.Model.incoming(@node["id"])}>
+          <.link patch={"/dev/catalogue/model?node=#{edge["source"]}"} class="wb-link">{Business.Catalogue.Model.get(
+            edge["source"]
+          )["name"]}</.link> {String.replace(edge["relation"], "_", " ")} this concept<span :if={
+            edge["field"]
+          }> ({edge["field"]})</span>
+        </li>
+      </ul>
+    </section>
+  </div>
+</div>

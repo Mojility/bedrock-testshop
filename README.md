@@ -7,7 +7,7 @@ This repository was generated and is maintained by
 [Bedrock](https://mybedrock.ca), a product of Mojility Inc. Bedrock's
 generators belong to Mojility; everything they produced here belongs to
 TestShop (see `LICENSE`). Nothing in this repository depends on
-Bedrock at build time or at run time. A competent Elixir shop can pick it
+Bedrock at build time or at run time. A competent Elixir team can pick it
 up cold, and this README is written for one.
 
 `SYSTEM.md` says what the system contains and where its data lives. It is
@@ -47,7 +47,7 @@ say. Postgres from Homebrew on macOS has no `postgres` role; run
 `createuser -s postgres` once, or `export PGUSER=$USER PGPASSWORD=`.
 
 Sign-in is passwordless and staff access is invitation-only. For local
-setup, call `Shop.Accounts.Staff.bootstrap_owner("owner@example.com")` in
+setup, call `Business.Accounts.Staff.bootstrap_owner("owner@example.com")` in
 `iex -S mix`. Request a login link at `/users/log-in`. Development email
 lands in `/dev/mailbox`. See `BUSINESS.md` for deployment and lead transfer.
 
@@ -65,7 +65,7 @@ checks](guides/quality.md).
 ## Build the image
 
 ```sh
-docker build -t shop .
+docker build -t business .
 ```
 
 The image runs pending migrations and then starts the server
@@ -86,13 +86,33 @@ The release reads these at start (`config/runtime.exs`):
 | `PORT`                   | no                 | HTTP port the server listens on. Default `4000`.                                    |
 | `MAIL_FROM`              | no                 | Sender address for email, optionally `Name <address>`. Default `noreply@$PHX_HOST`. |
 | `AWS_REGION`             | no                 | Region for Amazon SES. Default `ca-central-1`.                                      |
-| `SHOP_NAME`              | no                 | Overrides the shop's name from `config/config.exs`.                                 |
+| `BUSINESS_NAME`          | no                 | Overrides the business's name from `priv/business.json` or legacy configuration.    |
 | `MEDIA_BUCKET`           | for photos         | This customer's private Canadian S3 bucket.                                         |
 | `AWS_CREDENTIALS_FILE`   | hosted             | Read-only, atomically renewed customer AWS credentials.                             |
 | `TRUSTED_PROXY_IPS`      | behind a proxy     | Comma-separated trusted proxy peer addresses.                                       |
 | `WEBSITE_PREVIEW_SECRET` | for remote preview | Separate machine credential, at least 32 bytes.                                     |
 | `LEAD_NOTIFICATIONS`     | no                 | Set `false` for isolated rehearsals.                                                |
 | `POOL_SIZE`              | no                 | Database connection pool size. Default `10`.                                        |
+
+`SHOP_NAME` is the older spelling of `BUSINESS_NAME`. A deployment that still
+sets only `SHOP_NAME` keeps working; when both are set, `BUSINESS_NAME` wins.
+
+New generators must JSON-encode the business name as the string `name` in
+`priv/business.json`, for example `{"name":"Électricité du Nord"}`. This optional
+file is authored system identity data and is included in releases; it is separate
+from published website outputs. Never substitute a name into Elixir or HEEx.
+Startup resolves `BUSINESS_NAME`, then `SHOP_NAME`, then this file, then
+`config :business, :business_name` (the stock fallback is `Business`). An explicitly
+empty environment value still wins. Existing systems with baked configuration
+and no file continue to work. A present malformed file or non-string `name`
+fails startup unless an environment override wins; only an absent file falls back.
+Changes take effect on restart. Names are escaped by their output consumers.
+
+`python3 scripts/qualify_business_name.py --port 0` proves this input through
+formatting, compilation and real synthetic HTTP responses, including 120-character
+names and legacy overrides. It uses a unique disposable database and disables
+outbound mail through the test configuration. The current Bedrock producer still
+requires the change recorded in [owner journey findings](docs/owner-journey-findings.md).
 
 Hosted media and mail read renewable customer-scoped credentials from
 `AWS_CREDENTIALS_FILE`. The host renews that read-only file. Standalone mail can
@@ -126,8 +146,8 @@ push and says so in the run summary.
 ## Layout
 
 ```text
-lib/shop/          business logic (contexts, schemas), no web dependencies
-lib/shop_web/      the web layer: router, LiveViews, controllers, components
+lib/business/      business logic (contexts, schemas), no web dependencies
+lib/business_web/  the web layer: router, LiveViews, controllers, components
 config/            compile-time and runtime configuration
 priv/repo/         migrations and seeds
 test/              the test suite; CI refuses a change that breaks it

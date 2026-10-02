@@ -1,0 +1,15 @@
+{
+  "kind": "direct",
+  "reason": "Authorized correction is a named ownership finding. Committed caller provisioning records and the guest version check support PostgreSQL 18, while caller CI selects 16. No starter runtime behavior changes; hosted access is prohibited. Probe queries server version only in a new synthetic database and removes it.",
+  "source_change": [
+    "docs/owner-journey-findings.md",
+    "docs/postgres-contract-2026-10-01.md",
+    "SYSTEM.md"
+  ],
+  "corrected": {
+    "command": "foundry capture -- python3 .foundry/postgres-ownership-probe.py",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790905302613923857.stdout.log"
+  },
+  "previous_behavioral_proof": ".foundry/caller-discovery-proof.json"
+}

@@ -28,11 +28,11 @@ or accounting syncs.
 
 | Source | Responsibility |
 | --- | --- |
-| `ShopWeb.CoreComponents` | Existing buttons, fields, icons and validation output |
-| `ShopWeb.Workbench` | Headers, status, notices, typed tables and split compositions |
+| `BusinessWeb.CoreComponents` | Existing buttons, fields, icons and validation output |
+| `BusinessWeb.Workbench` | Headers, status, notices, typed tables and split compositions |
 | `assets/css/workbench.css` | Operational colour roles, control and layout styles |
-| `ShopWeb.CatalogueLive` | Example state and catalogue navigation |
-| `Shop.Catalogue.Receiving` | Pure synthetic receiving transitions and validation |
+| `BusinessWeb.CatalogueLive` | Example state and catalogue navigation |
+| `Business.Catalogue.Receiving` | Pure synthetic receiving transitions and validation |
 | `priv/catalogue/receiving.json` | Versioned blueprint snapshot with source digest |
 
 Each component declares attributes and slots. Business contexts retain ownership
@@ -40,7 +40,7 @@ of authorization, persistence, concurrency and transactions. Presentation
 components must not derive permissions from visible or hidden controls.
 
 The component graph currently describes the implemented subset explicitly in the
-`Shop.Catalogue.Components` registry. New graph nodes must reference existing
+`Business.Catalogue.Components` registry. New graph nodes must reference existing
 nodes and reflect the actual composition contract. The blueprint snapshot is
 portable; rendering it does not require Bedrock source, credentials or a network
 call to the platform.
@@ -177,7 +177,7 @@ receiving rules. The model documents decimal/unit intent; the demonstrated recei
 still accepts whole units only. There is no generic model interpreter, generated
 persistence, arbitrary field mutation or live query binding in this increment.
 
-`Shop.Catalogue.Domain` reads only the carried blueprint. Bedrock's canonical
+`Business.Catalogue.Domain` reads only the carried blueprint. Bedrock's canonical
 source is `blueprints/receiving.v5.json`; the snapshot includes its SHA-256 digest.
 Domain definitions and bindings must remain consistent with executable examples.
 Tests check reference integrity, field paths, presentation targets and navigation.
@@ -255,11 +255,11 @@ public website, enquiry form, private enquiry queue, and follow-up composition
 inline. The staff Journey starts at the queue. Each stage names its performer and
 states what is carried forward; the protagonist and performer can differ.
 
-`Shop.Catalogue.Enquiries` keeps up to 50 synthetic enquiries in session state.
+`Business.Catalogue.Enquiries` keeps up to 50 synthetic enquiries in session state.
 Submitting the form adds a Lead to the queue and selects it for follow-up. Selection
 changes view state only. Saving follow-up preserves the original public request,
 updates status and private notes, and records the first saved follow-up time. No
-action persists data or sends messages. Both input paths reuse `Shop.Leads.Lead`
+action persists data or sends messages. Both input paths reuse `Business.Leads.Lead`
 changesets. Reloading clears the sample state.
 
 The model and domain explorers combine both blueprint snapshots, sharing primitive

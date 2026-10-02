@@ -1,0 +1,34 @@
+{
+  "command": "foundry capture -- python3 scripts/verify_qualification_cleanup.py --bedrock /tmp/starter-c4-bedrock --bedrock-revision 426ba1ba37c550a4fc793e598bb984d8b8a817b2 --case success",
+  "exit_code": 0,
+  "log": "/home/svetzal/.foundry/tool-logs/2-1790885681999504241.stdout.log",
+  "bedrock_revision": "426ba1ba37c550a4fc793e598bb984d8b8a817b2",
+  "starter_revision": "116969003b5c4d5c332d0169d3db613eab64af34",
+  "candidate_source_snapshots": [
+    "79387a14c80d275103f87517c74e5a26669e8f49c4831813bdcf8710c99c0337",
+    "79387a14c80d275103f87517c74e5a26669e8f49c4831813bdcf8710c99c0337"
+  ],
+  "observed_cleanup": {
+    "event": "cleanup",
+    "exit_code": 0,
+    "listener": false,
+    "database_exists": false,
+    "snapshots": [],
+    "live_children": [],
+    "lock_observations": 985,
+    "lock_violations": [],
+    "lock_released": true
+  },
+  "publication_states": {
+    "baseline": "baseline: actual HTTP/database smoke passed",
+    "published": "published: actual HTTP/database smoke passed"
+  },
+  "source_hashes": {
+    "scripts/qualify_callers.py": "ea289127da942c26cc025298534e1da9672c27b70e8b29560312dff681aa0a1c",
+    "scripts/qualify_workshop.py": "054f7296d82403820281e4be5d31c66eab547b1ab574a4293cc2cf4dbc069b4d",
+    "scripts/verify_workshop_cleanup.py": "ed63becebf751a7fa6d378730d57226d986885655907c242a72637d6a7f3436c",
+    "scripts/qualification_seed.exs": "7e8e78379eef629571d9abc1d2b48d224e210050abd09d902758d890ce848904",
+    "lib/business/smoke.ex": "7ccbe5e6381144d569acc19ceb21dacf2dc46612e254e37d0e58bd8b13c88527",
+    "test/fixtures/website_scene.json": "d218c9f590f28e6d986348f32567ed654b81fada3bdf2fc0370633f89e8aaeb2"
+  }
+}

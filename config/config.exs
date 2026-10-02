@@ -7,39 +7,40 @@
 # General application configuration
 import Config
 
-config :shop, :scopes,
+config :business, :scopes,
   user: [
     default: true,
-    module: Shop.Accounts.Scope,
+    module: Business.Accounts.Scope,
     assign_key: :current_scope,
     access_path: [:user, :id],
     schema_key: :user_id,
     schema_type: :binary_id,
     schema_table: :users,
-    test_data_fixture: Shop.AccountsFixtures,
+    test_data_fixture: Business.AccountsFixtures,
     test_setup_helper: :register_and_log_in_user
   ]
 
-config :shop,
-  ecto_repos: [Shop.Repo],
+config :business,
+  ecto_repos: [Business.Repo],
   generators: [timestamp_type: :utc_datetime]
 
-# The shop this system belongs to. The forge substitutes the placeholder
-# when it creates the repository; SHOP_NAME overrides it at runtime.
-config :shop, :shop_name, "TestShop"
+# Fallback for an unconfigured starter. Generated names are data, never source.
+# Existing systems may retain their baked-in name here; runtime preserves it
+# when priv/business.json and the environment overrides are absent.
+config :business, :business_name, "Business"
 
 # Sender of every email the system sends. Production reads MAIL_FROM.
-config :shop, :mail_from, "noreply@localhost"
+config :business, :mail_from, "noreply@localhost"
 
 # Configures the endpoint
-config :shop, ShopWeb.Endpoint,
+config :business, BusinessWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: ShopWeb.ErrorHTML, json: ShopWeb.ErrorJSON],
+    formats: [html: BusinessWeb.ErrorHTML, json: BusinessWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: Shop.PubSub,
+  pubsub_server: Business.PubSub,
   live_view: [signing_salt: "vc6QTUuk"]
 
 # Configures the mailer
@@ -49,12 +50,12 @@ config :shop, ShopWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :shop, Shop.Mailer, adapter: Swoosh.Adapters.Local
+config :business, Business.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.28.2",
-  shop: [
+  business: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
@@ -64,7 +65,7 @@ config :esbuild,
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "4.3.3",
-  shop: [
+  business: [
     args: ~w(
       --input=assets/css/app.css
       --output=priv/static/assets/css/app.css

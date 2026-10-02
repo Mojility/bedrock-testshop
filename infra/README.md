@@ -28,7 +28,7 @@ its database and session secrets. This recipe has not received the hosted
 pilot's full operational qualification.
 
 Required inputs are `DomainName`, `SecretKeyBase`, and an explicit 40-character
-commit SHA in `ImageTag`. `ImageRepositoryName` defaults to `shop` and must
+commit SHA in `ImageTag`. `ImageRepositoryName` defaults to `business` and must
 match the CI repository variable. `HostedZoneId` and `CreateSesIdentity` control
 DNS and SES setup. `InstanceType` must be an ARM type accepted by the template.
 
@@ -55,7 +55,7 @@ until that image exists. Point the domain at the `PublicIP` output if DNS is
 managed separately. Check SES identity verification and Canadian sending access.
 
 For subsequent releases, qualify the image and migrations, then update the
-protected `/opt/shop/image` file to the qualified full ECR image reference
+protected `/opt/business/image` file to the qualified full ECR image reference
 (`repository-uri@sha256:digest`) and restart the service
 through trusted SSM access. Restarting a service with the old image reference
 does not deploy a new image. The current bootstrap uses the stack image setting
@@ -72,7 +72,7 @@ and configure `MEDIA_BUCKET` plus a renewed, application-scoped
 automatically create that bucket or renewer. Do not silently lose photographs
 or grant fleet permissions to make them load.
 
-Establish the intended owner through `Shop.Release.bootstrap_owner/1` and check
+Establish the intended owner through `Business.Release.bootstrap_owner/1` and check
 sign-in before switching traffic. The recipe trusts only local Caddy peers
 `127.0.0.1` and `::1`. Keep forwarding headers from other peers untrusted. When
 moving leads, freeze old submissions, transfer records only within Canada,

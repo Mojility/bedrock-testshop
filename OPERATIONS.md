@@ -11,9 +11,9 @@ in WEBSITE.md; authenticated workflows compose typed Phoenix components.
 | Layer | Owner | Contract |
 | --- | --- | --- |
 | Foundations | `assets/css/app.css` | Semantic colours, supported light/dark themes, typography, spacing, focus and motion |
-| Controls | `ShopWeb.CoreComponents` | Labelled inputs, buttons, icons, validation and flash feedback |
-| Workflow components | `ShopWeb.Operations` | Page header, panel, status, empty state, form actions and labelled facts |
-| Staff shell | `ShopWeb.Layouts.app`, `ShopWeb.StaffNavigation` | One navigation registry, current location, account controls and responsive content width |
+| Controls | `BusinessWeb.CoreComponents` | Labelled inputs, buttons, icons, validation and flash feedback |
+| Workflow components | `BusinessWeb.Operations` | Page header, panel, status, empty state, form actions and labelled facts |
+| Staff shell | `BusinessWeb.Layouts.app`, `BusinessWeb.StaffNavigation` | One navigation registry, current location, account controls and responsive content width |
 | Pages | Staff LiveViews | Compose the patterns, own form state and invoke authorized business contexts |
 | Business rules | Contexts and database | Permissions, validation, relationships, concurrency, transactions and audit history |
 
@@ -25,7 +25,7 @@ interaction state and authorization remain explicit application code.
 
 ## Existing components
 
-Use `alias ShopWeb.Operations` in the page and keep `Layouts.app` as its outer
+Use `alias BusinessWeb.Operations` in the page and keep `Layouts.app` as its outer
 wrapper. Pass `current_scope` and a `current_section` matching the navigation ID.
 Leads and Team are executable examples.
 

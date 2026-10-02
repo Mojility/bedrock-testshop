@@ -1,0 +1,11 @@
+{
+  "reason": "Interrupted two port-lock-waiting probes after passing isolated-port proof; tool interruption killed process groups before Python finally blocks ran. Explicit cleanup removed only the two owned synthetic snapshots and databases. No listeners were started.",
+  "snapshots_removed": [
+    "/tmp/qualification-2fg0f7jl",
+    "/tmp/qualification-o3h2noij"
+  ],
+  "databases_removed": [
+    "business_test_name_438ec8d1bef51830",
+    "business_test_name_04a389748a0638d7"
+  ]
+}

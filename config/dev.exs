@@ -4,11 +4,11 @@ import Config
 # The standard Postgres variables override the defaults. Homebrew on macOS
 # makes a superuser named after your account with no password: either
 # `createuser -s postgres` once, or `export PGUSER=$USER PGPASSWORD=`.
-config :shop, Shop.Repo,
+config :business, Business.Repo,
   username: System.get_env("PGUSER") || "postgres",
   password: System.get_env("PGPASSWORD") || "postgres",
   hostname: System.get_env("PGHOST") || "localhost",
-  database: "shop_dev",
+  database: "business_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -19,7 +19,7 @@ config :shop, Shop.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :shop, ShopWeb.Endpoint,
+config :business, BusinessWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("PORT") || "4000")],
@@ -28,8 +28,8 @@ config :shop, ShopWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "AOzGax6q5/bSJ1DEoayqEmM1iqOw/z+ojlxkkzzYKWaL5vWRFbVWXZJ8Hrp1IEYk",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:shop, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:shop, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:business, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:business, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -56,18 +56,18 @@ config :shop, ShopWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :shop, ShopWeb.Endpoint,
+config :business, BusinessWeb.Endpoint,
   live_reload: [
     web_console_logger: true,
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/shop_web/(?:controllers|live|components|router)/?.*\.(ex|heex)$"
+      ~r"lib/business_web/(?:controllers|live|components|router)/?.*\.(ex|heex)$"
     ]
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :shop, dev_routes: true
+config :business, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"

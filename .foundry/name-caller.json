@@ -1,0 +1,27 @@
+{
+  "command": "foundry capture -- python3 scripts/qualify_callers.py --bedrock /tmp/name-bedrock-trunk --bedrock-revision 78767528c45c0d9412c4cbc90d395c724ed1c5ee --snapshot-parent /tmp",
+  "exit_code": 0,
+  "log": "/home/svetzal/.foundry/tool-logs/2-1790901202146219571.stdout.log",
+  "candidate_materialization_sha256": "46e76e59298d22b5778f5e330c48ce989c6b2ced96ef59aca238b39ef19cff84",
+  "bedrock_revision": "78767528c45c0d9412c4cbc90d395c724ed1c5ee",
+  "command_sources": {
+    "bootstrap.ex": "24be9947207a50d9f108c68960351a715cc49fb6cbfeeffaee099f309306ae84",
+    "preparation.ex": "635f421f32ba3dc5fb1bd523329c4d072110666960cd2eef80011a9251f380f9"
+  },
+  "observations": [
+    "Baseline and compatible synthetic published state passed actual HTTP/database smoke",
+    "Cold and cached dependency preparation passed with current Bedrock command source",
+    "Nonempty deployed CSS including digested URLs; CSRF denial without writes; anonymous staff denial",
+    "Exact enquiry fields persisted; magic-link login established session for staff reads",
+    "Retained synthetic id, contact, request, source, legacy identity, inserted/seen timestamps, status and notes remained equal before and after smoke in both states",
+    "Staff HTTP rendered contact/request, submission timestamp and follow-up for new and retained enquiries; source/history integrity checked in SQL"
+  ],
+  "cleanup": {
+    "database": "qualification_95b8f6d947dfa9c60490",
+    "snapshot": "/tmp/qualification-smsdzshr",
+    "database_removed": true,
+    "snapshot_removed": true,
+    "listener_shutdown": "Qualification stop() waits for all live listener process-group members before releasing the shared port lock."
+  },
+  "limits": "Local PostgreSQL 16.15; project PostgreSQL 18 remains pinned. Synthetic scene/data and disabled mail; Contacted does not prove a reply or customer goal achieved. Current Bedrock JSON naming producer remains outstanding."
+}

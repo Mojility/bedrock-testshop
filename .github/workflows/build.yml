@@ -23,6 +23,14 @@ env:
   AWS_REGION: ca-central-1
 
 jobs:
+  integration:
+    if: github.repository == 'Mojility/bedrock-system-template' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: read
+      id-token: write
+    uses: Mojility/bedrock/.github/workflows/integration.yml@main
+    secrets: inherit
+
   # .tool-versions states the toolchain. A service container starts before
   # any step runs, so this job reads the PostgreSQL major for it.
   toolchain:
@@ -51,7 +59,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: shop_test
+          POSTGRES_DB: business_test
         ports:
           - 5432:5432
         options: >-
@@ -123,12 +131,61 @@ jobs:
         if: ${{ !cancelled() }}
         run: mix docs --warnings-as-errors
 
+  release-acceptance:
+    needs: toolchain
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:${{ needs.toolchain.outputs.postgres }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: 127.0.0.1
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-release-${{ hashFiles('.tool-versions') }}-${{ hashFiles('mix.lock') }}
+      - name: Runtime v1 release and HTTP/database smoke
+        run: python3 scripts/qualify_release.py
+      - name: Preserve release boundary logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-acceptance-logs
+          path: ~/.foundry/tool-logs/release-*.log
+
   build-and-push:
     permissions:
       contents: read
       id-token: write
-    needs: quality
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [quality, release-acceptance, integration]
+    # Customer repositories skip platform integration and retain standalone CI.
+    # Explicit results are required because !cancelled() permits skipped needs.
+    if: >-
+      ${{ !cancelled() &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.quality.result == 'success' &&
+      needs.release-acceptance.result == 'success' &&
+      (github.repository == 'Mojility/bedrock-system-template' && needs.integration.result == 'success' ||
+       github.repository != 'Mojility/bedrock-system-template' && needs.integration.result == 'skipped') }}
     runs-on: ubuntu-24.04-arm
 
     steps:
@@ -136,7 +193,7 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
       - name: Build image
-        run: docker buildx build --platform linux/arm64 --load -t shop:${{ github.sha }} .
+        run: docker buildx build --platform linux/arm64 --load -t business:${{ github.sha }} .
 
       - name: Skip push (no AWS_ROLE_ARN)
         if: vars.AWS_ROLE_ARN == ''
@@ -172,7 +229,7 @@ jobs:
               echo "Reusing immutable image $REGISTRY/$REPOSITORY@$existing" >> "$GITHUB_STEP_SUMMARY"
               continue
             fi
-            docker tag "shop:${{ github.sha }}" "$REGISTRY/$REPOSITORY:$tag"
+            docker tag "business:${{ github.sha }}" "$REGISTRY/$REPOSITORY:$tag"
             docker push "$REGISTRY/$REPOSITORY:$tag"
             echo "Pushed $REGISTRY/$REPOSITORY:$tag" >> "$GITHUB_STEP_SUMMARY"
           done

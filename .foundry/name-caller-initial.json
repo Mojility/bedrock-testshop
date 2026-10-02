@@ -1,0 +1,6 @@
+{
+  "command": "foundry capture -- python3 scripts/qualify_callers.py --bedrock /tmp/name-bedrock-trunk --bedrock-revision 78767528c45c0d9412c4cbc90d395c724ed1c5ee --snapshot-parent /tmp",
+  "exit_code": 1,
+  "log": "/home/svetzal/.foundry/tool-logs/2-1790900699362481479.stdout.log",
+  "reason": "Source stability gate rejected after DOM assertion and long-name reflow were corrected; no database or listener had been created. Snapshot removed."
+}

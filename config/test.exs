@@ -8,23 +8,23 @@ import Config
 # The standard Postgres variables override the defaults. Homebrew on macOS
 # makes a superuser named after your account with no password: either
 # `createuser -s postgres` once, or `export PGUSER=$USER PGPASSWORD=`.
-config :shop, Shop.Repo,
+config :business, Business.Repo,
   username: System.get_env("PGUSER") || "postgres",
   password: System.get_env("PGPASSWORD") || "postgres",
   hostname: System.get_env("PGHOST") || "localhost",
-  database: "shop_test#{System.get_env("MIX_TEST_PARTITION")}",
+  database: "business_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :shop, ShopWeb.Endpoint,
+config :business, BusinessWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "+LMfNOhPIm268CSfhtDUL5+aBXHrgZFpFiwarlfFn87CgvNkrpAjYc4W4bh8X5ZF",
   server: false
 
 # In test we don't send emails
-config :shop, Shop.Mailer, adapter: Swoosh.Adapters.Test
+config :business, Business.Mailer, adapter: Swoosh.Adapters.Test
 
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
@@ -39,7 +39,7 @@ config :phoenix, :plug_init_mode, :runtime
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
-config :shop, :lead_notifications, false
+config :business, :lead_notifications, false
 
 # Exercise the development-only catalogue routes in integration tests.
-config :shop, dev_routes: true
+config :business, dev_routes: true

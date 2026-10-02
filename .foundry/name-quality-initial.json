@@ -1,0 +1,105 @@
+{
+  "environment": {
+    "MIX_ENV": "test",
+    "ERL_FLAGS": "+S 4:4",
+    "HEX_HOME": "/tmp/starter-c9-tools/hex",
+    "MIX_TEST_PARTITION": "_name_c9_0d7470d4ba5f"
+  },
+  "checks": [
+    {
+      "command": "MIX_ENV=test mix deps.get",
+      "exit_code": 0,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/13-1790900752579134143.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/13-1790900752579134143.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix format --check-formatted",
+      "exit_code": 0,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/65-1790900754485016680.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/65-1790900754485016680.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix compile --warnings-as-errors",
+      "exit_code": 0,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/115-1790900755270423746.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/115-1790900755270423746.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix deps.unlock --check-unused",
+      "exit_code": 0,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/165-1790900767658113673.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/165-1790900767658113673.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix test --cover",
+      "exit_code": 2,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/213-1790900768229772099.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/213-1790900768229772099.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix credo --strict",
+      "exit_code": 0,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/349-1790900779972134404.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/349-1790900779972134404.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix dialyzer",
+      "exit_code": 0,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/399-1790900782213531588.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/399-1790900782213531588.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix docs --warnings-as-errors",
+      "exit_code": 0,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/451-1790901006419652948.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/451-1790901006419652948.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix hex.audit",
+      "exit_code": 0,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/501-1790901009903034273.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/501-1790901009903034273.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix deps.audit",
+      "exit_code": 0,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/553-1790901012868760054.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/553-1790901012868760054.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix sobelow --config",
+      "exit_code": 0,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/607-1790901014963940129.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/607-1790901014963940129.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix precommit",
+      "exit_code": 0,
+      "required": true,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/657-1790901017292604866.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/657-1790901017292604866.stderr.log"
+    },
+    {
+      "command": "MIX_ENV=test mix hex.outdated --all",
+      "exit_code": 1,
+      "required": false,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/801-1790901051285665053.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/801-1790901051285665053.stderr.log"
+    }
+  ],
+  "cleanup": {
+    "database": "business_test_name_c9_0d7470d4ba5f",
+    "exit_code": 0
+  }
+}

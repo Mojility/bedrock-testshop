@@ -616,10 +616,10 @@
         "name": "Source and catalogue evidence",
         "description": "Public Lead changeset and staff follow-up validation are reused by the synthetic demo.",
         "sources": [
-          "lib/shop/leads/lead.ex",
-          "lib/shop/leads.ex",
-          "lib/shop_web/controllers/lead_controller.ex",
-          "lib/shop_web/live/leads_live.ex"
+          "lib/business/leads/lead.ex",
+          "lib/business/leads.ex",
+          "lib/business_web/controllers/lead_controller.ex",
+          "lib/business_web/live/leads_live.ex"
         ],
         "limitations": [
           "Actual calls, email replies, booking, assignment and response deadlines are not implemented in the walkthrough.",

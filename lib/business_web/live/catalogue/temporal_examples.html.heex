@@ -1,0 +1,105 @@
+<div>
+  <div :if={@mode == "timestamp"}>
+    <.form for={@timestamp_form} id="timestamp-form" phx-submit="timestamp" class="wb-form">
+      <Workbench.timestamp_field
+        id="sample-timestamp"
+        form={@timestamp_form}
+        zones={Business.Catalogue.Temporal.zones()}
+      />
+      <.button class="wb-button">Resolve timestamp</.button>
+    </.form>
+    <Workbench.notice :if={@timestamp_result} id="resolved-timestamp" tone="success">
+      Exact instant: <time datetime={DateTime.to_iso8601(@timestamp_result)}>{DateTime.to_iso8601(@timestamp_result)}</time>. The local time and selected zone determine this UTC value.
+    </Workbench.notice>
+  </div>
+  <Workbench.split :if={@mode == "schedule"} id="schedule-composition">
+    <Workbench.record_header
+      id="schedule-header"
+      title="Schedule warehouse work"
+      reference="Crew A · Main warehouse"
+      description="One-off bookings; adjacent windows may meet, overlapping bookings are rejected."
+    />
+    <.form for={@schedule_form} id="schedule-form" phx-submit="schedule" class="wb-form">
+      <Workbench.time_range
+        id="appointment-window"
+        form={@schedule_form}
+        zones={Business.Catalogue.Temporal.zones()}
+      />
+      <.button class="wb-button">Add booking</.button>
+    </.form>
+    <:inspector>
+      <h3>Crew A agenda</h3><p role="status" aria-atomic="true">
+        Bookings scheduled: {length(@appointments)}.
+      </p>
+      <p :if={@appointments == []}>
+        No bookings yet. Try a two-hour receiving shift, then an adjacent shift.
+      </p>
+      <ol class="wb-history">
+        <li :for={booking <- @appointments} id={"booking-#{booking.id}"}>
+          <strong>Warehouse work · {booking.minutes} minutes</strong><small><time datetime={
+            DateTime.to_iso8601(booking.starts_at)
+          }>{Business.Catalogue.Temporal.display(booking.starts_at, booking.zone)}</time></small><small>Until
+          <time datetime={DateTime.to_iso8601(booking.ends_at)}>{Business.Catalogue.Temporal.display(
+            booking.ends_at,
+            booking.zone
+          )}</time></small><small>{booking.zone} · actual elapsed duration</small>
+        </li>
+      </ol>
+    </:inspector>
+  </Workbench.split>
+  <div :if={@mode in ["dates", "movements"]} class="catalogue-panel">
+    <h3>{if @mode == "movements", do: "Stock movement history · MAT-112", else: "Date range"}</h3>
+    <p>
+      Occurrence dates in America/Toronto. The imported sample history opens with 6 received units and 2 transferred from Van 02; deliveries recorded in this session appear here too.
+    </p>
+    <.form
+      for={@range_form}
+      id="movement-range"
+      phx-change="date_range"
+      phx-submit="date_range"
+      class="wb-form"
+    >
+      <Workbench.date_range id="movement-dates" form={@range_form} /><.button class="wb-button secondary">Apply range</.button>
+    </.form>
+    <Workbench.notice :if={!@range_form.source.valid?} id="range-invalid" tone="warning">
+      The range is invalid. Showing the last valid range: {@date_range.from} through {@date_range.to}.
+    </Workbench.notice>
+    <p role="status" aria-atomic="true">
+      Movements in the selected range: {length(
+        Business.Catalogue.Temporal.in_date_range(
+          Business.Catalogue.Temporal.movements(@receipt),
+          @date_range,
+          "America/Toronto"
+        )
+      )}.
+    </p>
+    <Workbench.data_table
+      id="movement-table"
+      caption="Received and transferred stock"
+      rows={
+        Business.Catalogue.Temporal.in_date_range(
+          Business.Catalogue.Temporal.movements(@receipt),
+          @date_range,
+          "America/Toronto"
+        )
+      }
+      striped
+    >
+      <:col :let={event} label="Movement">
+        <strong>{event.kind} · {event.quantity} each</strong><small>{event.route}</small><small>{event.reference}</small>
+      </:col>
+      <:col :let={event} label="Occurred at">
+        <time datetime={DateTime.to_iso8601(event.occurred_at)}>{Business.Catalogue.Temporal.display(
+          event.occurred_at,
+          "America/Toronto"
+        )}</time>
+      </:col>
+      <:col :let={event} label="Recorded at">
+        <time datetime={DateTime.to_iso8601(event.recorded_at)}>{Business.Catalogue.Temporal.display(
+          event.recorded_at,
+          "America/Toronto"
+        )}</time>
+      </:col>
+    </Workbench.data_table>
+  </div>
+</div>

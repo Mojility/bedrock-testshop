@@ -1,4 +1,4 @@
-defmodule Shop.Repo.Migrations.AddLeadNotifications do
+defmodule Business.Repo.Migrations.AddLeadNotifications do
   use Ecto.Migration
 
   def change do

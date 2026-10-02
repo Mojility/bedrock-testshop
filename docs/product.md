@@ -1,6 +1,6 @@
 # Product
 
-{{SHOP_NAME}} owns the source, business records, and deployment choices for this
+TestShop owns the source, business records, and deployment choices for this
 application. It combines a public website with a private workspace for enquiries
 and staff access. It can operate without the service that originally generated
 it.

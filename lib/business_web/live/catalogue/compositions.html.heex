@@ -1,0 +1,448 @@
+<div class="catalogue-body">
+  <section :if={!assigns[:embedded]} class="catalogue-intro flush">
+    <h2>The task defines the composition.</h2><p>
+      Compositions using shared controls. Receiving and the stock view share the same in-memory record. Explore them without losing your changes.
+    </p>
+  </section>
+  <nav :if={!assigns[:embedded]} class="catalogue-tabs" aria-label="Composition examples">
+    <.button
+      :for={
+        {value, label} <- [
+          {"receiving", "Record + inspector"},
+          {"stock", "Table + inspector"},
+          {"task", "Task + evidence"},
+          {"schedule", "Schedule + agenda"},
+          {"movements", "Stock movement history"},
+          {"website-intro", "Public website"},
+          {"enquiry-form", "Enquiry form"},
+          {"lead-queue", "Enquiry queue"},
+          {"lead-follow-up", "Lead + follow-up"}
+        ]
+      }
+      phx-click="scenario"
+      phx-value-scenario={value}
+      class={if @scenario == value, do: "wb-button", else: "wb-button secondary"}
+      aria-pressed={to_string(@scenario == value)}
+    >{label}</.button>
+  </nav>
+  <.lead_examples
+    :if={@scenario in ~w(website-intro enquiry-form lead-queue lead-follow-up)}
+    state={@enquiries}
+    mode={@scenario}
+  />
+  <.temporal_examples :if={@scenario in ["schedule", "movements"]} {@temporal} mode={@scenario} />
+  <Workbench.split :if={@scenario == "receiving"} id="receiving-composition">
+    <.link
+      :if={assigns[:embedded] && !assigns[:journey]}
+      patch="/dev/catalogue/graph?node=header"
+      class="catalogue-part-label"
+    >Explore record header ↗</.link>
+    <Workbench.record_header
+      id="receipt-header"
+      title="Receive materials"
+      reference="PO-2086 · Electra Supply"
+      description="Main warehouse · Bin A-06"
+    >
+      <:actions>
+        <Workbench.status
+          label={
+            cond do
+              @receipt.received == 0 -> "Awaiting delivery"
+              @receipt.received < 24 -> "Part received"
+              true -> "Received"
+            end
+          }
+          tone={if @receipt.received == 24, do: "success", else: "warning"}
+        />
+      </:actions>
+    </Workbench.record_header>
+    <.link
+      :if={assigns[:embedded] && !assigns[:journey]}
+      patch="/dev/catalogue/graph?node=table"
+      class="catalogue-part-label"
+    >Explore data table ↗</.link>
+    <Workbench.data_table id="receipt-lines" rows={[@receipt]} caption="Purchase order quantities">
+      <:col :let={_row} label="Item">
+        <strong>15A AFCI breaker</strong><small>MAT-112 · $64.00 each</small>
+      </:col><:col :let={row} label="Ordered" numeric>{row.ordered}</:col><:col
+        :let={row}
+        label="Received"
+        numeric
+      >
+        {row.received}
+      </:col><:col :let={row} label="Outstanding" numeric>{row.ordered - row.received}</:col>
+    </Workbench.data_table>
+    <.form
+      :if={@receipt.received < @receipt.ordered}
+      for={@form}
+      id="receipt-form"
+      phx-change="validate_receipt"
+      phx-submit="receive"
+      class="wb-form"
+    >
+      <h3>Record this delivery</h3><p class="catalogue-muted">
+        Try 8 units for a partial delivery, then receive the remaining 16.
+      </p>
+      <div class="wb-fields">
+        <.input
+          field={@form[:quantity]}
+          type="number"
+          label="Quantity received"
+          min="1"
+          step="1"
+          class="wb-input"
+          error_class="wb-input wb-invalid"
+        /><.input
+          field={@form[:reference]}
+          label="Delivery reference"
+          placeholder="e.g. Packing slip 481"
+          class="wb-input"
+          error_class="wb-input wb-invalid"
+        />
+      </div>
+      <Workbench.timestamp_field
+        id="receipt-time"
+        form={@form}
+        zones={Business.Catalogue.Temporal.zones()}
+        label="Delivery received at"
+      />
+      <input type="hidden" name={@form[:revision].name} value={@form[:revision].value} />
+      <Workbench.notice :if={@form[:revision].errors != []} id="receipt-conflict" tone="error">
+        This receipt was already applied. Review the updated quantities.
+      </Workbench.notice>
+      <.button id="record-receipt" class="wb-button" phx-disable-with="Recording…">Record receipt</.button>
+      <small>Records stock only. Does not approve or pay a supplier bill.</small>
+    </.form>
+    <div class="wb-pad">
+      <Workbench.notice :if={@result} id="receipt-result" tone="success">
+        {@result}
+      </Workbench.notice><Workbench.notice
+        :if={@receipt.received == 24}
+        id="receipt-complete"
+        tone="success"
+      >
+        All 24 units received. No further receipt can be recorded for this order.
+      </Workbench.notice><.button id="reset-receipt" class="wb-button secondary" phx-click="reset">Reset sample</.button>
+    </div>
+    <:inspector>
+      <.link
+        :if={assigns[:embedded] && !assigns[:journey]}
+        patch="/dev/catalogue/graph?node=inspector"
+        class="catalogue-part-label"
+      >Explore inspector ↗</.link>
+      <h3>Stock position</h3><dl class="wb-facts">
+        <div>
+          <dt>On hand</dt><dd id="on-hand">{@receipt.on_hand}</dd>
+        </div><div>
+          <dt>Reserved</dt><dd>{@receipt.reserved}</dd>
+        </div><div>
+          <dt>Available</dt><dd id="available">{@receipt.on_hand - @receipt.reserved}</dd>
+        </div>
+      </dl><p>Receiving increases on-hand stock. Existing job reservations stay unchanged.</p><div class="catalogue-rule">
+      </div><h3>Receipt history</h3><p :if={@receipt.history == []}>
+        No deliveries recorded yet.
+      </p><ol id="receipt-history" class="wb-history">
+        <li :for={receipt <- Enum.reverse(@receipt.history)} id={"receipt-#{receipt.sequence}"}>
+          <strong>{receipt.quantity} units received</strong><small>{receipt.reference} · Receipt {receipt.sequence}</small><small><time datetime={
+            DateTime.to_iso8601(receipt.occurred_at)
+          }>{Business.Catalogue.Temporal.display(receipt.occurred_at, receipt.zone)}</time></small>
+        </li>
+      </ol>
+    </:inspector>
+  </Workbench.split>
+  <Workbench.split :if={@scenario == "stock"} id="stock-composition">
+    <.link
+      :if={assigns[:embedded] && !assigns[:journey]}
+      patch="/dev/catalogue/graph?node=header"
+      class="catalogue-part-label"
+    >Explore record header ↗</.link>
+    <Workbench.record_header
+      id="stock-header"
+      title="Warehouse stock"
+      description="Main warehouse & vans · quantities in stocking units"
+    />
+    <.link
+      :if={assigns[:embedded] && !assigns[:journey]}
+      patch="/dev/catalogue/graph?node=search"
+      class="catalogue-part-label"
+    >Explore toolbar ↗</.link>
+    <Workbench.table_toolbar
+      id="stock-toolbar"
+      result_label={"#{@stock_page.total} of 2000 items"}
+    >
+      <:search>
+        <.form
+          for={@filter_form}
+          id="stock-filter"
+          phx-hook="WorkbenchSearch"
+          phx-change="filter"
+          phx-submit="filter"
+          class="wb-search"
+        >
+          <.icon name="hero-magnifying-glass" class="wb-search-icon size-4" />
+          <.input
+            field={@filter_form[:query]}
+            aria-label="Find stock"
+            placeholder="Find stock…"
+            class="wb-input"
+          />
+          <button
+            :if={@query != ""}
+            type="button"
+            id="clear-stock-search"
+            phx-click="clear_filter"
+            class="wb-search-clear"
+            aria-label="Clear stock search"
+          ><.icon name="hero-x-mark" class="size-4" /></button>
+        </.form>
+      </:search>
+      <:actions>
+        <.form
+          for={@stock_options}
+          id="stock-options"
+          phx-change="stock_options"
+          class="wb-stock-options"
+        >
+          <.input
+            field={@stock_options[:category]}
+            type="select"
+            aria-label="Stock category"
+            options={["All categories" | Business.Catalogue.Stock.categories()]}
+            class="wb-input"
+          />
+        </.form>
+
+        <.button
+          type="button"
+          phx-click="density"
+          class="wb-button secondary"
+          aria-pressed={to_string(@compact)}
+        ><.icon name="hero-bars-3" class="size-4" />Compact rows</.button>
+      </:actions>
+    </Workbench.table_toolbar>
+    <p class="sr-only" role="status" aria-atomic="true" id="stock-selection-status">
+      Selected: {@selected_part.name}, {@selected_part.id}. Details in Supporting context.
+    </p>
+    <a
+      href="#stock-composition-inspector"
+      class="wb-focus-link"
+      phx-click={JS.focus(to: "#stock-composition-inspector")}
+    >Skip table to selected part details</a>
+    <.link
+      :if={assigns[:embedded] && !assigns[:journey]}
+      patch="/dev/catalogue/graph?node=table"
+      class="catalogue-part-label"
+    >Explore data table ↗</.link>
+    <Workbench.data_table
+      id="stock-table"
+      rows={@stock_page.rows}
+      caption="Warehouse stock"
+      compact={@compact}
+      striped
+      sort_by={@stock_sort}
+      sort_direction={@stock_direction}
+      sort_event="sort_stock"
+      row_id={& &1.id}
+      selected_id={@selected}
+      row_click="select"
+    >
+      <:col :let={row} label="Item" sort_key="name">
+        <div class="wb-part-cell">
+          <img
+            :if={row.photo}
+            src={"/images/catalogue/parts/#{row.photo}.png"}
+            alt=""
+            loading="lazy"
+            width="40"
+            height="40"
+            class="wb-part-thumb"
+          />
+          <span :if={!row.photo} class="wb-part-thumb wb-photo-missing" title="No photo"><.icon
+            name="hero-cube"
+            class="size-5"
+          /></span>
+          <div>
+            <button
+              type="button"
+              class="wb-row-action"
+              aria-label={"#{row.name}, #{row.id}"}
+              aria-controls="stock-composition-inspector"
+              aria-pressed={to_string(@selected == row.id)}
+            >{row.name}</button><small>{row.id} · {row.bin} · {row.unit}</small><small>{row.maker} · {row.series}</small>
+          </div>
+        </div>
+      </:col><:col :let={row} label="On hand" sort_key="on_hand" numeric>{row.on_hand}</:col><:col
+        :let={row}
+        label="Reserved"
+        sort_key="reserved"
+        numeric
+      >
+        {row.reserved}
+      </:col><:col :let={row} label="Available" sort_key="available" numeric>
+        {row.on_hand - row.reserved}
+      </:col>
+    </Workbench.data_table>
+    <div :if={@stock_page.total == 0} id="stock-empty" class="wb-empty">
+      <h3>No matching materials</h3><p>Try a name, SKU or bin.</p><.button
+        type="button"
+        phx-click="clear_filter"
+        class="wb-button secondary catalogue-space"
+      >Clear search</.button>
+    </div>
+    <.link
+      :if={assigns[:embedded] && !assigns[:journey]}
+      patch="/dev/catalogue/graph?node=pagination"
+      class="catalogue-part-label"
+    >Explore pagination ↗</.link>
+    <Workbench.pagination
+      id="stock-pagination"
+      page={@stock_page.page}
+      pages={@stock_page.pages}
+      first={@stock_page.first}
+      last={@stock_page.last}
+      total={@stock_page.total}
+      event="stock_page"
+    >
+      <:options>
+        <.form
+          for={@stock_options}
+          id="stock-page-size"
+          phx-change="stock_options"
+          class="wb-stock-options"
+        >
+          <.input
+            field={@stock_options[:size]}
+            type="select"
+            aria-label="Rows per page"
+            options={[{"25 per page", 25}, {"50 per page", 50}, {"100 per page", 100}]}
+            class="wb-input"
+          />
+        </.form>
+      </:options>
+    </Workbench.pagination>
+    <:inspector>
+      <.link
+        :if={assigns[:embedded] && !assigns[:journey]}
+        patch="/dev/catalogue/graph?node=inspector"
+        class="catalogue-part-label"
+      >Explore inspector ↗</.link>
+      <small>Selected record · {@selected_part.id}</small>
+      <h3 id="selected-stock">{@selected_part.name}</h3>
+      <.link
+        :if={assigns[:embedded] && !assigns[:journey]}
+        patch="/dev/catalogue/graph?node=photo"
+        class="catalogue-part-label"
+      >Explore part photo ↗</.link>
+      <figure :if={@selected_part.photo} class="wb-part-photo">
+        <a
+          href={"/images/catalogue/parts/#{@selected_part.photo}.png"}
+          target="_blank"
+          rel="noopener"
+          aria-label="Open representative part photo (new tab)"
+        >
+          <img
+            src={"/images/catalogue/parts/#{@selected_part.photo}.png"}
+            alt={"Representative #{@selected_part.category} example"}
+            width="240"
+            height="180"
+          />
+        </a>
+        <figcaption>Generated category example · not an exact product photo</figcaption>
+      </figure>
+      <div
+        :if={!@selected_part.photo}
+        class="wb-part-photo wb-photo-missing"
+        id="stock-photo-missing"
+      >
+        <.icon name="hero-cube" class="size-8" /><span>No photo available</span>
+      </div>
+      <dl class="wb-facts">
+        <div>
+          <dt>Category</dt><dd>{@selected_part.category}</dd>
+        </div>
+        <div>
+          <dt>Manufacturer</dt><dd>{@selected_part.maker}</dd>
+        </div>
+        <div>
+          <dt>Range</dt><dd>{@selected_part.series}</dd>
+        </div>
+        <div>
+          <dt>Bin / unit</dt><dd>{@selected_part.bin} · {@selected_part.unit}</dd>
+        </div>
+        <div>
+          <dt>On hand / reserved</dt><dd>{@selected_part.on_hand} / {@selected_part.reserved}</dd>
+        </div>
+        <div>
+          <dt>Available</dt><dd>{@selected_part.on_hand - @selected_part.reserved}</dd>
+        </div>
+        <div>
+          <dt>Reorder point</dt><dd>{@selected_part.reorder}</dd>
+        </div>
+      </dl>
+      <Workbench.notice :if={!@stock_page.selected_matches} id="selection-filtered" tone="neutral">
+        Selected item is outside the current results.
+      </Workbench.notice>
+      <.link
+        :if={@selected == "MAT-112"}
+        patch="/dev/catalogue/graph?node=movement-history"
+        class="catalogue-relation"
+      >View received / transferred history</.link>
+      <p>Selected material stays open while you search, sort or turn pages.</p>
+      <.link
+        :if={assigns[:embedded] && !assigns[:journey]}
+        patch="/dev/catalogue/graph?node=record"
+        class="wb-button secondary catalogue-space"
+      >Open receiving example</.link>
+      <.button
+        :if={!assigns[:embedded]}
+        phx-click="scenario"
+        phx-value-scenario="receiving"
+        class="wb-button secondary catalogue-space"
+      >Open receiving example</.button>
+    </:inspector>
+  </Workbench.split>
+  <Workbench.split :if={@scenario == "task"} id="task-composition">
+    <.link
+      :if={assigns[:embedded] && !assigns[:journey]}
+      patch="/dev/catalogue/graph?node=header"
+      class="catalogue-part-label"
+    >Explore record header ↗</.link>
+    <Workbench.record_header
+      id="task-header"
+      title="Delivery inspection"
+      reference="Warehouse · receiving checklist"
+      description="An evidence task can reuse the same record-and-inspector layout."
+    /><div class="wb-pad">
+      <h3>Check packaging condition</h3><p class="catalogue-muted catalogue-space">
+        Inspect cartons before shelving. This example records a session-local check only.
+      </p><.button
+        id="inspection-toggle"
+        phx-click="task"
+        class="wb-button catalogue-space"
+        aria-pressed={to_string(@field_done)}
+      >{if @field_done, do: "Reopen check", else: "Mark packaging checked"}</.button><Workbench.notice
+        :if={@field_done}
+        id="inspection-done"
+        tone="success"
+      >
+        Packaging check complete.
+      </Workbench.notice>
+    </div><:inspector>
+      <h3>Completion evidence</h3><dl class="wb-facts">
+        <div>
+          <dt>Packaging check</dt><dd>
+            <Workbench.status
+              label={if @field_done, do: "Complete", else: "Needed"}
+              tone={if @field_done, do: "success", else: "warning"}
+            />
+          </dd>
+        </div>
+      </dl><p>
+        Attachment capture, signed evidence and business authorization are not implemented in this catalogue story.
+      </p>
+    </:inspector>
+  </Workbench.split>
+  <p :if={!assigns[:journey]} class="catalogue-footnote">
+    Contract: application state and mutations stay outside the presentation components. This story is executable; it is not an installed customer capability.
+  </p>
+</div>

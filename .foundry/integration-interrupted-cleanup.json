@@ -1,0 +1,8 @@
+{
+  "removed": [
+    "/tmp/bedrock-owner-proof-gw2u43zf",
+    "/tmp/bedrock-owner-proof-3auraiq4"
+  ],
+  "database": "bedrock_test_starter_c7_083990_e5324ba0c10d",
+  "private_sockets": "connection refused or missing after namespace shutdown"
+}

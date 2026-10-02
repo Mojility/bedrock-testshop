@@ -1,6 +1,6 @@
 # Customer system — agent guidance
 
-This is the business system of one shop, a web application written
+This is the business system of one company, a web application written
 using the Phoenix web framework. `SYSTEM.md` describes what it contains,
 how it is deployed, and where its data lives; keep it current in the same
 commit as any change that adds, removes, or moves something. `README.md`
@@ -27,6 +27,26 @@ previews, render compositions inline with their domain and component breakdowns.
 Isolate repeated instances' state and accessible IDs or render one trace at a time.
 Public/private mode labels explain context; they do not grant authorization.
 Use synthetic demo state without production persistence or messaging.
+
+Starter preparation changes must preserve the executable Bedrock caller contract.
+Run `python3 scripts/qualify_callers.py --bedrock /path/to/clean/bedrock-trunk`
+on the Canadian workstation after changes to preparation, assets, enquiry capture
+or authentication. Qualify both the unpublished page and the compatible synthetic
+published scene with deployed assets, `MIX_ENV=prod`, port 4000 and
+`scripts/smoke.exs`. Keep the shared port lock until every listener process stops;
+use a unique synthetic database and remove it and the snapshot on all exit paths.
+Never use customer repositories, records, mail or cloud credentials for this proof.
+
+Smoke must exercise HTTP and database behavior: nonempty CSS including digested
+URLs, CSRF denial without a write, anonymous staff denial, enquiry field persistence,
+magic-link session creation, and staff reading both the new enquiry and a retained
+synthetic enquiry with its contact, request, source, timestamps and follow-up intact.
+The qualification seeds the retained record before startup and checks it across
+both publication states. Capability-loss regressions must fail qualification;
+IDs, check counts and successful command receipts do not establish these outcomes.
+Preserve the scene fixture's compatibility hash and publication-output provenance.
+Record commands, exact source identities, results, limitations and cleanup in a
+dated sanitized log under `docs/`; retain the behavioral proof under `.foundry/`.
 
 Name actions by their real business effect. “Request electrical service” avoids
 the employment ambiguity of “Ask about a job.” A Contacted status does not prove
@@ -92,8 +112,8 @@ publication output. Compact JSON does not establish provenance.
 - `priv/published_site/` and `priv/static/assets/published/` contain publication
   outputs. Their local guidance identifies the producer and editable inputs.
 - `priv/website/components.json` is editable customer component source.
-- `lib/shop/website/` owns component definitions, expansion and public content;
-  `lib/shop_web/website_html.ex` implements HTML rendering. Business behavior
+- `lib/business/website/` owns component definitions, expansion and public content;
+  `lib/business_web/website_html.ex` implements HTML rendering. Business behavior
   belongs in the application's contexts, controllers and LiveViews.
 
 Read `WEBSITE.md` for the source map and compatibility boundary. Follow the
@@ -191,7 +211,7 @@ LiveViews that require login should **always be placed inside the **existing**
       pipe_through [:browser, :require_authenticated_user]
 
       live_session :require_authenticated_user,
-        on_mount: [{ShopWeb.UserAuth, :require_authenticated}] do
+        on_mount: [{BusinessWeb.UserAuth, :require_authenticated}] do
         # phx.gen.auth generated routes
         live "/users/settings", UserLive.Settings, :edit
         live "/users/settings/confirm-email/:token", UserLive.Settings,
@@ -219,7 +239,7 @@ LiveViews that can work with or without authentication, **always use the
       pipe_through [:browser]
 
       live_session :current_user,
-        on_mount: [{ShopWeb.UserAuth, :mount_current_scope}] do
+        on_mount: [{BusinessWeb.UserAuth, :mount_current_scope}] do
         # our own routes that work with or without authentication
         live "/", PublicLive
       end

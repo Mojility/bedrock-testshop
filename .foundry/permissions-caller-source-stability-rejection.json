@@ -1,0 +1,12 @@
+{
+  "command": "foundry capture -- python3 scripts/qualify_callers.py --bedrock /tmp/starter-c8-permissions/clean-bedrock --bedrock-revision 78767528c45c0d9412c4cbc90d395c724ed1c5ee --snapshot-parent /tmp/starter-c8-permissions",
+  "exit_code": 1,
+  "log": "/home/svetzal/.foundry/tool-logs/2-1790897218099760601.stdout.log",
+  "error_log": "/home/svetzal/.foundry/tool-logs/2-1790897218099760601.stderr.log",
+  "reason": "Documentation finalized while the stable-source qualifier was running. Not a behavioral rejection.",
+  "cleanup": {
+    "snapshot_removed": "/tmp/starter-c8-permissions/qualification-hkcozaza",
+    "database_created": false,
+    "listener_started": false
+  }
+}

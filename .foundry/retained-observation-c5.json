@@ -1,0 +1,30 @@
+{
+  "expected": {
+    "id": "3d98b060-ce92-4ae7-9843-6449a1b158b8",
+    "message": "Replace the kitchen light",
+    "name": "Retained synthetic enquiry",
+    "status": "contacted",
+    "source": "synthetic-import",
+    "phone": "555-0101",
+    "email": "retained@example.invalid",
+    "inserted_at": "2026-09-01T12:00:00+00:00",
+    "notes": "Awaiting preferred service date",
+    "seen_at": "2026-09-02T13:00:00+00:00",
+    "legacy_id": "ccc82ebd-f07a-4855-a005-4af2b85f7939"
+  },
+  "observed": {
+    "id": "3d98b060-ce92-4ae7-9843-6449a1b158b8",
+    "message": "Replace the kitchen light",
+    "name": "Retained synthetic enquiry",
+    "status": "contacted",
+    "source": "synthetic-import",
+    "phone": "555-0101",
+    "email": "retained@example.invalid",
+    "inserted_at": "2026-09-01T12:00:00+00:00",
+    "notes": "Awaiting preferred service date",
+    "seen_at": "2026-09-02T13:00:00+00:00",
+    "legacy_id": "ccc82ebd-f07a-4855-a005-4af2b85f7939"
+  },
+  "all_fields_preserved": true,
+  "query": "select row_to_json(r) from (select id, message, name, status, source, phone, email, inserted_at, notes, seen_at, legacy_id from leads where id='3d98b060-ce92-4ae7-9843-6449a1b158b8') r"
+}

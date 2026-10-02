@@ -1,4 +1,4 @@
-defmodule Shop.Repo.Migrations.AddBusinessWorkspace do
+defmodule Business.Repo.Migrations.AddBusinessWorkspace do
   use Ecto.Migration
 
   def change do

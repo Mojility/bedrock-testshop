@@ -1,0 +1,10 @@
+{
+  "command": "MIX_ENV=test mix precommit",
+  "exit_code": 0,
+  "logs": {
+    "stdout": "/home/svetzal/.foundry/tool-logs/14-1790903057899032080.stdout.log",
+    "stderr": "/home/svetzal/.foundry/tool-logs/14-1790903057899032080.stderr.log"
+  },
+  "database": "business_test_name_final_95a15f116f1e",
+  "cleanup_exit_code": 0
+}

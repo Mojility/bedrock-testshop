@@ -1,0 +1,100 @@
+{
+  "kind": "behavioral",
+  "source_change": "Add the starter-only reusable integration call with inherited secrets and require its success before starter ARM64 image publication; preserve customer standalone CI. Workflow regression rejects the committed missing dependency. The real shared owner-journey smoke rejects a synthetic controller that reports success without persisting an enquiry; the compatible candidate baseline passes unchanged HTTP/database checks in both publication states.",
+  "rejecting": {
+    "command": "foundry capture -- env PATH=/tmp/starter-integration-bin-083990:$PATH python3 /tmp/starter-integration-isolated-083990.py broken",
+    "exit_code": 1,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790892282861303690.stdout.log",
+    "error_log": "/home/svetzal/.foundry/tool-logs/2-1790892282861303690.stderr.log",
+    "failure": "lead_persistence in unpublished and published real smoke"
+  },
+  "corrected": {
+    "command": "foundry capture -- env PATH=/tmp/starter-integration-bin-083990:$PATH python3 /tmp/starter-integration-isolated-083990.py corrected",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790893483812201571.stdout.log",
+    "error_log": "/home/svetzal/.foundry/tool-logs/2-1790893483812201571.stderr.log",
+    "record": ".foundry/integration-corrected.json",
+    "source_record": ".foundry/integration-sources-corrected.json",
+    "resource_retry": "Only a pre-generation contended shared lock was retried; no application or smoke failure was retried."
+  },
+  "workflow_regression": {
+    "rejecting": {
+      "command": "foundry capture -- env MIX_ENV=test HEX_HOME=/tmp/starter-c6-tools/hex ERL_FLAGS=\"+S 2:2\" MIX_TEST_PARTITION=_workflow_c7_083990 BUILD_WORKFLOW_PATH=/tmp/starter-build-before-083990.yml mix test test/maintenance/build_workflow_test.exs",
+      "exit_code": 2,
+      "log": "/home/svetzal/.foundry/tool-logs/2-1790893704775019759.stdout.log"
+    },
+    "corrected": {
+      "command": "foundry capture -- env MIX_ENV=test HEX_HOME=/tmp/starter-c6-tools/hex ERL_FLAGS=\"+S 2:2\" MIX_TEST_PARTITION=_workflow_c7_083990 mix test test/maintenance/build_workflow_test.exs",
+      "exit_code": 0,
+      "log": "/home/svetzal/.foundry/tool-logs/2-1790893686200780630.stdout.log"
+    }
+  },
+  "github_execution": "not performed; this is local verification",
+  "release_checks": {
+    "unpublished": {
+      "style_assets_checked": 3,
+      "photo_variants_checked": 0,
+      "enquiry": {
+        "id": "3890e734-89f7-4682-980e-2b8fe22511d6",
+        "message": "Exact enquiry 2892a10ef7d942a0888fdb883c96c4e5",
+        "name": "Release rehearsal 2892a10ef7d942a0888fdb883c96c4e5",
+        "email": "enquiry-2892a10ef7d942a0888fdb883c96c4e5@example.invalid",
+        "phone": "555-0100"
+      },
+      "publication": "unpublished",
+      "preview": "not applicable: unpublished",
+      "rejecting": {
+        "command": "python3 /tmp/starter-integration-sources-083990/bedrock/scripts/owner_journey_release.py --base /tmp/bedrock-owner-proof-6usy845u --socket /tmp/bedrock-owner-proof-6usy845u/postgres-socket --output /tmp/bedrock-owner-proof-6usy845u/release-check.json --lead-route /__missing_release_leads",
+        "exit_code": 1,
+        "log": "/home/svetzal/.foundry/tool-logs/1779-1790894939065728537.stderr.log",
+        "stdout_log": "/home/svetzal/.foundry/tool-logs/1779-1790894939065728537.stdout.log",
+        "stderr_log": "/home/svetzal/.foundry/tool-logs/1779-1790894939065728537.stderr.log"
+      },
+      "corrected": {
+        "command": "python3 /tmp/starter-integration-sources-083990/bedrock/scripts/owner_journey_release.py --base /tmp/bedrock-owner-proof-6usy845u --socket /tmp/bedrock-owner-proof-6usy845u/postgres-socket --output /tmp/bedrock-owner-proof-6usy845u/release-check.json",
+        "exit_code": 0,
+        "log": "/home/svetzal/.foundry/tool-logs/1789-1790894939156602601.stdout.log",
+        "stdout_log": "/home/svetzal/.foundry/tool-logs/1789-1790894939156602601.stdout.log",
+        "stderr_log": "/home/svetzal/.foundry/tool-logs/1789-1790894939156602601.stderr.log"
+      }
+    },
+    "published": {
+      "style_assets_checked": 31,
+      "photo_variants_checked": 0,
+      "enquiry": {
+        "id": "809fb868-beae-49ad-ab95-a01ffc3e56cb",
+        "message": "Exact enquiry 07aa75f6469a4b4e92d5b217b382c553",
+        "name": "Release rehearsal 07aa75f6469a4b4e92d5b217b382c553",
+        "email": "enquiry-07aa75f6469a4b4e92d5b217b382c553@example.invalid",
+        "phone": "555-0100"
+      },
+      "publication": "published",
+      "preview": "passed; unauthorized, malformed and incompatible requests rejected",
+      "rejecting": {
+        "command": "python3 /tmp/starter-integration-sources-083990/bedrock/scripts/owner_journey_release.py --base /tmp/bedrock-owner-proof-6usy845u/published --socket /tmp/bedrock-owner-proof-6usy845u/postgres-socket --output /tmp/bedrock-owner-proof-6usy845u/published/release-check.json --artifact-root /tmp/bedrock-owner-proof-6usy845u --lead-route /__missing_release_leads",
+        "exit_code": 1,
+        "log": "/home/svetzal/.foundry/tool-logs/3770-1790895294599842360.stderr.log",
+        "stdout_log": "/home/svetzal/.foundry/tool-logs/3770-1790895294599842360.stdout.log",
+        "stderr_log": "/home/svetzal/.foundry/tool-logs/3770-1790895294599842360.stderr.log"
+      },
+      "corrected": {
+        "command": "python3 /tmp/starter-integration-sources-083990/bedrock/scripts/owner_journey_release.py --base /tmp/bedrock-owner-proof-6usy845u/published --socket /tmp/bedrock-owner-proof-6usy845u/postgres-socket --output /tmp/bedrock-owner-proof-6usy845u/published/release-check.json --artifact-root /tmp/bedrock-owner-proof-6usy845u",
+        "exit_code": 0,
+        "log": "/home/svetzal/.foundry/tool-logs/3780-1790895294745616168.stdout.log",
+        "stdout_log": "/home/svetzal/.foundry/tool-logs/3780-1790895294745616168.stdout.log",
+        "stderr_log": "/home/svetzal/.foundry/tool-logs/3780-1790895294745616168.stderr.log"
+      }
+    }
+  },
+  "quality": {
+    "record": ".foundry/integration-quality.json",
+    "command": "foundry capture -- python3 /tmp/starter-integration-quality-083990.py",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790895506174166711.stdout.log",
+    "coverage_percent": 94.11,
+    "coverage_threshold": 90,
+    "upgrade_visibility_exit_code": 1,
+    "audit_source_verification": ".foundry/integration-audit-source.json"
+  },
+  "cleanup": ".foundry/integration-cleanup.json"
+}

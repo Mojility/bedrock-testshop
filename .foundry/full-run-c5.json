@@ -1,0 +1,30 @@
+{
+  "command": [
+    "foundry",
+    "capture",
+    "--",
+    "env",
+    "MIX_HOME=/tmp/starter-c3-tools/mix",
+    "HEX_HOME=/tmp/starter-c3-tools/hex",
+    "python3",
+    "scripts/qualify_workshop.py",
+    "--workshop",
+    "/tmp/starter-c5-sources/bedrock-workshop",
+    "--workshop-revision",
+    "6dc82a749f77548ed5488b7fa25d303d0c655795",
+    "--workshop-repository",
+    "/home/svetzal/Work/Projects/Mojility/bedrock-workshop",
+    "--bedrock",
+    "/tmp/starter-c5-sources/bedrock",
+    "--bedrock-revision",
+    "426ba1ba37c550a4fc793e598bb984d8b8a817b2",
+    "--bedrock-repository",
+    "/home/svetzal/Work/Projects/Mojility/bedrock",
+    "--starter-revision",
+    "7d102f2d760e1d4be07195f17910e2d41e35ec7a",
+    "--report",
+    ".foundry/workshop-c5.json"
+  ],
+  "exit_code": 0,
+  "capture_summary": "/home/svetzal/.foundry/tool-logs/starter-c5-revalidate-summary.log"
+}

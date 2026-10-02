@@ -4,7 +4,7 @@ Description: 'This system on its own: VPC, RDS PostgreSQL, ECR, and one EC2 inst
 # The standalone rendering of the deployment recipe (see infra/README.md).
 # Everything the system needs, in one account, sharing nothing:
 #
-#   aws cloudformation deploy --region ca-central-1 --stack-name shop \
+#   aws cloudformation deploy --region ca-central-1 --stack-name business \
 #     --template-file infra/standalone.yaml --capabilities CAPABILITY_NAMED_IAM \
 #     --parameter-overrides DomainName=app.example.ca SecretKeyBase=...
 #
@@ -38,7 +38,7 @@ Parameters:
 
   ImageRepositoryName:
     Type: String
-    Default: shop
+    Default: business
     Description: Name of the ECR repository to create; the workflow's ECR_REPOSITORY variable must match
     AllowedPattern: '^[a-z0-9]+(?:[._-][a-z0-9]+)*$'
 
@@ -186,7 +186,7 @@ Resources:
       Name: !Sub '${AWS::StackName}/database'
       Description: !Sub '${AWS::StackName} database master credentials'
       GenerateSecretString:
-        SecretStringTemplate: '{"username": "shop"}'
+        SecretStringTemplate: '{"username": "business"}'
         GenerateStringKey: password
         PasswordLength: 32
         ExcludePunctuation: true
@@ -227,7 +227,7 @@ Resources:
       MaxAllocatedStorage: 100
       StorageType: gp3
       StorageEncrypted: true
-      DBName: shop
+      DBName: business
       MasterUsername: !Sub '{{resolve:secretsmanager:${DatabaseSecret}::username}}'
       MasterUserPassword: !Sub '{{resolve:secretsmanager:${DatabaseSecret}::password}}'
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
@@ -517,7 +517,7 @@ Resources:
           curl -o /etc/yum.repos.d/caddy.repo https://copr.fedorainfracloud.org/coprs/g/caddy/caddy/repo/epel-9/group_caddy-caddy-epel-9.repo
           dnf install -y caddy
 
-          APP_DIR=/opt/shop
+          APP_DIR=/opt/business
           mkdir -p $APP_DIR
 
           APP_SECRETS=$(aws secretsmanager get-secret-value \
@@ -533,7 +533,7 @@ Resources:
 
           cat > $APP_DIR/.env << ENVFILE
           PHX_SERVER=true
-          DATABASE_URL=ecto://$DB_USER:$DB_PASSWORD@${Database.Endpoint.Address}:${Database.Endpoint.Port}/shop
+          DATABASE_URL=ecto://$DB_USER:$DB_PASSWORD@${Database.Endpoint.Address}:${Database.Endpoint.Port}/business
           SECRET_KEY_BASE=$(echo "$APP_SECRETS" | jq -r '.secret_key_base')
           PHX_HOST=${DomainName}
           TRUSTED_PROXY_IPS=127.0.0.1,::1
@@ -561,20 +561,20 @@ Resources:
           cat > $APP_DIR/start.sh << 'STARTSCRIPT'
           #!/bin/bash
           set -euo pipefail
-          if [ ! -s /opt/shop/image ]; then
+          if [ ! -s /opt/business/image ]; then
             digest=$(aws ecr batch-get-image --region ${AWS::Region} --repository-name ${ImageRepositoryName} --image-ids imageTag=${ImageTag} --query 'images[0].imageId.imageDigest' --output text)
             [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || exit 1
-            echo "${ImageRepository.RepositoryUri}@$digest" > /opt/shop/image.tmp
-            chmod 600 /opt/shop/image.tmp
-            mv /opt/shop/image.tmp /opt/shop/image
+            echo "${ImageRepository.RepositoryUri}@$digest" > /opt/business/image.tmp
+            chmod 600 /opt/business/image.tmp
+            mv /opt/business/image.tmp /opt/business/image
           fi
-          image=$(cat /opt/shop/image)
+          image=$(cat /opt/business/image)
           [[ "$image" =~ @sha256:[a-f0-9]{64}$ ]] || exit 1
           docker pull "$image"
-          exec docker run --rm --name shop --env-file /opt/shop/.env --network host "$image"
+          exec docker run --rm --name business --env-file /opt/business/.env --network host "$image"
           STARTSCRIPT
           chmod 700 $APP_DIR/start.sh
-          cat > /etc/systemd/system/shop.service << SERVICE
+          cat > /etc/systemd/system/business.service << SERVICE
           [Unit]
           Description=${AWS::StackName} Phoenix application
           After=docker.service
@@ -585,11 +585,11 @@ Resources:
           Restart=always
           RestartSec=30
           EnvironmentFile=$APP_DIR/.env
-          ExecStartPre=-/usr/bin/docker stop shop
-          ExecStartPre=-/usr/bin/docker rm shop
+          ExecStartPre=-/usr/bin/docker stop business
+          ExecStartPre=-/usr/bin/docker rm business
           ExecStartPre=/bin/bash -c 'aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin $ECR_REGISTRY'
-          ExecStart=/opt/shop/start.sh
-          ExecStop=/usr/bin/docker stop shop
+          ExecStart=/opt/business/start.sh
+          ExecStop=/usr/bin/docker stop business
 
           [Install]
           WantedBy=multi-user.target
@@ -598,8 +598,8 @@ Resources:
           systemctl daemon-reload
           systemctl enable caddy
           systemctl start caddy
-          systemctl enable shop
-          systemctl start shop
+          systemctl enable business
+          systemctl start business
 
           echo "Setup complete."
       Tags:
@@ -656,7 +656,7 @@ Outputs:
 
   RestartCommand:
     Description: Pull the current image tag and restart the system
-    Value: !Sub "aws ssm send-command --region ${AWS::Region} --document-name AWS-RunShellScript --instance-ids ${Instance} --parameters 'commands=[\"systemctl restart shop\"]'"
+    Value: !Sub "aws ssm send-command --region ${AWS::Region} --document-name AWS-RunShellScript --instance-ids ${Instance} --parameters 'commands=[\"systemctl restart business\"]'"
 
   EstimatedMonthlyCost:
     Description: Rough monthly cost

@@ -1,0 +1,60 @@
+{
+  "kind": "behavioral",
+  "source_change": "scripts/qualify_callers.py: unwind SIGTERM/SIGINT, stop whole child process groups before releasing the shared Bedrock port lock, and remove the synthetic database and snapshot. lib/business/smoke.ex checks a usable form rather than its ID; HTTP faults remove usable form/inbox/retained content while retaining markers and SQL fields, with restored endpoint probes. The observer supplies a unique private snapshot parent and limits rescue cleanup to that parent.",
+  "rejecting": {
+    "command": "foundry capture -- python3 /tmp/starter-c2-signal-proof.py --source scripts/qualify_callers.py --bedrock /tmp/starter-c2-bedrock-main",
+    "exit_code": 1,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790871554930672913.stdout.log",
+    "source_state": "Original c1 qualifier; default external logs substituted by the supervisor only.",
+    "qualifier_sha256": "527e51880ba8fd62131055730229cd3abadcce3292546d1d0be5d6c8d89ddbbd"
+  },
+  "corrected": {
+    "command": "foundry capture -- python3 scripts/verify_qualification_cleanup.py --bedrock /tmp/starter-c2-bedrock-main --case sigterm",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/5-1790874470709578392.stdout.log",
+    "qualifier_sha256": "01c6abe76881b82e7fbf965e67f3aaccc0f30877f6dd29faacadb2152364eb9a",
+    "observer_sha256": "bc96b0ea1ad465362e0d73866b70f941e64cc5797dce2a9d2a30298f81fe55cf"
+  },
+  "preserved_source": {
+    "starter_baseline": "963f5db9f0017f7dba6a56459697d5c79efb058a",
+    "bedrock_final": "aaec254d96299f17c4a846a2dc04e5d1f068d15b",
+    "note": "Historical c1 run is preserved in docs/caller-qualification-2026-10-01.md; its unretained worktree-local raw logs are not current acceptance evidence."
+  },
+  "sigint": {
+    "command": "foundry capture -- python3 scripts/verify_qualification_cleanup.py --bedrock /tmp/starter-c2-bedrock-main --case sigint",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/766-1790874601770961000.stdout.log"
+  },
+  "form_capability": {
+    "rejecting": {
+      "command": "MIX_ENV=test foundry capture -- mix test test/business/smoke_contract_test.exs --trace",
+      "exit_code": 2,
+      "log": "/home/svetzal/.foundry/tool-logs/5-1790872771244302743.stdout.log"
+    },
+    "corrected": {
+      "command": "MIX_ENV=test foundry capture -- mix test test/business/smoke_contract_test.exs test/business/exploration_test.exs --trace",
+      "exit_code": 0,
+      "log": "/home/svetzal/.foundry/tool-logs/55-1790872894103824568.stdout.log"
+    }
+  },
+  "command_failure": {
+    "command": "foundry capture -- python3 scripts/verify_qualification_cleanup.py --bedrock /tmp/starter-c2-bedrock-main --case failure",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/1523-1790874735386445075.stdout.log",
+    "qualifier_exit_code": 1,
+    "failure_check": "stylesheet_delivery"
+  },
+  "full_qualification": {
+    "command": "foundry capture -- python3 scripts/verify_qualification_cleanup.py --bedrock /tmp/starter-c2-bedrock-final-main --case success",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790879622021481626.stdout.log"
+  },
+  "candidate_source_sha256": "a6631ab829282e5624d1b3ca3e7eb419a5aee32230bec61b14012bcf22861bc6",
+  "starter_candidate_base": "6170f522e52879016fdcfac7d48feef74f4ae049",
+  "bedrock_trunk": "12d15697b629235d7c4bfeaf4753ff2f899a1ed5",
+  "previous_full_qualification": {
+    "command": "foundry capture -- python3 scripts/verify_qualification_cleanup.py --bedrock /tmp/starter-c2-bedrock-main --case success",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2334-1790874876363970599.stdout.log"
+  }
+}

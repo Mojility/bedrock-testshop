@@ -1,1 +1,1 @@
-call "%~dp0\shop" eval Shop.Release.migrate
+call "%~dp0\business" eval Business.Release.migrate

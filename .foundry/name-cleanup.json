@@ -1,0 +1,9 @@
+{
+  "archive_removed": true,
+  "temporary_browser_test_removed": true,
+  "snapshots_removed": true,
+  "owned_databases_remaining": "",
+  "listener_shutdown": "Caller completed stop() process-group waits before shared lock release; synthetic name probes likewise wait on each run group.",
+  "retained_tooling": "Ignored compiled artifacts and the writable temporary Hex package cache; external Foundry logs and screenshots remain for review.",
+  "source_identity_match": true
+}

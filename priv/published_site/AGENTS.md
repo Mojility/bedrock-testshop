@@ -3,7 +3,7 @@
 `scene.json` and `media.json` are produced by Bedrock's publication workflow,
 not by a local asset build. `Bedrock.Publishing.Export.files/1` exports a frozen
 design document and theme plus metadata for the referenced ready photographs.
-The customer application consumes these files through `Shop.Website`.
+The customer application consumes these files through `Business.Website`.
 
 For composition, facts, theme or published photograph changes, change the
 corresponding authoring input and publish it. For rendering or business behavior,

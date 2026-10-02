@@ -1,0 +1,26 @@
+{
+  "bedrock": {
+    "repository": "/home/svetzal/Work/Projects/Mojility/bedrock",
+    "revision": "426ba1ba37c550a4fc793e598bb984d8b8a817b2",
+    "archive": "/tmp/starter-c5-sources/bedrock"
+  },
+  "bedrock-workshop": {
+    "repository": "/home/svetzal/Work/Projects/Mojility/bedrock-workshop",
+    "revision": "6dc82a749f77548ed5488b7fa25d303d0c655795",
+    "archive": "/tmp/starter-c5-sources/bedrock-workshop"
+  },
+  "starter": {
+    "revision": "7d102f2d760e1d4be07195f17910e2d41e35ec7a",
+    "archive_sha256": "bd3f44035ef53ee28df8d1ff3cef0d90c3a868918f1f5d904945c909538be362",
+    "candidate": "unmodified committed archive; no worktree overlay"
+  },
+  "supervisor": {
+    "path": "/home/svetzal/.foundry/worktrees/bedrock-system-template/starter-caller-contracts-v1-c5-3683f7/scripts/qualify_workshop.py",
+    "sha256": "696597f422b52a0c7ec61e029b1729e2bdcefb0962c707f6942d1a5c5fe4de1e",
+    "retained_source": "/home/svetzal/.foundry/tool-logs/starter-c5-qualify_workshop.py"
+  },
+  "boundary_probe": {
+    "path": "/home/svetzal/.foundry/worktrees/bedrock-system-template/starter-caller-contracts-v1-c5-3683f7/scripts/check_workshop_boundaries.exs",
+    "sha256": "d8559f77229020fe3245f7135644a81d0531443cb4237979aad36cce4d55c4b2"
+  }
+}

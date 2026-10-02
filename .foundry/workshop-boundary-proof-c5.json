@@ -1,0 +1,15 @@
+{
+  "kind": "behavioral",
+  "source_change": "scripts/check_workshop_boundaries.exs probes an actual HEEx platform call instead of expecting prose to fail; scripts/qualify_workshop.py checks committed caller bytes before/after and extracts an unchanged committed starter candidate without a worktree overlay.",
+  "rejecting": {
+    "command": "foundry capture -- env MIX_HOME=/tmp/starter-c3-tools/mix HEX_HOME=/tmp/starter-c3-tools/hex python3 scripts/qualify_workshop.py --workshop /tmp/starter-c5-sources/bedrock-workshop --workshop-revision 6dc82a749f77548ed5488b7fa25d303d0c655795 --workshop-repository /home/svetzal/Work/Projects/Mojility/bedrock-workshop --bedrock /tmp/starter-c5-sources/bedrock --bedrock-revision 426ba1ba37c550a4fc793e598bb984d8b8a817b2 --bedrock-repository /home/svetzal/Work/Projects/Mojility/bedrock --starter-revision 7d102f2d760e1d4be07195f17910e2d41e35ec7a --report .foundry/workshop-c5.json",
+    "exit_code": 1,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790887333463680286.stdout.log"
+  },
+  "corrected": {
+    "command": "foundry capture -- env MIX_HOME=/tmp/starter-c3-tools/mix HEX_HOME=/tmp/starter-c3-tools/hex ERL_FLAGS='+S 4:4' mise exec elixir@1.20.2-otp-29 erlang@29.0.2 -- mix run --no-start /home/svetzal/.foundry/worktrees/bedrock-system-template/starter-caller-contracts-v1-c5-3683f7/scripts/check_workshop_boundaries.exs",
+    "cwd": "/tmp/starter-c5-sources/bedrock-workshop",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790887834274329254.stdout.log"
+  }
+}

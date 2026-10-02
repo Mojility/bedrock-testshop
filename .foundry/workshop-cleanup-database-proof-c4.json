@@ -1,0 +1,14 @@
+{
+  "kind": "behavioral",
+  "source_change": "First-signal protection of Workshop final cleanup; independent database-loop rejection.",
+  "rejecting": {
+    "command": "foundry capture -- python3 scripts/verify_workshop_cleanup.py --source /tmp/workshop-cleanup-preserved-c4.py --stage database --signal SIGINT",
+    "exit_code": 1,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790885185357622365.stdout.log"
+  },
+  "corrected": {
+    "command": "foundry capture -- python3 scripts/verify_workshop_cleanup.py --stage database --signal SIGINT",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790885220922544422.stdout.log"
+  }
+}

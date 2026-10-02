@@ -7,7 +7,7 @@ follow-up, accounts, and session tokens live in this application's database.
 
 The first owner must be established through trusted deployment access. There
 is no public registration or bootstrap endpoint. Run database migrations first.
-Call `Shop.Release.bootstrap_owner(email)` in the release with the intended
+Call `Business.Release.bootstrap_owner(email)` in the release with the intended
 owner's verified provisioning email. The function creates an unconfirmed owner
 account. It rejects subsequent bootstrap attempts once an owner exists.
 The owner requests a magic link at `/users/log-in` and confirms their email.
@@ -21,9 +21,13 @@ role. Owner transfer and a separate administrator role are future extensions.
 
 ## Leads
 
-The scene-rendered website submits to `POST /leads`. The route checks CSRF,
-validates contact details, and stores the enquiry before returning a thank-you.
-A missing or incompatible website release refuses submissions explicitly.
+The published website and unpublished holding page submit to `POST /leads`.
+The route checks CSRF, validates contact details, and stores the enquiry before
+returning a thank-you.
+When no scene has been published, the holding page accepts enquiries through
+the same validation and rate limiter. Malformed or incompatible published
+releases refuse submissions explicitly. Validation errors retain the supplied
+contact details; saving an enquiry confirms storage, not a reply from staff.
 
 Signed-in staff work at `/app/leads`. The workspace shows the latest 200
 messages, contact links, status, and follow-up notes. Older records remain in
@@ -50,7 +54,7 @@ stay in Canadian infrastructure and must not appear in source control or logs.
 2. Stop submissions to the old endpoint during the final export.
 3. Export only the intended tenant with `Bedrock.Leads.export_legacy(tenant)`.
 4. Transfer the JSON array to a protected file beside this release.
-5. Call `Shop.Release.import_legacy_leads(path)` through trusted release access.
+5. Call `Business.Release.import_legacy_leads(path)` through trusted release access.
 6. Compare identifiers, content, timestamps, and record counts.
 7. Route the public website to this application.
 8. Remove the transfer file after the records have been checked.

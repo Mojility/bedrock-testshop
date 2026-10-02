@@ -45,7 +45,7 @@ Staff LiveViews require the application's authenticated scope. Context functions
 check staff or owner permissions. Owner revocation invalidates tokens and
 broadcasts session disconnection.
 
-`Shop.Website` checks scene versions, model hashes, graph limits, component
+`Business.Website` checks scene versions, model hashes, graph limits, component
 registrations, and validation results before rendering. HEEx escapes dynamic
 text. Native components are explicit application code; scene JSON cannot load
 arbitrary modules or execute expressions as Elixir.
@@ -92,9 +92,9 @@ their existing access controls.
   needed.
 - Rate-limit counters are local to one node and reset on restart.
 
-Source references: [router](../lib/shop_web/router.ex),
-[staff authorization](../lib/shop/accounts/staff.ex),
-[renderer](../lib/shop/website.ex),
-[preview controller](../lib/shop_web/controllers/website_preview_controller.ex),
-[media controller](../lib/shop_web/controllers/media_controller.ex), and
+Source references: [router](../lib/business_web/router.ex),
+[staff authorization](../lib/business/accounts/staff.ex),
+[renderer](../lib/business/website.ex),
+[preview controller](../lib/business_web/controllers/website_preview_controller.ex),
+[media controller](../lib/business_web/controllers/media_controller.ex), and
 [runtime configuration](../config/runtime.exs).

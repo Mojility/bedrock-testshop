@@ -1,0 +1,23 @@
+{
+  "samples": 7200,
+  "listener_after_lock_release": [],
+  "owned_groups": [
+    1290,
+    1332,
+    1374,
+    1502,
+    1544,
+    1588,
+    1632,
+    1674,
+    1716,
+    1758,
+    1800,
+    1905
+  ],
+  "remaining_processes": [],
+  "database_query": "",
+  "snapshot_removed": true,
+  "listener_present": false,
+  "observation_before_recovery": true
+}

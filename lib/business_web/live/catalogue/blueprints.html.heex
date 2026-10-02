@@ -1,0 +1,60 @@
+<div class="catalogue-body">
+  <section class="catalogue-intro flush">
+    <h2>Capability before configuration.</h2><p>
+      A blueprint supplies the questions, workflows and rules an owner should not have to imagine from scratch. Its applicability must be confirmed with the business.
+    </p>
+  </section><section class="catalogue-panel">
+    <div class="wb-actions">
+      <h2>{@blueprint["name"]}</h2><Workbench.status
+        label="Demonstrated · not installed"
+        tone="warning"
+      />
+    </div><p>{@blueprint["outcome"]}</p><p>Blueprint version {@blueprint["version"]}</p>
+  </section>
+  <section class="catalogue-panel catalogue-space">
+    <h2>Domain concepts, behaviour and compositions</h2><p>
+      This blueprint packages business definitions and presentation bindings together. Bindings connect projections to controls and inputs to named commands.
+    </p>
+    <div class="wb-actions catalogue-space">
+      <.link
+        :for={id <- Enum.map(@blueprint["domain_model"]["nodes"], & &1["id"])}
+        patch={"/dev/catalogue/domain?node=#{id}"}
+        class="catalogue-relation"
+      >{Business.Catalogue.Domain.get(id)["name"]}</.link>
+    </div>
+    <.link
+      patch={"/dev/catalogue/model?node=#{Enum.find(@blueprint["design_model"]["nodes"], &(&1["kind"] == "Blueprint"))["id"]}"}
+      class="wb-button secondary"
+    >Explore the design model</.link>
+    <div class="wb-actions catalogue-space">
+      <.link
+        :for={id <- @blueprint["compositions"]}
+        patch={"/dev/catalogue/graph?node=#{id}"}
+        class="catalogue-relation"
+      >{Business.Catalogue.Components.get(id).title}</.link>
+    </div>
+    <.bindings bindings={@blueprint["presentation_bindings"]} />
+  </section><div class="catalogue-grid flush catalogue-space">
+    <section class="catalogue-panel">
+      <h2>Ask the owner</h2><ol>
+        <li :for={question <- @blueprint["questions"]}>{question}</li>
+      </ol>
+    </section><section class="catalogue-panel">
+      <h2>Business rules</h2><ul>
+        <li :for={rule <- @blueprint["rules"]}>{rule}</li>
+      </ul>
+    </section><section class="catalogue-panel">
+      <h2>Acceptance scenarios</h2><ul>
+        <li :for={example <- @blueprint["acceptance"] || []}>{example}</li>
+      </ul><.link patch="/dev/catalogue/compositions" class="wb-button catalogue-space">Explore the working composition</.link>
+    </section><section class="catalogue-panel">
+      <h2>Boundaries & dependencies</h2><p>
+        Each blueprint declares its domain and authority boundaries. Validate these against the customer’s business before implementation.
+      </p><h3 class="catalogue-space">Not yet implemented</h3><ul>
+        <li :for={gap <- @blueprint["not_implemented"] || []}>{gap}</li>
+      </ul>
+    </section>
+  </div><p class="catalogue-footnote">
+    Source: {@blueprint["source"]} · Versioned snapshot carried by the starter; no Bedrock runtime calls.
+  </p>
+</div>

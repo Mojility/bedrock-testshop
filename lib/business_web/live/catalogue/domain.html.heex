@@ -1,0 +1,149 @@
+<div class="catalogue-body">
+  <section class="catalogue-intro flush">
+    <h2>The business meaning behind each control.</h2><p>
+      Explore primitives, value objects and entities. Follow a field to its type, or a binding to its projections, view state and commands.
+    </p>
+  </section>
+  <nav class="catalogue-model-switch" aria-label="Library perspectives">
+    <.link patch="/dev/catalogue/graph">Visual components</.link><.link
+      patch="/dev/catalogue/domain?node=inventory_item"
+      aria-current="page"
+    >Business domain</.link>
+  </nav>
+  <.form for={%{}} id="domain-picker" phx-change="domain_node" class="catalogue-component-picker">
+    <.input
+      id="domain-choice"
+      name="node"
+      type="select"
+      label="Explore a domain concept"
+      value={@node["id"]}
+      options={Enum.map(@nodes, &{&1["name"], &1["id"]})}
+      class="wb-input"
+    />
+  </.form>
+  <div class="catalogue-explorer">
+    <nav class="catalogue-component-list" aria-label="Domain library">
+      <section :for={kind <- ["Primitive", "Value object", "Entity"]}>
+        <h3>{kind}</h3><.link
+          :for={item <- Enum.filter(@nodes, &(&1["kind"] == kind))}
+          patch={"/dev/catalogue/domain?node=#{item["id"]}"}
+          aria-current={if @node["id"] == item["id"], do: "true"}
+        >{item["name"]}</.link>
+      </section>
+    </nav>
+    <div class="catalogue-component-detail">
+      <header class="catalogue-component-heading">
+        <span class="catalogue-label">{@node["kind"]}</span><h2
+          id="component-heading"
+          tabindex="-1"
+        >
+          {@node["name"]}
+        </h2><p>{@node["description"]}</p>
+      </header>
+      <section class="catalogue-preview">
+        <div class="catalogue-preview-label">
+          <strong>Sample business value</strong><span>Synthetic example · not a database schema</span>
+        </div><div class="catalogue-preview-content">
+          <%= case @node["id"] do %>
+            <% "inventory_item" -> %>
+              <h3>{@part.name}</h3><dl class="wb-facts">
+                <div>
+                  <dt>Identifier / SKU</dt><dd>{@part.id}</dd>
+                </div><div>
+                  <dt>Stocking unit</dt><dd>{@part.unit}</dd>
+                </div><div>
+                  <dt>Photo</dt><dd>
+                    {if @part.photo, do: "Representative category image", else: "Not supplied"}
+                  </dd>
+                </div>
+              </dl><.link
+                patch="/dev/catalogue/graph?node=inventory-picker"
+                class="wb-button secondary"
+              >Try the inventory selector</.link>
+            <% "stock_position" -> %>
+              <h3>{@part.name} · {@part.bin}</h3><dl class="wb-facts">
+                <div>
+                  <dt>On hand</dt><dd>{@part.on_hand} {@part.unit}</dd>
+                </div><div>
+                  <dt>Reserved</dt><dd>{@part.reserved} {@part.unit}</dd>
+                </div><div>
+                  <dt>Available · derived</dt><dd>
+                    {@part.on_hand - @part.reserved} {@part.unit}
+                  </dd>
+                </div>
+              </dl><p>
+                Available = on hand − reserved. Receiving changes on hand through the Record receipt command.
+              </p>
+            <% "purchase_order_line" -> %>
+              <p>
+                MAT-112 · {@receipt.ordered} ordered · {@receipt.received} received · {@receipt.ordered -
+                  @receipt.received} outstanding
+              </p>
+            <% _ -> %>
+              <p>{@node["sample"]}</p>
+          <% end %>
+        </div>
+      </section>
+      <section :if={@node["fields"] != []} class="catalogue-binding-section">
+        <h3>Fields and types</h3><div
+          class="wb-table-scroll"
+          role="region"
+          aria-label="Domain fields"
+          tabindex="0"
+        >
+          <table class="wb-table">
+            <caption class="sr-only">{@node["name"]} fields and types</caption><thead>
+              <tr>
+                <th scope="col">Field</th><th scope="col">Type</th><th scope="col">Meaning</th>
+              </tr>
+            </thead><tbody>
+              <tr :for={field <- @node["fields"]}>
+                <th scope="row">
+                  {field["name"]}<small :if={field["value_source"] == "derived"}>Derived · read-only</small><small :if={
+                    !field["required"]
+                  }>Optional</small><small :if={field["relationship"]}>Reference</small>
+                </th><td>
+                  <.link patch={"/dev/catalogue/domain?node=#{field["type"]}"} class="wb-link">{Business.Catalogue.Domain.get(
+                    field["type"]
+                  )["name"]}</.link>
+                </td><td>
+                  {field["meaning"]}<small :if={field["relationship"]}>{field["cardinality"]} · independent lifecycle</small>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="catalogue-binding-section">
+        <h3>Fields of this type appear in</h3><p :if={@used_in == []}>
+          No fields refer to this type in this blueprint.
+        </p><.link
+          :for={item <- @used_in}
+          patch={"/dev/catalogue/domain?node=#{item["id"]}"}
+          class="catalogue-relation"
+        >{item["name"]}</.link>
+      </section>
+      <section :if={@node["rules"] != []} class="catalogue-binding-section">
+        <h3>Business rules</h3><ul>
+          <li :for={rule <- @node["rules"]}>{rule}</li>
+        </ul>
+      </section>
+      <section class="catalogue-binding-section">
+        <h3>Suitable presentations</h3><p>
+          Choose a presentation for the task. A compatible type alone does not authorize editing.
+        </p><.link
+          :for={id <- @node["presentations"]}
+          patch={"/dev/catalogue/graph?node=#{id}"}
+          class="catalogue-relation"
+        >{Business.Catalogue.Components.get(id).title}</.link>
+      </section>
+      <.link patch={"/dev/catalogue/model?node=domain:#{@node["id"]}"} class="catalogue-relation">Explore concept relationships</.link>
+      <.bindings bindings={@bindings} />
+      <section class="catalogue-binding-section">
+        <h3>Blueprint</h3><.link patch="/dev/catalogue/blueprints" class="catalogue-relation">Explore blueprints · domain + presentation</.link><p>
+          The blueprint carries these definitions and bindings together. They describe intent; real customer schemas, permissions and transactions still require implementation.
+        </p>
+      </section>
+    </div>
+  </div>
+</div>

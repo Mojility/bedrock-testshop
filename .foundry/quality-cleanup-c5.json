@@ -1,0 +1,16 @@
+{
+  "dropdb": {
+    "command": [
+      "dropdb",
+      "--if-exists",
+      "--force",
+      "business_test_c5_1790e0ad48c8"
+    ],
+    "exit_code": 0,
+    "stdout_log": "/home/svetzal/.foundry/tool-logs/1631-1790888943990877974.stdout.log",
+    "stderr_log": "/home/svetzal/.foundry/tool-logs/1631-1790888943990877974.stderr.log"
+  },
+  "database_query": "",
+  "hex_cache_removed": true,
+  "audit_cache_removed": true
+}

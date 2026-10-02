@@ -1,0 +1,17 @@
+{
+  "command": "MIX_ENV=test mix test /tmp/name_browser_test.exs",
+  "exit_code": 0,
+  "logs": {
+    "stdout": "/home/svetzal/.foundry/tool-logs/13-1790900997016844249.stdout.log",
+    "stderr": "/home/svetzal/.foundry/tool-logs/13-1790900997016844249.stderr.log"
+  },
+  "database": "business_test_name_browser_1138b101d707",
+  "cleanup_exit_code": 0,
+  "screenshots": {
+    "light": "/home/svetzal/.foundry/tool-logs/starter-c9-name-light-invalid.png",
+    "dark": "/home/svetzal/.foundry/tool-logs/starter-c9-name-dark-invalid.png"
+  },
+  "retained_test_source": ".foundry/name-browser-test.exs",
+  "replay_command": "MIX_ENV=test mix test .foundry/name-browser-test.exs",
+  "replay_note": "Same retained test source; original temporary source was removed after verification. The wrapper now uses its retained path."
+}

@@ -1,0 +1,30 @@
+{
+  "command": "python3 /tmp/starter-c3-browser.py",
+  "exit_code": 0,
+  "log": "/home/svetzal/.foundry/tool-logs/2-1790883526736938383.stdout.log",
+  "observations": [
+    {
+      "theme": "light",
+      "footnotes": 2,
+      "keyboard_focus": {
+        "tag": "A",
+        "style": "solid",
+        "width": "3px",
+        "shadow": "none",
+        "reflow": true
+      }
+    },
+    {
+      "theme": "dark",
+      "footnotes": 2,
+      "keyboard_focus": {
+        "tag": "A",
+        "style": "solid",
+        "width": "3px",
+        "shadow": "none",
+        "reflow": true
+      }
+    }
+  ],
+  "cleanup": "Owned server group stopped and unique synthetic database dropped"
+}

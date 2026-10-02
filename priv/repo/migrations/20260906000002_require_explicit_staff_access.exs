@@ -1,4 +1,4 @@
-defmodule Shop.Repo.Migrations.RequireExplicitStaffAccess do
+defmodule Business.Repo.Migrations.RequireExplicitStaffAccess do
   use Ecto.Migration
 
   def up do

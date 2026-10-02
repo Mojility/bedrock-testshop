@@ -1,0 +1,70 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <section id="home" class="space-y-4">
+    <.header>
+      <span class="[overflow-wrap:anywhere]">{Business.name()}</span>
+      <:subtitle>
+        <%= if @current_scope do %>
+          You are signed in as {@current_scope.user.email}.
+        <% else %>
+          Send an enquiry with your contact details so the business can reply.
+        <% end %>
+      </:subtitle>
+    </.header>
+
+    <h2 class={["text-xl font-semibold text-base-content"]}>Request service</h2>
+    <p :if={@sent} id="lead-sent" role="status" class={["text-base-content"]}>
+      Your enquiry has been saved.
+    </p>
+    <p :if={@refused} id="lead-form-refused" role="alert" class={["text-base-content"]}>
+      Too many enquiries were submitted. Please try again later.
+    </p>
+    <.form
+      for={@lead_form}
+      id="lead-form"
+      action={~p"/leads"}
+      method="post"
+      class={[
+        "[&_.label]:text-base-content [&_.label]:opacity-100 [&_.text-error]:text-base-content",
+        "[&_.input]:border-base-content/60 [&_.textarea]:border-base-content/60"
+      ]}
+    >
+      <.input
+        field={@lead_form[:name]}
+        label="Name"
+        autocomplete="name"
+        required
+        autofocus={@error_field == :name}
+      />
+      <.input
+        field={@lead_form[:phone]}
+        type="tel"
+        label="Phone"
+        autocomplete="tel"
+        aria-describedby="lead-contact-help"
+        autofocus={@error_field == :phone}
+      />
+      <.input
+        field={@lead_form[:email]}
+        type="email"
+        label="Email"
+        autocomplete="email"
+        aria-describedby="lead-contact-help"
+        autofocus={@error_field == :email}
+      />
+      <p id="lead-contact-help" class={["mb-4 text-base-content"]}>
+        Include a phone number or email so we can reply.
+      </p>
+      <.input
+        field={@lead_form[:message]}
+        type="textarea"
+        label="What do you need?"
+        autofocus={@error_field == :message}
+      />
+      <.button id="lead-submit">Send enquiry</.button>
+    </.form>
+
+    <.link :if={!@current_scope} navigate={~p"/users/log-in"} class="btn btn-primary">
+      Log in
+    </.link>
+  </section>
+</Layouts.app>

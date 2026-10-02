@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/mirego/elixir-security-advisories.git",
+  "revision": "935abf7410a2bbb18e12579dee6e31267c3ed244",
+  "remote_main_revision": "935abf7410a2bbb18e12579dee6e31267c3ed244",
+  "archive_sha256": "a4b6ba196ca1bf56f186d4a254f2e90c58405f8603a7ab170212edc814cb768e",
+  "all_loaded_advisory_bytes_match_committed_archive": true,
+  "cache_mutated": false,
+  "remote_verification_log": "/home/svetzal/.foundry/tool-logs/2-1790896889399546587.stdout.log",
+  "byte_verification_log": "/home/svetzal/.foundry/tool-logs/3-1790896905624924271.stdout.log",
+  "limitation": "MixAudit attempts a pull in the read-only shared cache and ignores its failed exit; all loaded advisory YAML bytes independently match current committed remote main. No cache or refs changed."
+}

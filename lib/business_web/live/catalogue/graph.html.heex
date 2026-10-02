@@ -1,0 +1,420 @@
+<div class="catalogue-body">
+  <section class="catalogue-intro flush">
+    <h2>Explore the pieces. See how they fit.</h2>
+    <p>
+      Choose a component to try it, see its states and follow its relationships. Previews use the same components as the working compositions.
+    </p>
+  </section>
+  <.form for={%{}} id="component-picker" phx-change="component" class="catalogue-component-picker">
+    <.input
+      id="component-choice"
+      name="node"
+      type="select"
+      label="Explore a component"
+      value={@node.id}
+      options={Enum.map(@nodes, &{"#{&1.layer} · #{&1.title}", &1.id})}
+      class="wb-input"
+    />
+  </.form>
+  <nav class="catalogue-model-switch" aria-label="Library perspectives">
+    <.link patch="/dev/catalogue/graph" aria-current="page">Visual components</.link><.link patch="/dev/catalogue/domain?node=inventory_item">Business domain</.link>
+  </nav>
+  <div class="catalogue-explorer">
+    <nav class="catalogue-component-list" aria-label="Component library">
+      <section :for={layer <- ["Foundation", "Control", "Pattern", "Composition", "Blueprint"]}>
+        <h3>{layer}</h3>
+        <.link
+          :for={item <- Enum.filter(@nodes, &(&1.layer == layer))}
+          patch={"/dev/catalogue/graph?node=#{item.id}"}
+          aria-current={if @node.id == item.id, do: "true"}
+        >
+          {item.title}
+        </.link>
+      </section>
+    </nav>
+    <div class="catalogue-component-detail">
+      <header class="catalogue-component-heading">
+        <span class="catalogue-label">{@node.layer}</span>
+        <h2 id="component-heading" tabindex="-1">{@node.title}</h2>
+        <p>{@node.purpose}</p>
+      </header>
+      <section class="catalogue-preview" aria-label={"#{@node.title} live preview"}>
+        <div class="catalogue-preview-label">
+          <strong>Live preview</strong><span>Use the page theme switch to compare themes</span>
+        </div>
+        <div class="catalogue-preview-content">
+          <%= case @node.id do %>
+            <% id when id in ~w(website-intro enquiry-form lead-queue lead-follow-up) -> %>
+              <.lead_examples state={@story.enquiries} mode={id} />
+            <% "website-leads" -> %>
+              <.lead_examples state={@story.enquiries} mode="website-intro" />
+              <.link
+                patch="/dev/catalogue/model?node=journey:enquiry_to_follow_up"
+                class="wb-button secondary"
+              >Explore the complete Journey</.link>
+            <% "date-field" -> %>
+              <.input
+                id="sample-date"
+                name="sample_date"
+                type="date"
+                label="Promised delivery date"
+                value="2026-09-28"
+                class="wb-input"
+              /><p>A date-only value. Changing it never converts through UTC.</p>
+            <% "time-field" -> %>
+              <.input
+                id="sample-time"
+                name="sample_time"
+                type="time"
+                label="Warehouse opens at"
+                value="08:30"
+                class="wb-input"
+              /><p>Local time of day; no instant until paired with a date and zone.</p>
+            <% "timestamp-display" -> %>
+              <p>
+                Received
+                <time datetime="2026-09-26T13:30:00Z">September 26, 2026 · 09:30 EDT</time>
+                · America/Toronto
+              </p><p>
+                Recorded
+                <time datetime="2026-09-26T13:34:00Z">September 26, 2026 · 09:34 EDT</time>
+              </p>
+            <% "duration-display" -> %>
+              <Workbench.status label="120 minutes · 2 hours" /><p>
+                Elapsed duration is calculated from instants; daylight-saving transitions can change the result.
+              </p>
+            <% id when id in ["timestamp-field", "date-range", "time-range", "schedule", "movement-history"] -> %>
+              <.temporal_examples
+                {@temporal}
+                mode={
+                  case id do
+                    "timestamp-field" -> "timestamp"
+                    "date-range" -> "dates"
+                    "movement-history" -> "movements"
+                    _ -> "schedule"
+                  end
+                }
+              />
+            <% "foundations" -> %>
+              <.foundations count={@count} />
+            <% "button" -> %>
+              <div class="wb-actions">
+                <.button class="wb-button" phx-click="exercise">Record delivery</.button>
+                <.button class="wb-button secondary" phx-click="exercise">Save draft</.button>
+                <.button class="wb-button" disabled>Unavailable</.button>
+              </div>
+              <div class="wb-actions catalogue-space">
+                <.button class="wb-button" phx-click="exercise"><.icon
+                  name="hero-plus"
+                  class="size-4"
+                />Add part</.button>
+                <.button class="wb-button secondary" phx-click="exercise"><.icon
+                  name="hero-arrow-down-tray"
+                  class="size-4"
+                />Export list</.button>
+              </div><p role="status">Activated {@count} times</p>
+            <% "input" -> %>
+              <.form
+                for={@control_form}
+                id="example-form"
+                phx-submit="control_submit"
+                class="wb-form"
+              >
+                <.input
+                  field={@control_form[:name]}
+                  label="Customer name"
+                  class="wb-input"
+                  error_class="wb-input wb-invalid"
+                />
+                <input type="hidden" name="example[status]" value="Draft" />
+                <.button class="wb-button">Validate example</.button>
+              </.form>
+              <.input
+                id="graph-number"
+                name="sample_quantity"
+                type="number"
+                label="Quantity (number field example)"
+                value="24"
+                min="1"
+                step="1"
+                class="wb-input"
+              />
+              <p>Leave the name empty to try an error, then correct and submit.</p>
+              <Workbench.notice :if={@control_result} id="graph-field-result" tone="success">
+                {@control_result}
+              </Workbench.notice>
+            <% "inventory-picker" -> %>
+              <.form
+                for={@filter_form}
+                id="stock-filter"
+                phx-hook="WorkbenchSearch"
+                phx-change="filter"
+                phx-submit="filter"
+                class="wb-form"
+              >
+                <.input
+                  field={@filter_form[:query]}
+                  label="Find parts by name, SKU or bin"
+                  class="wb-input"
+                />
+              </.form>
+              <.form for={%{}} id="inventory-picker" phx-change="choose_part" class="wb-form">
+                <.input
+                  id="inventory-part-choice"
+                  name="part_id"
+                  type="select"
+                  label="Inventory item · stock by location"
+                  value={@selected}
+                  options={[
+                    {"Current selection",
+                     [{Business.Catalogue.Domain.option_label(@selected_part), @selected}]},
+                    {"Matching parts",
+                     Enum.reject(Enum.take(@stock_page.rows, 25), &(&1.id == @selected))
+                     |> Enum.map(&{Business.Catalogue.Domain.option_label(&1), &1.id})}
+                  ]}
+                  class="wb-input"
+                />
+              </.form>
+              <p role="status" aria-atomic="true">
+                Selected {@selected_part.name}, {@selected}. {@selected_part.on_hand -
+                  @selected_part.reserved} {@selected_part.unit} available; {@selected_part.on_hand} on hand; {@selected_part.reserved} reserved.
+              </p>
+              <p>
+                Showing up to 25 matches of {@stock_page.total}. Search to narrow the list. The current selection stays available even when outside the results.
+              </p>
+              <.button class="wb-button secondary" phx-click="clear_filter">Clear filters</.button>
+            <% "select" -> %>
+              <.form
+                for={@stock_options}
+                id="graph-select"
+                phx-change="stock_options"
+                class="wb-form"
+              >
+                <.input
+                  field={@stock_options[:category]}
+                  type="select"
+                  label="Part category"
+                  options={["All categories" | Business.Catalogue.Stock.categories()]}
+                  class="wb-input"
+                />
+              </.form><p role="status">{@stock_page.total} matching parts</p>
+            <% "icon" -> %>
+              <div class="catalogue-icon-examples">
+                <span><.icon name="hero-magnifying-glass" class="size-6" />Search</span><span><.icon
+                  name="hero-cube"
+                  class="size-6"
+                />Part</span><span><.icon name="hero-check-circle" class="size-6" />Complete</span>
+              </div>
+            <% "status" -> %>
+              <div class="wb-actions">
+                <Workbench.status label="Draft" /><Workbench.status
+                  label="Received"
+                  tone="success"
+                /><Workbench.status label="Part received" tone="warning" /><Workbench.status
+                  label="Needs correction"
+                  tone="error"
+                />
+              </div>
+            <% "notice" -> %>
+              <Workbench.notice id="graph-notice-success" tone="success">
+                8 units received. Stock is updated.
+              </Workbench.notice>
+              <Workbench.notice id="graph-notice-warning" tone="warning">
+                16 units are still outstanding.
+              </Workbench.notice>
+              <Workbench.notice id="graph-notice-error" tone="error">
+                Quantity exceeds the outstanding order. Enter 16 or fewer.
+              </Workbench.notice>
+            <% "header" -> %>
+              <Workbench.record_header
+                id="graph-record-header"
+                title="Receive materials"
+                reference="PO-2086 · Electra Supply"
+                description="Main warehouse · Bin A-06"
+              >
+                <:actions><Workbench.status label="Part received" tone="warning" /></:actions>
+              </Workbench.record_header>
+            <% "search" -> %>
+              <Workbench.table_toolbar
+                id="graph-toolbar"
+                result_label={"#{@stock_page.total} matching parts"}
+              >
+                <:search>
+                  <.form
+                    for={@filter_form}
+                    id="stock-filter"
+                    phx-hook="WorkbenchSearch"
+                    phx-change="filter"
+                    phx-submit="filter"
+                    class="wb-search"
+                  >
+                    <.input
+                      field={@filter_form[:query]}
+                      aria-label="Find stock"
+                      placeholder="Find stock…"
+                      class="wb-input"
+                    />
+                  </.form>
+                </:search>
+                <:actions>
+                  <.button class="wb-button secondary" phx-click="clear_filter">Clear filters</.button>
+                </:actions>
+              </Workbench.table_toolbar><p>
+                Try “cable”, a bin or a SKU. This searches all 2,000 sample parts.
+              </p>
+            <% "table" -> %>
+              <.button
+                class="wb-button secondary"
+                phx-click="density"
+                aria-pressed={to_string(@compact)}
+              >Compact rows</.button>
+              <Workbench.data_table
+                id="graph-table"
+                rows={Enum.take(@stock_page.rows, 5)}
+                caption="Stock table example · first five matching rows"
+                striped
+                compact={@compact}
+                sort_by={@stock_sort}
+                sort_direction={@stock_direction}
+                sort_event="sort_stock"
+                row_id={& &1.id}
+                row_click="select"
+                selected_id={@selected}
+              >
+                <:col :let={row} label="Item" sort_key="name">
+                  <button
+                    type="button"
+                    class="wb-row-action"
+                    aria-label={"#{row.name}, #{row.id}"}
+                    aria-pressed={to_string(@selected == row.id)}
+                  >{row.name}</button><small>{row.id}</small>
+                </:col>
+                <:col :let={row} label="On hand" sort_key="on_hand" numeric>{row.on_hand}</:col>
+                <:col :let={row} label="Reserved" sort_key="reserved" numeric>
+                  {row.reserved}
+                </:col>
+                <:col :let={row} label="Available" sort_key="available" numeric>
+                  {row.on_hand - row.reserved}
+                </:col>
+              </Workbench.data_table><p role="status">Selected: {@selected}</p>
+              <p :if={@stock_page.total == 0}>
+                No matches with your current filters.
+                <button class="wb-link" phx-click="clear_filter">Clear filters</button>
+              </p>
+            <% "pagination" -> %>
+              <Workbench.pagination
+                id="graph-pages"
+                page={@stock_page.page}
+                pages={@stock_page.pages}
+                first={@stock_page.first}
+                last={@stock_page.last}
+                total={@stock_page.total}
+                event="stock_page"
+              />
+            <% "photo" -> %>
+              <div class="catalogue-photo-examples">
+                <figure class="wb-part-photo">
+                  <img
+                    src="/images/catalogue/parts/breaker.png"
+                    alt="Representative circuit breaker"
+                  /><figcaption>
+                    Generated category example, not an exact product photo
+                  </figcaption>
+                </figure><div class="wb-part-photo wb-photo-missing">
+                  <.icon name="hero-cube" class="size-8" /><span>No photo available</span>
+                </div>
+              </div>
+            <% "inspector" -> %>
+              <aside class="wb-inspector" aria-label="Example part details">
+                <h3>15A AFCI breaker</h3><small>MAT-112 · Main warehouse</small><dl class="wb-facts">
+                  <div>
+                    <dt>On hand</dt><dd>{@receipt.on_hand}</dd>
+                  </div><div>
+                    <dt>Reserved</dt><dd>{@receipt.reserved}</dd>
+                  </div><div>
+                    <dt>Available</dt><dd>{@receipt.on_hand - @receipt.reserved}</dd>
+                  </div>
+                </dl><Workbench.status label="Reorder needed" tone="warning" />
+              </aside>
+            <% id when id in ["split", "record", "task", "receiving"] -> %>
+              <.compositions
+                {@story}
+                embedded={true}
+                scenario={
+                  case id do
+                    "split" -> "stock"
+                    "task" -> "task"
+                    _ -> "receiving"
+                  end
+                }
+              />
+          <% end %>
+        </div>
+      </section>
+      <section class="catalogue-anatomy" aria-label="Component relationships">
+        <div>
+          <h3>
+            {if @node.layer == "Blueprint", do: "Includes compositions", else: "Uses components"}
+          </h3><p :if={@node.depends == []}>
+            Shared design tokens; no component dependencies.
+          </p>
+          <.link
+            :for={id <- @node.depends}
+            patch={"/dev/catalogue/graph?node=#{id}"}
+            class="catalogue-relation"
+          ><span aria-hidden="true">↳</span> {Business.Catalogue.Components.get(id).title}</.link>
+        </div>
+        <div>
+          <h3>Used by</h3><p :if={@used_in == []}>No visual dependants in this catalogue.</p>
+          <.link
+            :for={item <- @used_in}
+            patch={"/dev/catalogue/graph?node=#{item.id}"}
+            class="catalogue-relation"
+          >{item.title} <span aria-hidden="true">↗</span></.link>
+        </div>
+      </section>
+      <section :if={@domain_types != []} class="catalogue-binding-section">
+        <h3>Can present</h3><p>
+          Compatible business types; the binding supplies field meaning and edit rules.
+        </p><.link
+          :for={type <- @domain_types}
+          patch={"/dev/catalogue/domain?node=#{type["id"]}"}
+          class="catalogue-relation"
+        >{type["name"]}</.link>
+      </section>
+      <.link
+        patch={
+          case @node.id do
+            "receiving" -> "/dev/catalogue/model?node=blueprint:materials_receiving"
+            "website-leads" -> "/dev/catalogue/model?node=blueprint:website_leads"
+            id -> "/dev/catalogue/model?node=component:#{id}"
+          end
+        }
+        class="catalogue-relation"
+      >Explore design relationships</.link>
+      <.composition_contract
+        :if={Business.Catalogue.Domain.composition(@node.id)}
+        contract={Business.Catalogue.Domain.composition(@node.id)}
+      />
+      <section
+        :if={Business.Catalogue.Model.journeys_for("component:" <> @node.id) != []}
+        class="catalogue-binding-section"
+      >
+        <h3>Used in an Actor’s Journey</h3>
+        <.link
+          :for={journey <- Business.Catalogue.Model.journeys_for("component:" <> @node.id)}
+          patch={"/dev/catalogue/model?node=#{journey["id"]}"}
+          class="catalogue-relation"
+        >{journey["name"]}</.link>
+      </section>
+      <.bindings bindings={@bindings} />
+      <div class="catalogue-component-guidance">
+        <section>
+          <h3>When to use it</h3><p>{@node.usage}</p>
+        </section><section>
+          <h3>Accessibility behaviour</h3><p>{@node.accessibility}</p><small>Automated and browser checks are not a conformance certification. Assistive-technology review remains required.</small>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>

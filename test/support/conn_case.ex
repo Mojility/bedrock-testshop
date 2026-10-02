@@ -1,4 +1,4 @@
-defmodule ShopWeb.ConnCase do
+defmodule BusinessWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -11,31 +11,31 @@ defmodule ShopWeb.ConnCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use ShopWeb.ConnCase, async: true`, although
+  by setting `use BusinessWeb.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
 
   use ExUnit.CaseTemplate
 
-  alias Shop.Accounts.Scope
-  alias Shop.AccountsFixtures
+  alias Business.Accounts.Scope
+  alias Business.AccountsFixtures
 
   using do
     quote do
       # The default endpoint for testing
-      @endpoint ShopWeb.Endpoint
+      @endpoint BusinessWeb.Endpoint
 
-      use ShopWeb, :verified_routes
+      use BusinessWeb, :verified_routes
 
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
-      import ShopWeb.ConnCase
+      import BusinessWeb.ConnCase
     end
   end
 
   setup tags do
-    Shop.DataCase.setup_sandbox(tags)
+    Business.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 
@@ -65,7 +65,7 @@ defmodule ShopWeb.ConnCase do
   It returns an updated `conn`.
   """
   def log_in_user(conn, user, opts \\ []) do
-    token = Shop.Accounts.generate_user_session_token(user)
+    token = Business.Accounts.generate_user_session_token(user)
 
     maybe_set_token_authenticated_at(token, opts[:token_authenticated_at])
 

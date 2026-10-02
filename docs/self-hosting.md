@@ -61,7 +61,7 @@ may be incompatible with a completed database migration.
 2. Rehearse migrations and application checks against an isolated Canadian copy.
 3. Select the qualified image digest through trusted deployment access.
 4. Run migrations before serving the release.
-5. Establish the first owner with `Shop.Release.bootstrap_owner/1` if none
+5. Establish the first owner with `Business.Release.bootstrap_owner/1` if none
    exists.
 6. Request a magic link at `/users/log-in` using the intended owner's email.
 7. Check staff access, an enquiry, mail delivery, and public HTTPS readiness.
@@ -71,7 +71,7 @@ The default container entrypoint migrates, then starts the server. A deployment
 that runs `/app/bin/migrate` separately should start `/app/bin/server`
 afterward.
 
-For later standalone releases, update the protected `/opt/shop/image` reference
+For later standalone releases, update the protected `/opt/business/image` reference
 as described in the infrastructure guide. Changing the stack image parameter
 alone does not rerun initialization on an existing instance.
 

@@ -6,6 +6,6 @@ set -eu
 
 cd -P -- "$(dirname -- "$0")"
 
-./shop eval 'Shop.Release.migrate()'
+./business eval 'Business.Release.migrate()'
 
-PHX_SERVER=true exec ./shop start
+PHX_SERVER=true exec ./business start

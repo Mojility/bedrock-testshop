@@ -1,0 +1,14 @@
+{
+  "kind": "behavioral",
+  "source_change": "Reword blueprint boundary prose so the unchanged Workshop Source.separation gate accepts the starter HEEx source.",
+  "rejecting": {
+    "command": "elixir -r /tmp/starter-workshop-trunk/lib/workshop_executive/source.ex -e 'result = WorkshopExecutive.Source.separation(File.cwd!()); IO.inspect(result); if result[\"status\"] != \"passed\", do: System.halt(1)'",
+    "exit_code": 1,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790881024919277168.stdout.log"
+  },
+  "corrected": {
+    "command": "elixir -r /tmp/starter-workshop-trunk/lib/workshop_executive/source.ex -e 'result = WorkshopExecutive.Source.separation(File.cwd!()); IO.inspect(result); if result[\"status\"] != \"passed\", do: System.halt(1)'",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790881035747984243.stdout.log"
+  }
+}

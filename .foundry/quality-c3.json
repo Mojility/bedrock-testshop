@@ -1,0 +1,114 @@
+[
+  {
+    "command": [
+      "mix",
+      "deps.get"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/60-1790882417228351186.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/60-1790882417228351186.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "format",
+      "--check-formatted"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/160-1790882420350411811.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/160-1790882420350411811.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "compile",
+      "--warnings-as-errors"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/258-1790882422170770084.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/258-1790882422170770084.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "deps.unlock",
+      "--check-unused"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/356-1790882424076299672.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/356-1790882424076299672.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "test",
+      "--cover"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/452-1790882426137998816.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/452-1790882426137998816.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "credo",
+      "--strict"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/636-1790882439156277005.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/636-1790882439156277005.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "dialyzer"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/734-1790882441855885567.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/734-1790882441855885567.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "docs",
+      "--warnings-as-errors"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/834-1790882451771680471.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/834-1790882451771680471.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "hex.audit"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/932-1790882453595737565.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/932-1790882453595737565.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "deps.audit"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/1032-1790882455774912758.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/1032-1790882455774912758.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "sobelow",
+      "--config"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/1134-1790882456994199789.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/1134-1790882456994199789.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "hex.outdated",
+      "--all"
+    ],
+    "exit_code": 1,
+    "capture": "mix: exit 1\nstdout: /home/svetzal/.foundry/tool-logs/1232-1790882458439252691.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/1232-1790882458439252691.stderr.log\n.0   Up-to-date       \nphoenix                           1.8.15   1.8.15  Up-to-date       \nphoenix_ecto                      4.7.0    4.7.0   Up-to-date       \nphoenix_html                      4.3.0    4.3.0   Up-to-date       \nphoenix_live_dashboard            0.9.1    0.9.1   Up-to-date       \nphoenix_live_reload     dev       1.7.0    1.7.0   Up-to-date       \nphoenix_live_view                 1.2.12   1.2.12  Up-to-date       \nphoenix_pubsub                    2.3.0    2.3.0   Up-to-date       \nphoenix_template                  1.1.0    1.1.0   Up-to-date       \nplug                              1.20.3   1.20.3  Up-to-date       \nplug_crypto                       2.2.0    2.2.0   Up-to-date       \npostgrex                          0.22.4   0.22.4  Up-to-date       \nranch                             2.3.0    2.3.0   Up-to-date       \nreq                               0.7.4    0.7.4   Up-to-date       \nsobelow                 dev,test  0.15.0   0.16.0  Update possible  \nsweet_xml                         0.7.5    0.7.5   Up-to-date       \nswoosh                            1.28.1   1.28.1  Up-to-date       \ntailwind                          0.5.1    0.5.1   Up-to-date       \ntelemetry                         1.4.2    1.4.2   Up-to-date       \ntelemetry_metrics                 1.2.0    1.2.0   Up-to-date       \ntelemetry_poller                  1.3.0    1.3.0   Up-to-date       \nthousand_island                   1.5.0    1.5.0   Up-to-date       \ntz                                0.28.4   0.28.4  Up-to-date       \nwebsock                           0.5.3    0.5.3   Up-to-date       \nwebsock_adapter                   0.6.0    0.6.0   Up-to-date       \nyamerl                            0.10.0   0.10.0  Up-to-date       \nyaml_elixir                       2.12.2   2.12.2  Up-to-date       \n\nRun `mix hex.outdated APP` to see requirements for a specific dependency.\n\nTo view the diffs in each available update, visit:\nhttps://hex.pm/l/XnwST\n\nTo view the diff of a specific update, run `mix hex.package diff APP FROM..TO`.\n\n"
+  },
+  {
+    "command": [
+      "mix",
+      "precommit"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/1332-1790882460587913811.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/1332-1790882460587913811.stderr.log\n"
+  }
+]

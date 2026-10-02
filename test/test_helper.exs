@@ -1,5 +1,5 @@
 ExUnit.start()
-Ecto.Adapters.SQL.Sandbox.mode(Shop.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Business.Repo, :manual)
 
 # The maintenance baseline tool runs as a standalone script, outside the
 # application, so its tests load it directly.

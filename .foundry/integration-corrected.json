@@ -1,0 +1,254 @@
+{
+  "intent": {
+    "actor": "bedrock.actor.field_service_owner",
+    "goal": "bedrock.goal.own_business_system",
+    "interaction": "bedrock.interaction.publish_my_site",
+    "interactions": [
+      "bedrock.interaction.publish_my_site",
+      "bedrock.interaction.explore_before_adopting"
+    ]
+  },
+  "campaign": {
+    "1": "Generate and name the immutable unpublished starter",
+    "2": "Execute Bootstrap preparation, service readiness and customer smoke",
+    "3": "Export publication into the generated system and prove its real renderer/runtime",
+    "4": "Qualify release-route assumptions in unpublished and published systems",
+    "5": "Workshop iteration and acceptance (unimplemented)",
+    "6": "Front journey through real contexts (unimplemented)"
+  },
+  "stages": {
+    "1": {
+      "status": "passed",
+      "business_name": "Acme Electric",
+      "generation": "Bedrock.Foundry.create_system/1; GitHub.Fake only"
+    },
+    "2": {
+      "status": "passed",
+      "phases": {
+        "stage": "passed",
+        "compile": "passed",
+        "service": "passed",
+        "smoke": "passed"
+      },
+      "database_setup_command": "exec env MIX_HOME=/workspace/app/.bedrock-tools/mix HEX_HOME=/workspace/app/.bedrock-tools/hex MIX_ENV=prod mix ecto.migrate",
+      "retained_record": {
+        "id": "8a59b26f-e8e5-425d-b3ac-318c097dd0f0",
+        "message": "Keep this enquiry through publication",
+        "name": "Retained qualification enquiry",
+        "status": "new",
+        "phone": null,
+        "email": "retained@example.invalid",
+        "inserted_at": "2026-10-01T22:48:54.549087Z",
+        "notes": null
+      }
+    },
+    "4": {
+      "status": "passed",
+      "states": {
+        "unpublished": {
+          "style_assets_checked": 3,
+          "photo_variants_checked": 0,
+          "enquiry": {
+            "id": "3890e734-89f7-4682-980e-2b8fe22511d6",
+            "message": "Exact enquiry 2892a10ef7d942a0888fdb883c96c4e5",
+            "name": "Release rehearsal 2892a10ef7d942a0888fdb883c96c4e5",
+            "email": "enquiry-2892a10ef7d942a0888fdb883c96c4e5@example.invalid",
+            "phone": "555-0100"
+          },
+          "publication": "unpublished",
+          "preview": "not applicable: unpublished",
+          "rejecting": {
+            "command": "python3 /tmp/starter-integration-sources-083990/bedrock/scripts/owner_journey_release.py --base /tmp/bedrock-owner-proof-6usy845u --socket /tmp/bedrock-owner-proof-6usy845u/postgres-socket --output /tmp/bedrock-owner-proof-6usy845u/release-check.json --lead-route /__missing_release_leads",
+            "exit_code": 1,
+            "log": "/home/svetzal/.foundry/tool-logs/1779-1790894939065728537.stderr.log",
+            "stdout_log": "/home/svetzal/.foundry/tool-logs/1779-1790894939065728537.stdout.log",
+            "stderr_log": "/home/svetzal/.foundry/tool-logs/1779-1790894939065728537.stderr.log"
+          },
+          "corrected": {
+            "command": "python3 /tmp/starter-integration-sources-083990/bedrock/scripts/owner_journey_release.py --base /tmp/bedrock-owner-proof-6usy845u --socket /tmp/bedrock-owner-proof-6usy845u/postgres-socket --output /tmp/bedrock-owner-proof-6usy845u/release-check.json",
+            "exit_code": 0,
+            "log": "/home/svetzal/.foundry/tool-logs/1789-1790894939156602601.stdout.log",
+            "stdout_log": "/home/svetzal/.foundry/tool-logs/1789-1790894939156602601.stdout.log",
+            "stderr_log": "/home/svetzal/.foundry/tool-logs/1789-1790894939156602601.stderr.log"
+          }
+        },
+        "published": {
+          "style_assets_checked": 31,
+          "photo_variants_checked": 0,
+          "enquiry": {
+            "id": "809fb868-beae-49ad-ab95-a01ffc3e56cb",
+            "message": "Exact enquiry 07aa75f6469a4b4e92d5b217b382c553",
+            "name": "Release rehearsal 07aa75f6469a4b4e92d5b217b382c553",
+            "email": "enquiry-07aa75f6469a4b4e92d5b217b382c553@example.invalid",
+            "phone": "555-0100"
+          },
+          "publication": "published",
+          "preview": "passed; unauthorized, malformed and incompatible requests rejected",
+          "rejecting": {
+            "command": "python3 /tmp/starter-integration-sources-083990/bedrock/scripts/owner_journey_release.py --base /tmp/bedrock-owner-proof-6usy845u/published --socket /tmp/bedrock-owner-proof-6usy845u/postgres-socket --output /tmp/bedrock-owner-proof-6usy845u/published/release-check.json --artifact-root /tmp/bedrock-owner-proof-6usy845u --lead-route /__missing_release_leads",
+            "exit_code": 1,
+            "log": "/home/svetzal/.foundry/tool-logs/3770-1790895294599842360.stderr.log",
+            "stdout_log": "/home/svetzal/.foundry/tool-logs/3770-1790895294599842360.stdout.log",
+            "stderr_log": "/home/svetzal/.foundry/tool-logs/3770-1790895294599842360.stderr.log"
+          },
+          "corrected": {
+            "command": "python3 /tmp/starter-integration-sources-083990/bedrock/scripts/owner_journey_release.py --base /tmp/bedrock-owner-proof-6usy845u/published --socket /tmp/bedrock-owner-proof-6usy845u/postgres-socket --output /tmp/bedrock-owner-proof-6usy845u/published/release-check.json --artifact-root /tmp/bedrock-owner-proof-6usy845u",
+            "exit_code": 0,
+            "log": "/home/svetzal/.foundry/tool-logs/3780-1790895294745616168.stdout.log",
+            "stdout_log": "/home/svetzal/.foundry/tool-logs/3780-1790895294745616168.stdout.log",
+            "stderr_log": "/home/svetzal/.foundry/tool-logs/3780-1790895294745616168.stderr.log"
+          }
+        }
+      },
+      "packaging_commands": {
+        "unpublished": "env MIX_HOME=/workspace/app/.bedrock-tools/mix HEX_HOME=/workspace/app/.bedrock-tools/hex MIX_ENV=prod mix release --overwrite",
+        "published": "env MIX_HOME=/workspace/app/.bedrock-tools/mix HEX_HOME=/workspace/app/.bedrock-tools/hex MIX_ENV=prod mix release --overwrite"
+      },
+      "runtime_commands": {
+        "unpublished": "exec /tmp/bedrock-owner-proof-6usy845u/workspace/app/_build/prod/rel/business/bin/business start",
+        "published": "exec /tmp/bedrock-owner-proof-6usy845u/published/workspace/app/_build/prod/rel/business/bin/business start"
+      }
+    },
+    "3": {
+      "status": "passed",
+      "phases": {
+        "stage": "passed",
+        "compile": "passed",
+        "service": "passed",
+        "smoke": "passed"
+      },
+      "database_setup_command": "exec env MIX_HOME=/workspace/app/.bedrock-tools/mix HEX_HOME=/workspace/app/.bedrock-tools/hex MIX_ENV=prod mix ecto.migrate",
+      "retained_record": {
+        "id": "8a59b26f-e8e5-425d-b3ac-318c097dd0f0",
+        "message": "Keep this enquiry through publication",
+        "name": "Retained qualification enquiry",
+        "status": "new",
+        "phone": null,
+        "email": "retained@example.invalid",
+        "inserted_at": "2026-10-01T22:48:54.549087Z",
+        "notes": null
+      },
+      "renderer_command": "exec env MIX_HOME=/workspace/app/.bedrock-tools/mix HEX_HOME=/workspace/app/.bedrock-tools/hex MIX_ENV=prod mix run --no-start /tmp/bedrock-owner-proof-6usy845u/published/renderer.exs",
+      "renderer": "accepted export; incompatible hash rejected",
+      "http": {
+        "path": "/",
+        "status": 200,
+        "sha256": "1d6b8d509997289328d9f6f6dff50922d15f0db087d53fc464cfa1cb4ce8be7c",
+        "published_content": "Published boundary electrical service"
+      }
+    }
+  },
+  "publication": {
+    "content": "Published boundary electrical service",
+    "publication_id": "cbf1ec9c-6103-4632-8ea4-d4487d931bea",
+    "files_sha256": {
+      "priv/static/assets/published/fonts/OFL-space-grotesk.txt": "c6dec685825f73b18c20926fddc65e8315642e12986f15db0699170940a09efc",
+      "priv/static/assets/published/fonts/ibm-plex-mono-400.woff2": "c36f509c0a8f9f85f29cb44bc8701d8a9e0b14c499e77a884f789ead7093a7ac",
+      "priv/static/assets/published/fonts/zilla-slab-500.woff2": "7212ca62b51f3ad608eceaa4fa4cd6f38b2cca5a6140bfe1b9b3d995ad04443f",
+      "priv/static/assets/published/fonts/OFL-merriweather-sans.txt": "96596af4585dfa870eab42befab548d00fa31d2cc6ae2105fc568cc125c5b7ff",
+      "priv/static/assets/published/fonts/newsreader-400-600.woff2": "01817351be3edfc1714fe6d60ddea6a22a169a5ebd033b50c7f9495e5d9c386a",
+      "priv/static/assets/published/fonts/archivo-400-700.woff2": "7150c0ec5ad356453013d11affec1fbab95de0dd2dcecb043b4f1cb7f87c4ba4",
+      "priv/static/assets/published/fonts/ibm-plex-sans-400-700.woff2": "056e4e2459f57a0033c8c9c844ff19d6e42ac8602027803d4345823bcc939818",
+      "priv/static/assets/published/fonts/OFL-fraunces.txt": "bdf4c22802eaf804f998195871c6b8938aac2ac14b2d78a8bd66a6f1eced833b",
+      "priv/published_site/scene.json": "b956a49c6dc87226daf6b4b477c840f0dcc005d20733e5afb20821d4884e27ff",
+      "priv/static/assets/published/fonts/OFL.txt": "186d750eb496a4c17a76385f82be6aea2ac1cf2de074a811d63786cf374ea73f",
+      "priv/static/assets/published/fonts/lato-700.woff2": "7a7ce1a34f3e9944fe88fc61abbc93b6db383afa2b90815fd7ccea456fbce4e5",
+      "priv/static/assets/published/fonts/zilla-slab-700.woff2": "6d5ec30c781ce44aef71e9ea386f861a6a74db5dc162fbbc126fb522519c38a3",
+      "priv/static/assets/published/fonts/OFL-outfit.txt": "c676351bf8576b9aba743cd5eaa8c0e7ee0d51f805d720447b4df4ddb6a2e416",
+      "priv/static/assets/published/fonts/OFL-archivo.txt": "108b4e57c9c796d3d38d0428ca7ee39de47ad93187302718d9b2d8864b9b716b",
+      "priv/static/assets/published/fonts/OFL-archivo-black.txt": "4eb085b4f06e3c1625d8b577902bf639d480633635837bf2ed94d1a7b1b842f5",
+      "priv/static/assets/published/fonts/lora-400-700.woff2": "6b102ab35aa1f2b315788bb4853434ed1e52137603bf7a3da71a682276748d45",
+      "priv/static/assets/published/fonts/OFL-public-sans.txt": "157a9e77f7580246e97c769490e2e977ae94399f9d30f4556015c41fe8c28bac",
+      "priv/static/assets/published/fonts/sora-400-700.woff2": "3902474d3ece89c8580d5ef3325cf58753e6e45a86f9957b4dacc4fce2e7fde1",
+      "priv/static/assets/published/fonts/OFL-ibm-plex-mono.txt": "37784b44044a4ffd9256702b7c0982c37e5c8887ba90c6dca0479aea93dc898d",
+      "priv/static/assets/published/fonts/newsreader-italic-400.woff2": "e384e31812c1d580b5ae2217ade8ca5fe9e5135ea9c27423359d00a954c28488",
+      "priv/static/assets/published/fonts/OFL-work-sans.txt": "749aca05078664ce682dce1b1b10096ac397cb088c1a6df4e1bb56f0092a9272",
+      "priv/static/assets/published/fonts/OFL-nunito-sans.txt": "efbb0c9e864cef973982d9a17567e6be5c3d1759695574586f3f18c7ecca064b",
+      "priv/static/assets/published/fonts/OFL-figtree.txt": "140d37233e7f3ce7313798befa9600893bcceaf41a55fa0fa5ad52f7f657a268",
+      "priv/static/assets/published/fonts.css": "1f5e12ea58672405f281dec708ddd3c93b1170b7c75fa2f26244d25f4a8702a5",
+      "priv/static/assets/published/fonts/oswald-400-700.woff2": "9dde3797547520f762f4ba3a822d417a0872b962bc78753a7ee9f955382b6b85",
+      "priv/static/assets/published/fonts/OFL-ibm-plex-sans.txt": "37784b44044a4ffd9256702b7c0982c37e5c8887ba90c6dca0479aea93dc898d",
+      "priv/static/assets/published/fonts/public-sans-400-700.woff2": "c1b6da516e0062e9c2f341b3a51dd2d621d946da72f06c6cfe05fd9d2dd8622d",
+      "priv/static/assets/published/fonts/source-sans-3-400-600.woff2": "ac057a5593cbe3df0d2585da5dd5f33b8efa84aa30550c710fe061b37fc5c54b",
+      "priv/static/assets/published/fonts/bricolage-grotesque-400-700.woff2": "85f55a58a31e61a2e19e8bb25fed503181bf2a6b4cab76c589992cfaac377447",
+      "priv/static/assets/published/fonts/OFL-oswald.txt": "0687c51a3126ae6963389181135a2eaea02f2e88f31230d27409952f28e84da5",
+      "priv/static/assets/published/fonts/OFL-lora.txt": "1d9a970809ac804b582a6ce7f0ebc4e7fefcbfd7ff6299cad35ee656a21be716",
+      "priv/static/assets/published/fonts/inter-tight-400-700.woff2": "83d548cd73ef2e039167db3adb5ea9d7a7870466ffc8a162c9820bc348938aaf",
+      "priv/static/assets/published/fonts/OFL-open-sans.txt": "fbbbcfef55318de350562559b671360de6d597112ecc5c73881b05092db89602",
+      "priv/static/assets/published/fonts/zilla-slab-600.woff2": "afeeae1f7ce9f9a419c958fea3f99e86e268ab8b5d9ed50c0bcc9cfaf21f1c50",
+      "priv/static/assets/published/fonts/OFL-inter-tight.txt": "50240ab035cf1b6b3307940235481d515c4b6de3ab1fa843dbe59e7892cb9d58",
+      "priv/static/assets/published/fonts/archivo-black-400.woff2": "4eca2abdbbc1998c3a286e2e83a2256be5263ccb801aa93b00c64fea891efd3a",
+      "priv/static/assets/published/fonts/barlow-400.woff2": "7a686e76312866b7d506c103e51a829d4c96a0b4576835128d3b7b53801c095a",
+      "priv/static/assets/published/fonts/lato-400.woff2": "d4ae5188a65370ecfe28f42293bbee8297cfd5712c6aadfdb270d48f2bcd88b0",
+      "priv/static/assets/published/fonts/figtree-400-600.woff2": "8330490a01c60c196eae00b823de8102275aaa5862e7b76a7af21b8745338928",
+      "priv/static/assets/published/fonts/barlow-condensed-700.woff2": "e3e520cb7468f2efd60bc2ce96694567c3312f4ef414fffbe605e3ad146b24e6",
+      "priv/static/assets/published/fonts/OFL-libre-baskerville.txt": "55959eef5b0c3b2e3c1c7631b8ff0f9447d75de20f29cfa7db5bcfb026763343",
+      "priv/static/assets/published/fonts/merriweather-sans-400-700.woff2": "69a9465bc51cf625c58e3b17c90f89031361a75f21debff9c28b9bf6feff20e4",
+      "priv/published_site/media.json": "1daebc6e7baeb6446c9a575736ee653ddae994093026c79dcf2abd95895f3118",
+      "priv/static/assets/published/fonts/OFL-bricolage-grotesque.txt": "4b5a7d8f37f5602621c8a8d7358a6a2e71317e6c231c661e15aef0275d3e07ba",
+      "priv/static/assets/published/fonts/space-grotesk-400-700.woff2": "a0d054c4af557de20afd6ca59f47ab353bcaec49c63ff04b6c9d39d0f8910557",
+      "priv/static/assets/published/fonts/outfit-400-700.woff2": "92684e4acde79ef07758cd09380b7e01e9824d8b061eddeda046f78c166d7b12",
+      "priv/static/assets/published/fonts/work-sans-400-700.woff2": "72cd8f67849cc714f3364eeeb378df9a49f4aff00e6a3640fad36c9c93a9b197",
+      "priv/static/assets/published/fonts/open-sans-400-700.woff2": "441af0def989ebfdbd6ad85ffaed85e967ab21a05f1dd342f16259464a206dd0",
+      "priv/static/assets/published/fonts/barlow-condensed-600.woff2": "5bc49d41f32810a114765314392332ce2acae2276635eee265a50319a12c1b49",
+      "priv/static/assets/published/fonts/nunito-sans-400-700.woff2": "39184f4d011106f5bfbe3813d3a8c3673663f04a45a9c9f55b1ed15f4d5b1cc9",
+      "priv/static/assets/published/fonts/barlow-600.woff2": "488b58098126c00b8fa77f4d58b0a4bc982e81e4c83323c1a73d9f1a67c15971",
+      "priv/static/assets/published/fonts/OFL-sora.txt": "ba0b9729c9428ba79a0459ab8ec575791b51509dbec213e383d0316d37fec299",
+      "priv/static/assets/published/fonts/barlow-500.woff2": "80e7dc5605dd451bb9b092d7f46704f08bf39d2866cb981aa8caddc016716aed",
+      "priv/static/assets/published/fonts/ibm-plex-mono-500.woff2": "a76f53ca6612e7b3828eec2311098675b7f9849ae4169a8bcef6302aec02a6c0",
+      "priv/static/assets/published/fonts/OFL-source-sans-3.txt": "09746787287a289323b0ec3cff4d1a4a801331b82b7207c1e186f5d26619a392",
+      "priv/static/assets/published/fonts/zilla-slab-400.woff2": "90f974cf9aa18b562a98b0bbfd2670ef065f15dc56d39c26d826d71f7b9821e7",
+      "priv/static/assets/published/fonts/fraunces-400-700.woff2": "88e17be075f1be50ab67b057b99e3701b828f44ed28f9452df6c02645bb0cba9",
+      "priv/static/assets/published/fonts/OFL-lato.txt": "74ba064d03f1f1c4a952da936c3eb71866c34404916734de3cae73b34357e59e",
+      "priv/static/assets/published/site.css": "280df43f94fc6effd8d82fb3bc2d54423b82b411d8bfc1bea59fae2dca8d1ee1",
+      "priv/static/assets/published/fonts/libre-baskerville-400-700.woff2": "b62b98ef69e6e55b28b9bcac84513eb1bdd1d312a344b1c76e979219923224a5",
+      "priv/static/assets/published/fonts/OFL-zilla-slab.txt": "240b385d3ec8c8d5c1d4af2bbba6ac72bac0309a80c1a8ff112c168643cc6811",
+      "priv/static/assets/published/fonts/OFL-newsreader.txt": "fdfad38143ec470553cae82a1e45320bdd1b9ec70415d37bd0171051d8a4ded8"
+    },
+    "generated_commit": "ce956eb3663b764226283e779bef59febad93a4d",
+    "parent_commit": "de315152446f7bb723173fe408f1fb9e88050bbd"
+  },
+  "release_routes": true,
+  "sources": {
+    "bedrock": {
+      "repository": "Mojility/bedrock",
+      "revision": "69c7f88c796299f0a4c46a888dddb91c77cf70b3"
+    },
+    "roost": {
+      "repository": "Mojility/roost",
+      "revision": "bb57e6d0bf2bff3af72d40ad9adb5fa7c34d81b8"
+    },
+    "workshop": {
+      "repository": "Mojility/bedrock-workshop",
+      "revision": "adfcae0a96c291ddebfd28a086e5464bf97c9376"
+    },
+    "starter": {
+      "repository": "Mojility/bedrock-system-template",
+      "revision": "a5912b119a61e8c216e7118c60659ead02acce06"
+    }
+  },
+  "bedrock_working_tree_dirty": false,
+  "bedrock_checkout_kind": "resolved integration source archive",
+  "host": "mojility-ops-01",
+  "date_utc": "2026-10-01T22:43:13Z",
+  "commands": {
+    "compile": "set -eu\nruntime_compile_started=$(date +%s)\nMIX_HOME=/workspace/app/.bedrock-tools/mix HEX_HOME=/workspace/app/.bedrock-tools/hex MIX_ENV=prod mix compile --warnings-as-errors\nprintf 'bedrock_runtime_compile_seconds: %s\\n' \"$(( $(date +%s) - runtime_compile_started ))\"\n",
+    "service": "set -eu\numask 077\nif test ! -f /workspace/runtime.env; then\n  printf 'export SECRET_KEY_BASE=%s\n' \"$(openssl rand -hex 64)\" > /workspace/runtime.env\nfi\nprintf '%s\n' 'export CUSTOMER_EXPLORATION=true' 'export EXPLORATION_PARENT_ORIGIN=https://owner-proof.mybedrock.ca' 'export EXPLORATION_PLATFORM_ORIGIN=https://mybedrock.ca' 'export EXPLORATION_MEDIA_ORIGIN=https://owner-proof-media.mybedrock.ca' >> /workspace/runtime.env\n. /workspace/runtime.env\nexec env MIX_HOME=/workspace/app/.bedrock-tools/mix HEX_HOME=/workspace/app/.bedrock-tools/hex MIX_ENV=prod PHX_SERVER=true PORT=4000 mix phx.server\n",
+    "smoke": "set -eu\n. /workspace/runtime.env\nreadiness_attempt=0\nuntil curl --fail --silent --output /dev/null --max-time 2 http://127.0.0.1:4000/health/ready; do\n  readiness_attempt=$((readiness_attempt + 1))\n  if test \"$readiness_attempt\" -ge 30; then\n    printf '%s\n' 'application_readiness_timeout' >&2\n    exit 1\n  fi\n  sleep 1\ndone\nexec env MIX_HOME=/workspace/app/.bedrock-tools/mix HEX_HOME=/workspace/app/.bedrock-tools/hex MIX_ENV=prod PHX_SERVER=false mix run --no-start scripts/smoke.exs\n",
+    "stage": "set -eu\nexport GIT_TERMINAL_PROMPT=0 MIX_ENV=prod\nexport MIX_HOME=/staging/app/.bedrock-tools/mix HEX_HOME=/staging/app/.bedrock-tools/hex\nmkdir -p /staging/app\ncd /staging/app\ntest ! -L .git\nif test -d .git; then\n  test \"$(git remote get-url origin)\" = 'https://github.com/Mojility/bedrock-acme-electric'\n  test -z \"$(git status --porcelain --untracked-files=all)\"\nelse\n  git init -q\n  printf '%s\n' '.bedrock-tools/' >> .git/info/exclude\n  git remote add origin 'https://github.com/Mojility/bedrock-acme-electric'\n  git fetch --depth 1 origin 'de315152446f7bb723173fe408f1fb9e88050bbd'\n  git checkout --detach FETCH_HEAD\nfi\ntest \"$(git rev-parse HEAD)\" = 'de315152446f7bb723173fe408f1fb9e88050bbd'\ntest ! -e _build && test ! -L _build\ntest ! -e deps && test ! -L deps\n\nmix local.hex --force\nmix local.rebar --force\ntest -f mix.lock\nMIX_ENV=dev mix deps.get --check-locked\nMIX_ENV=dev mix deps.compile\nMIX_ENV=dev mix compile --warnings-as-errors\nMIX_ENV=test mix deps.get --check-locked\nMIX_ENV=test mix deps.compile\nMIX_ENV=test mix compile --warnings-as-errors\nmix deps.get --check-locked\ngit diff --exit-code -- mix.lock\nmix deps.compile\nmix compile --warnings-as-errors\nmix assets.deploy\n\n"
+  },
+  "generated_commit": "de315152446f7bb723173fe408f1fb9e88050bbd",
+  "commands_sha256": "30953840f8aa3d7d87bd429732a4cda063fa0aa19721eee820dded1a94895629",
+  "database": {
+    "name": "exploration",
+    "unique_cluster": "bedrock-owner-proof-6usy845u",
+    "transport": "private Unix socket; no TCP listener"
+  },
+  "published_commands": {
+    "compile": "set -eu\nruntime_compile_started=$(date +%s)\nMIX_HOME=/workspace/app/.bedrock-tools/mix HEX_HOME=/workspace/app/.bedrock-tools/hex MIX_ENV=prod mix compile --warnings-as-errors\nprintf 'bedrock_runtime_compile_seconds: %s\\n' \"$(( $(date +%s) - runtime_compile_started ))\"\n",
+    "service": "set -eu\numask 077\nif test ! -f /workspace/runtime.env; then\n  printf 'export SECRET_KEY_BASE=%s\n' \"$(openssl rand -hex 64)\" > /workspace/runtime.env\nfi\nprintf '%s\n' 'export CUSTOMER_EXPLORATION=true' 'export EXPLORATION_PARENT_ORIGIN=https://owner-proof.mybedrock.ca' 'export EXPLORATION_PLATFORM_ORIGIN=https://mybedrock.ca' 'export EXPLORATION_MEDIA_ORIGIN=https://owner-proof-media.mybedrock.ca' >> /workspace/runtime.env\n. /workspace/runtime.env\nexec env MIX_HOME=/workspace/app/.bedrock-tools/mix HEX_HOME=/workspace/app/.bedrock-tools/hex MIX_ENV=prod PHX_SERVER=true PORT=4000 mix phx.server\n",
+    "smoke": "set -eu\n. /workspace/runtime.env\nreadiness_attempt=0\nuntil curl --fail --silent --output /dev/null --max-time 2 http://127.0.0.1:4000/health/ready; do\n  readiness_attempt=$((readiness_attempt + 1))\n  if test \"$readiness_attempt\" -ge 30; then\n    printf '%s\n' 'application_readiness_timeout' >&2\n    exit 1\n  fi\n  sleep 1\ndone\nexec env MIX_HOME=/workspace/app/.bedrock-tools/mix HEX_HOME=/workspace/app/.bedrock-tools/hex MIX_ENV=prod PHX_SERVER=false mix run --no-start scripts/smoke.exs\n",
+    "stage": "set -eu\nexport GIT_TERMINAL_PROMPT=0 MIX_ENV=prod\nexport MIX_HOME=/staging/app/.bedrock-tools/mix HEX_HOME=/staging/app/.bedrock-tools/hex\nmkdir -p /staging/app\ncd /staging/app\ntest ! -L .git\nif test -d .git; then\n  test \"$(git remote get-url origin)\" = 'https://github.com/Mojility/bedrock-acme-electric'\n  test -z \"$(git status --porcelain --untracked-files=all)\"\nelse\n  git init -q\n  printf '%s\n' '.bedrock-tools/' >> .git/info/exclude\n  git remote add origin 'https://github.com/Mojility/bedrock-acme-electric'\n  git fetch --depth 1 origin 'ce956eb3663b764226283e779bef59febad93a4d'\n  git checkout --detach FETCH_HEAD\nfi\ntest \"$(git rev-parse HEAD)\" = 'ce956eb3663b764226283e779bef59febad93a4d'\ntest ! -e _build && test ! -L _build\ntest ! -e deps && test ! -L deps\n\nmix local.hex --force\nmix local.rebar --force\ntest -f mix.lock\nMIX_ENV=dev mix deps.get --check-locked\nMIX_ENV=dev mix deps.compile\nMIX_ENV=dev mix compile --warnings-as-errors\nMIX_ENV=test mix deps.get --check-locked\nMIX_ENV=test mix deps.compile\nMIX_ENV=test mix compile --warnings-as-errors\nmix deps.get --check-locked\ngit diff --exit-code -- mix.lock\nmix deps.compile\nmix compile --warnings-as-errors\nmix assets.deploy\n\n"
+  },
+  "published_commands_sha256": "b879bf56bbc3303e50a51559d7a13acc775a453d989563dcfda0e5c28b5e5ce6"
+}

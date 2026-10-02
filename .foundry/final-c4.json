@@ -1,0 +1,59 @@
+{
+  "commands": [
+    {
+      "command": [
+        "mix",
+        "docs",
+        "--warnings-as-errors"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/32-1790886631061473576.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/32-1790886631061473576.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "precommit"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/82-1790886632682426179.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/82-1790886632682426179.stderr.log"
+    }
+  ],
+  "archive_sources": {
+    "apps/bedrock/lib/bedrock/explorations/bootstrap.ex": "24be9947207a50d9f108c68960351a715cc49fb6cbfeeffaee099f309306ae84",
+    "apps/bedrock/lib/bedrock/explorations/preparation.ex": "635f421f32ba3dc5fb1bd523329c4d072110666960cd2eef80011a9251f380f9",
+    "workshop": "All executing files match the manifest already checked against committed source"
+  },
+  "cleanup": {
+    "/tmp/starter-c4-bedrock": "removed",
+    "/tmp/starter-c4-workshop": "removed",
+    "/tmp/starter-c4-hex": "removed",
+    "independent_sql": {
+      "databases": [
+        "workshop_f0b48a8c02a757b3ea19",
+        "workshop_test_f0b48a8c02a757b3ea19",
+        "qualification_f732c4aa573d99c584e1",
+        "business_test_c4_0827e71e9319"
+      ],
+      "remaining": ""
+    },
+    "workshop_snapshot_absent": true,
+    "bedrock_snapshot_parent_absent": true,
+    "final_quality_database": {
+      "name": "business_test_c4_final_d39103501fe0",
+      "exit_code": 0,
+      "capture": "dropdb: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/231-1790886656657854081.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/231-1790886656657854081.stderr.log\n",
+      "independent_database_query": ""
+    },
+    "temporary_drivers": "Removed after retaining external copies under /home/svetzal/.foundry/tool-logs/"
+  },
+  "proof_shape": "passed",
+  "working_tree": "Modified; Foundry owns finalization",
+  "environment": {
+    "MIX_ENV": "test",
+    "ERL_FLAGS": "+S 4:4",
+    "HEX_HOME": "/tmp/starter-c4-final-hex",
+    "MIX_TEST_PARTITION": "_c4_final_d39103501fe0"
+  }
+}

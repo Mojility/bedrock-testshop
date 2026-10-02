@@ -1,0 +1,9 @@
+{
+  "baseline_revision": "973fb6ce8317363ce1ac478a666cb14997f60de2",
+  "final_candidate_sha256": "571dbfa6618722015bb847f483db7b2678d324c46f3ecf7a71f2192775697ff9",
+  "algorithm": "SHA-256 over sorted tracked/nonignored paths and file bytes, with NUL separators, excluding .foundry (same algorithm as caller qualifier).",
+  "executing_application_and_workflow_sources_match_both_successful_rehearsals": true,
+  "qualification_materialization_sha256": "0d31bc3d345e71aae684dadf8b3ffba9c5ed4124fc4c1417bf6b5ae6c4fb84f9",
+  "qualification_to_final_difference": "Documentation finalization only; the final regression byte assertion was already in the retained caller qualification.",
+  "source_diff_sha256": "a5c5db3eae4d1a09ee6d5d6fb92c0e24dea1a356c51f57a39760910c78373771"
+}

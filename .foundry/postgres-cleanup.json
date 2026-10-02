@@ -1,0 +1,32 @@
+{
+  "test_databases": [
+    {
+      "actual_database_name": "business_test_postgres_c11_fa1eb366b48b4affb8fc996a426db3e7",
+      "absent": true
+    },
+    {
+      "actual_database_name": "business_test_postgres_final_c11_364189100313434fbbd023820ac8cb",
+      "absent": true
+    }
+  ],
+  "probe_database_removed": true,
+  "removed_resources": [
+    "/tmp/starter-c11-tools",
+    "/tmp/starter-c11-quality.py",
+    "/tmp/starter-c11-quality-final.py",
+    "/tmp/postgres-contract-bedrock",
+    "/tmp/postgres-contract-bedrock.tar",
+    "/tmp/postgres-contract-roost",
+    "/tmp/postgres-contract-roost.tar",
+    "/tmp/postgres-contract-bedrock-workshop",
+    "/tmp/postgres-contract-bedrock-workshop.tar",
+    "deps",
+    "_build",
+    "doc",
+    "cover",
+    "priv/plts"
+  ],
+  "listeners_started": false,
+  "sibling_edits": false,
+  "hosting_calls": false
+}

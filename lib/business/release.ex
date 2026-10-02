@@ -1,0 +1,53 @@
+defmodule Business.Release do
+  alias Business.Accounts.Staff
+
+  @moduledoc """
+  Used for executing DB release tasks when run in production without Mix
+  installed.
+  """
+  @app :business
+
+  def migrate do
+    load_app()
+
+    for repo <- repos() do
+      {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
+    end
+  end
+
+  def bootstrap_owner(email) do
+    load_app()
+
+    {:ok, result, _} =
+      Ecto.Migrator.with_repo(Business.Repo, fn _ -> Staff.bootstrap_owner(email) end)
+
+    result
+  end
+
+  # Trusted release CLI only, no route accepts this path; operator chooses the import file.
+  # sobelow_skip ["Traversal.FileModule"]
+  def import_legacy_leads(path) do
+    load_app()
+    rows = path |> File.read!() |> Jason.decode!()
+
+    {:ok, result, _} =
+      Ecto.Migrator.with_repo(Business.Repo, fn _ -> Business.Leads.import_legacy(rows) end)
+
+    result
+  end
+
+  def rollback(repo, version) do
+    load_app()
+    {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
+  end
+
+  defp repos do
+    Application.fetch_env!(@app, :ecto_repos)
+  end
+
+  defp load_app do
+    # Many platforms require SSL when connecting to the database
+    Application.ensure_all_started(:ssl)
+    Application.ensure_loaded(@app)
+  end
+end

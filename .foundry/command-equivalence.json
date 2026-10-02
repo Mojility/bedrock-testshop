@@ -1,0 +1,27 @@
+{
+  "kind": "direct",
+  "reason": "Current main advanced, but all actual generated Bootstrap/Preparation commands are byte-identical to the producer used in the completed behavioral qualification. This is command equivalence, not a fabricated latest-main HTTP run.",
+  "sources": [
+    "aaec254d96299f17c4a846a2dc04e5d1f068d15b",
+    "12d15697b629235d7c4bfeaf4753ff2f899a1ed5"
+  ],
+  "command_sha256": {
+    "unretained": {
+      "stage": "6dc1c720a9dbb69ff5e629a33affb3442d1a15ce2b9094affd70e13281764832",
+      "compile": "14b96c7e9a0e785e47821808e1a3563c6233522928dcded033bb885f74149269",
+      "service": "69d9111d43e1858dfbd251542f23531d6d144f7ea7bc960aba7feeec71929488",
+      "smoke": "2502490dd766efac5991fc0240f3b926d7f5b13bf26ef916b8116c1cfe254efb"
+    },
+    "retained": {
+      "stage": "0195d83df717be4b10a006d37a9979a9e5d39f07911529d492627d88890f22f0",
+      "compile": "14b96c7e9a0e785e47821808e1a3563c6233522928dcded033bb885f74149269",
+      "service": "69d9111d43e1858dfbd251542f23531d6d144f7ea7bc960aba7feeec71929488",
+      "smoke": "2502490dd766efac5991fc0240f3b926d7f5b13bf26ef916b8116c1cfe254efb"
+    }
+  },
+  "corrected": {
+    "command": "foundry capture -- python3 -B /tmp/starter-c2-compare-commands.py",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790879254507311749.stdout.log"
+  }
+}

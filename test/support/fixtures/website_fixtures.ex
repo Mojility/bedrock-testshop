@@ -1,4 +1,4 @@
-defmodule Shop.WebsiteFixtures do
+defmodule Business.WebsiteFixtures do
   @moduledoc "Pure theme settings for customer website contract tests."
 
   @doc "A full theme, with any axes in `overrides` replaced."

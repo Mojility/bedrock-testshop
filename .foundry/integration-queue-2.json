@@ -1,0 +1,76 @@
+{
+  "intent": {
+    "actor": "bedrock.actor.field_service_owner",
+    "goal": "bedrock.goal.own_business_system",
+    "interaction": "bedrock.interaction.publish_my_site",
+    "interactions": [
+      "bedrock.interaction.publish_my_site",
+      "bedrock.interaction.explore_before_adopting"
+    ]
+  },
+  "campaign": {
+    "1": "Generate and name the immutable unpublished starter",
+    "2": "Execute Bootstrap preparation, service readiness and customer smoke",
+    "3": "Export publication into the generated system and prove its real renderer/runtime",
+    "4": "Qualify release-route assumptions in unpublished and published systems",
+    "5": "Workshop iteration and acceptance through real executive evidence",
+    "6": "Front journey through real contexts (unimplemented)"
+  },
+  "stages": {
+    "1": {
+      "status": "failed",
+      "reason": "[Errno 11] Resource temporarily unavailable"
+    },
+    "2": {
+      "status": "failed",
+      "reason": "[Errno 11] Resource temporarily unavailable"
+    },
+    "3": {
+      "status": "failed",
+      "reason": "[Errno 11] Resource temporarily unavailable"
+    },
+    "4": {
+      "status": "failed",
+      "reason": "[Errno 11] Resource temporarily unavailable"
+    }
+  },
+  "publication": "not attempted",
+  "release_routes": true,
+  "sources": {
+    "bedrock": {
+      "repository": "Mojility/bedrock",
+      "revision": "78767528c45c0d9412c4cbc90d395c724ed1c5ee"
+    },
+    "roost": {
+      "repository": "Mojility/roost",
+      "revision": "bb57e6d0bf2bff3af72d40ad9adb5fa7c34d81b8"
+    },
+    "workshop": {
+      "repository": "Mojility/bedrock-workshop",
+      "revision": "32730f7132b1a262b85a0b66fcc46fedd1b8051a"
+    },
+    "starter": {
+      "repository": "Mojility/bedrock-system-template",
+      "revision": "973fb6ce8317363ce1ac478a666cb14997f60de2"
+    }
+  },
+  "bedrock_working_tree_dirty": false,
+  "bedrock_checkout_kind": "resolved integration source archive",
+  "executed_bedrock_files_sha256": {
+    "scripts/owner_journey_cache_proof.py": "e2e7faaf975bf59f2345ded5b6f0b79c833c68e02238ca73547c7dec979f17e4",
+    "scripts/owner_journey_commands.exs": "b767b965fcba5097a268393bfd4aa880c5fe7b25fdabdac143dd712bab913988",
+    "scripts/owner_journey_generation_test.exs": "d6ce838d118d0d976e829a137d65c671ef29fb0d7c15663fd572b3981713f9f1",
+    "scripts/owner_journey_records.exs": "a4da5b46fbf5d75af5b3bf46813ff9ee348071720b76bcba569d2387b1434ffd",
+    "scripts/owner_journey_release.py": "04741b54ca2670f4ff2151a7acf269f40cfbc389c0c9bc71075403669d76e846",
+    "scripts/owner_journey_renderer.exs": "9ec61c7f4597d3202e27dcee2189f4882c07d21fed8e09ef0a2c51918b40ad7f",
+    "scripts/owner_journey_workshop.exs": "ac98c0fd1fff926fcf3e6a63a0bcac02a0603d1bcdacd36f8181c22897d15463",
+    "scripts/owner_journey_workshop.py": "649946ef46e2a38e1476d161dd58e3e17bdda1e6435939b91c59abb51af69962",
+    "scripts/owner_journey_workshop_acceptance_test.exs": "60e4e105f23f6a75968b430ce81f7e859e6b3de6b54273a8dcf2fedcbd9776ed",
+    "scripts/owner_journey_workshop_import_test.exs": "310c39d630abdd9ad8d69bd86939f6145ee890f434605a2c4325cf3dd8095302",
+    "scripts/qualify_owner_journey.py": "930d0bb50a1f7901307125612e08f8b00c3c2a94b103e55107c6d1a279368ba5"
+  },
+  "host": "mojility-ops-01",
+  "date_utc": "2026-10-01T23:30:06Z",
+  "commands": {},
+  "error": "[Errno 11] Resource temporarily unavailable"
+}

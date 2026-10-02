@@ -1,0 +1,26 @@
+[
+  {
+    "case": "sigterm",
+    "command": "foundry capture -- python3 scripts/verify_qualification_cleanup.py --bedrock /tmp/starter-c2-bedrock-main --case sigterm",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/5-1790874470709578392.stdout.log"
+  },
+  {
+    "case": "sigint",
+    "command": "foundry capture -- python3 scripts/verify_qualification_cleanup.py --bedrock /tmp/starter-c2-bedrock-main --case sigint",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/766-1790874601770961000.stdout.log"
+  },
+  {
+    "case": "failure",
+    "command": "foundry capture -- python3 scripts/verify_qualification_cleanup.py --bedrock /tmp/starter-c2-bedrock-main --case failure",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/1523-1790874735386445075.stdout.log"
+  },
+  {
+    "case": "success",
+    "command": "foundry capture -- python3 scripts/verify_qualification_cleanup.py --bedrock /tmp/starter-c2-bedrock-final-main --case success",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790879622021481626.stdout.log"
+  }
+]

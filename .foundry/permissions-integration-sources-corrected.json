@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "sources": {
+    "bedrock": {
+      "repository": "Mojility/bedrock",
+      "revision": "78767528c45c0d9412c4cbc90d395c724ed1c5ee"
+    },
+    "roost": {
+      "repository": "Mojility/roost",
+      "revision": "bb57e6d0bf2bff3af72d40ad9adb5fa7c34d81b8"
+    },
+    "workshop": {
+      "repository": "Mojility/bedrock-workshop",
+      "revision": "32730f7132b1a262b85a0b66fcc46fedd1b8051a"
+    },
+    "starter": {
+      "repository": "Mojility/bedrock-system-template",
+      "revision": "973fb6ce8317363ce1ac478a666cb14997f60de2"
+    }
+  },
+  "deployment": "not asserted",
+  "build_id": "local.1",
+  "bedrock_working_tree_dirty": false,
+  "starter_files_sha256": "1b5c1177905fe1c2a4728d54321cfa409e8156e7cecad965d9bd86abfaf6c2cb",
+  "roost_files_sha256": "1434f81482d26205802fa96616087a3d94ef422946420402251dea4a35df4005",
+  "workshop_contract": {
+    "source": "contracts/workshop_executive_contract_v1.json",
+    "destination": "apps/bedrock/test/fixtures/workshop_executive_contract_v1.json",
+    "sha256": "2f9ed7596bd567e131aa69cea936dcced847fa049a1ea75a501f0a7d49d5a36d"
+  },
+  "guidance": {
+    "version": 1,
+    "repository": "https://github.com/Mojility/bedrock.git",
+    "revision": "78767528c45c0d9412c4cbc90d395c724ed1c5ee",
+    "source": "apps/bedrock/priv/meta_model/guidance.json",
+    "destination": "priv/meta_model/guidance.json",
+    "sha256": "0a12d934356f13a556a57502457b8e74ef51177a866095f0692dd07ff3b02006",
+    "profiles": {
+      "phoenix-v1": {
+        "repository": "https://github.com/svetzal/guidelines.git",
+        "revision": "ccd0b4b574dbe21f6152e8381541b491b7362453",
+        "source": "plugins/elixir-ecosystem/agents/elixir-phoenix-craftsperson.md",
+        "destination": "priv/profiles/phoenix-v1.md",
+        "sha256": "0ceb58e93f0570518f485a647e7bdf45e9014e8e969189526ab53ca631ea5f8d"
+      }
+    }
+  },
+  "committed_starter_files_sha256": "7d7d60a5a77331ad4a2212a70563f36a58437269f708b367e296eec711d0f94e",
+  "candidate_overlay": {
+    "base_revision": "973fb6ce8317363ce1ac478a666cb14997f60de2",
+    "variant": "corrected",
+    "materialization_sha256": "1b5c1177905fe1c2a4728d54321cfa409e8156e7cecad965d9bd86abfaf6c2cb"
+  }
+}

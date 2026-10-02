@@ -1,0 +1,116 @@
+{
+  "kind": "behavioral",
+  "source_change": "Grant contents: read and id-token: write at the starter integration call. Compare effective caller permissions against every real committed reusable producer job; inherited unspecified permissions are none and job permissions replace workflow defaults.",
+  "producer": {
+    "repository": "Mojility/bedrock",
+    "revision": "78767528c45c0d9412c4cbc90d395c724ed1c5ee",
+    "path": ".github/workflows/integration.yml",
+    "sha256": "da1dac5fe25a61dbd0096f988269c58ab36d71458f7afb02f16258e34d8b4a06"
+  },
+  "caller_baseline": {
+    "revision": "973fb6ce8317363ce1ac478a666cb14997f60de2",
+    "workflow_sha256": "f385efa2253329d0065816a9fced85ce961d06f7f6a5cabbe6ec9bc2c6ebe92c"
+  },
+  "rejecting": {
+    "command": "foundry capture -- env MIX_ENV=test ERL_FLAGS=\"+S 4:4\" HEX_HOME=/tmp/starter-c8-tools/hex MIX_TEST_PARTITION=_c8 BUILD_WORKFLOW_PATH=/tmp/starter-c8-permissions/caller-before.yml mix test test/maintenance/build_workflow_test.exs",
+    "exit_code": 2,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790896946343565397.stdout.log",
+    "failure": "Actual preserved workflow cannot grant the producer bedrock-image id-token write request."
+  },
+  "corrected": {
+    "command": "foundry capture -- env MIX_ENV=test ERL_FLAGS=\"+S 4:4\" HEX_HOME=/tmp/starter-c8-tools/hex MIX_TEST_PARTITION=_c8 mix test test/maintenance/build_workflow_test.exs",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790896947513182854.stdout.log"
+  },
+  "limitations": [
+    "Local workflow permission validation, not hosted GitHub execution. No green main workflow, acceptance or deployment claimed."
+  ],
+  "preserved_evidence": ".foundry/proof-c7.json",
+  "initial_proof_first": {
+    "rejecting": {
+      "command": "foundry capture -- env MIX_ENV=test ERL_FLAGS=\"+S 4:4\" HEX_HOME=/tmp/starter-c8-tools/hex MIX_TEST_PARTITION=_c8 INTEGRATION_PRODUCER_PATH=/tmp/starter-c8-permissions/producer.yml mix test test/maintenance/build_workflow_test.exs",
+      "exit_code": 2,
+      "log": "/home/svetzal/.foundry/tool-logs/2-1790896478897542189.stdout.log",
+      "failure": "bedrock-image requests id-token write; preserved caller grants none"
+    },
+    "corrected": {
+      "command": "foundry capture -- env MIX_ENV=test ERL_FLAGS=\"+S 4:4\" HEX_HOME=/tmp/starter-c8-tools/hex MIX_TEST_PARTITION=_c8 INTEGRATION_PRODUCER_PATH=/tmp/starter-c8-permissions/producer.yml mix test test/maintenance/build_workflow_test.exs",
+      "exit_code": 0,
+      "log": "/home/svetzal/.foundry/tool-logs/2-1790896600753548664.stdout.log"
+    }
+  },
+  "final_regression_sha256": "0db2b615028c705b18c1f0549c3ee99571a8e536c9f2e081b23ec0879418a6c5",
+  "quality_record": ".foundry/permissions-quality.json",
+  "intent": {
+    "beneficiary": "Field-service owner",
+    "actor": "bedrock.actor.field_service_owner",
+    "goal": "bedrock.goal.own_business_system",
+    "interactions": [
+      "bedrock.interaction.open_workshop_promptly",
+      "bedrock.interaction.customers_reach_me_from_site"
+    ],
+    "performer": "Starter maintainer",
+    "completion": "A permission-compatible reusable caller with preserved publication gating and locally verified generation/preparation/HTTP/database behavior."
+  },
+  "current_source_integration": {
+    "command": "foundry capture -- env PATH=/tmp/starter-c8-permissions/bin:$PATH python3 /tmp/starter-c8-permissions/isolated.py corrected",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790896626927558123.stdout.log",
+    "record": ".foundry/permissions-integration-corrected.json",
+    "source_resolution": ".foundry/permissions-integration-sources-corrected.json",
+    "executing_source_identity": ".foundry/permissions-executing-sources.json",
+    "stages": [
+      "real generation",
+      "unpublished preparation + deployed assets + HTTP/database smoke",
+      "compatible real publication export + renderer + preparation + smoke",
+      "packaged release application checks in both states"
+    ]
+  },
+  "retained_enquiry_qualification": {
+    "command": "foundry capture -- python3 scripts/qualify_callers.py --bedrock /tmp/starter-c8-permissions/clean-bedrock --bedrock-revision 78767528c45c0d9412c4cbc90d395c724ed1c5ee --snapshot-parent /tmp/starter-c8-permissions",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790897672327842387.stdout.log",
+    "candidate_materialization_sha256": "0d31bc3d345e71aae684dadf8b3ffba9c5ed4124fc4c1417bf6b5ae6c4fb84f9",
+    "seed_log": "/home/svetzal/.foundry/tool-logs/2732-1790898416402590549.stdout.log",
+    "unpublished_smoke_log": "/home/svetzal/.foundry/tool-logs/2824-1790898868898400810.stdout.log",
+    "published_smoke_log": "/home/svetzal/.foundry/tool-logs/3030-1790898882260279378.stdout.log",
+    "verified_database_fields": [
+      "id",
+      "name",
+      "phone",
+      "email",
+      "message",
+      "source",
+      "status",
+      "notes",
+      "legacy_id",
+      "inserted_at",
+      "seen_at"
+    ],
+    "expected_synthetic_values": {
+      "name": "Retained synthetic enquiry",
+      "phone": "555-0101",
+      "email": "retained@example.invalid",
+      "message": "Replace the kitchen light",
+      "source": "synthetic-import",
+      "status": "contacted",
+      "notes": "Awaiting preferred service date",
+      "inserted_at": "2026-09-01T12:00:00.000000Z",
+      "seen_at": "2026-09-02T13:00:00.000000Z"
+    },
+    "assertions": "Database record equals the seeded full-field expectation before and after smoke in both states; authenticated HTTP renders contact, request, submission timestamp and follow-up. CSRF denial writes no enquiry; anonymous staff access is denied; a fresh enquiry persists exact fields; real magic-link login creates the session used for staff reads. CSS is fetched nonempty, including deployed digested app assets. Source and history metadata integrity are checked in SQL, not claimed as separately rendered UI fields.",
+    "limitations": "Synthetic data and local sessions, disabled outbound mail; Contacted does not prove a reply or achievement of the customer goal."
+  },
+  "cleanup_record": ".foundry/permissions-cleanup.json",
+  "audit_source_record": ".foundry/permissions-audit-source.json",
+  "final_source_record": ".foundry/permissions-final-source.json",
+  "quality": {
+    "record": ".foundry/permissions-quality.json",
+    "initial_record": ".foundry/permissions-quality-initial.json",
+    "command": "foundry capture -- python3 .foundry/permissions-local-quality.py",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/2-1790899173250694192.stdout.log",
+    "coverage_percent": 94.11,
+    "threshold": 90
+  }
+}

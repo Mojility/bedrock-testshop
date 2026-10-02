@@ -1,0 +1,74 @@
+{
+  "archives": [
+    {
+      "repository": "bedrock",
+      "revision": "78767528c45c0d9412c4cbc90d395c724ed1c5ee",
+      "acquisition": "git archive 78767528c45c0d9412c4cbc90d395c724ed1c5ee",
+      "archive_sha256": "893c37b1b754a4ca0dbde6b8b5db3fa64d82f7cd12dde094b95e0ddf17ced2fc"
+    },
+    {
+      "repository": "roost",
+      "revision": "bb57e6d0bf2bff3af72d40ad9adb5fa7c34d81b8",
+      "acquisition": "git archive bb57e6d0bf2bff3af72d40ad9adb5fa7c34d81b8",
+      "archive_sha256": "71f3447a7bd11178662f614ca159ede11fcd6e119c3066248bc50ca90ab29f1a"
+    },
+    {
+      "repository": "bedrock-workshop",
+      "revision": "32730f7132b1a262b85a0b66fcc46fedd1b8051a",
+      "acquisition": "git archive 32730f7132b1a262b85a0b66fcc46fedd1b8051a",
+      "archive_sha256": "92691f73f0405663ad9063db4bad04af8218b00a49ca9adc7820f94f6ca14af7"
+    }
+  ],
+  "starter_baseline": "973fb6ce8317363ce1ac478a666cb14997f60de2",
+  "producer_workflow_sha256": "da1dac5fe25a61dbd0096f988269c58ab36d71458f7afb02f16258e34d8b4a06",
+  "caller_before_sha256": "f385efa2253329d0065816a9fced85ce961d06f7f6a5cabbe6ec9bc2c6ebe92c",
+  "caller_corrected_sha256": "caa6b5c79f1eadbd446a206cdaf7784f42f7d0f95550d02c65a0417ec05ccedd",
+  "scene_fixture_sha256": "d218c9f590f28e6d986348f32567ed654b81fada3bdf2fc0370633f89e8aaeb2",
+  "transport": "Read-only committed sibling Git archives. Exact starter baseline with explicit worktree overlay; GitHub and outbound mail are the simulated edges. No hosted workflow execution.",
+  "previous_proof": ".foundry/proof-c7.json",
+  "cycle7_caller_comparison": {
+    "scripts/integrate.py": {
+      "previous_sha256": "7bbe16da46480bcab5bcdb5b4dc0b669b79f0c1f4681fe323aec7a47c8df8758",
+      "current_sha256": "7bbe16da46480bcab5bcdb5b4dc0b669b79f0c1f4681fe323aec7a47c8df8758",
+      "unchanged": true
+    },
+    "scripts/qualify_owner_journey.py": {
+      "previous_sha256": "a5a864598c1941ebe361d79d3da707b1395a06b70b85395e93beadaf50287b2c",
+      "current_sha256": "930d0bb50a1f7901307125612e08f8b00c3c2a94b103e55107c6d1a279368ba5",
+      "unchanged": false
+    },
+    "scripts/owner_journey_generation_test.exs": {
+      "previous_sha256": "d6ce838d118d0d976e829a137d65c671ef29fb0d7c15663fd572b3981713f9f1",
+      "current_sha256": "d6ce838d118d0d976e829a137d65c671ef29fb0d7c15663fd572b3981713f9f1",
+      "unchanged": true
+    },
+    "scripts/owner_journey_commands.exs": {
+      "previous_sha256": "b767b965fcba5097a268393bfd4aa880c5fe7b25fdabdac143dd712bab913988",
+      "current_sha256": "b767b965fcba5097a268393bfd4aa880c5fe7b25fdabdac143dd712bab913988",
+      "unchanged": true
+    },
+    "scripts/owner_journey_records.exs": {
+      "previous_sha256": "a4da5b46fbf5d75af5b3bf46813ff9ee348071720b76bcba569d2387b1434ffd",
+      "current_sha256": "a4da5b46fbf5d75af5b3bf46813ff9ee348071720b76bcba569d2387b1434ffd",
+      "unchanged": true
+    },
+    "scripts/owner_journey_renderer.exs": {
+      "previous_sha256": "9ec61c7f4597d3202e27dcee2189f4882c07d21fed8e09ef0a2c51918b40ad7f",
+      "current_sha256": "9ec61c7f4597d3202e27dcee2189f4882c07d21fed8e09ef0a2c51918b40ad7f",
+      "unchanged": true
+    },
+    "scripts/owner_journey_release.py": {
+      "previous_sha256": "04741b54ca2670f4ff2151a7acf269f40cfbc389c0c9bc71075403669d76e846",
+      "current_sha256": "04741b54ca2670f4ff2151a7acf269f40cfbc389c0c9bc71075403669d76e846",
+      "unchanged": true
+    },
+    "apps/bedrock/lib/bedrock/explorations/bootstrap.ex": {
+      "previous_sha256": "24be9947207a50d9f108c68960351a715cc49fb6cbfeeffaee099f309306ae84",
+      "current_sha256": "24be9947207a50d9f108c68960351a715cc49fb6cbfeeffaee099f309306ae84",
+      "unchanged": true
+    }
+  },
+  "reuse_limit": "Preserved observations identify their older producer. Bootstrap, generation and application check bytes compare unchanged; the changed owner qualifier is rerun on the current producer, not presented as previously executed.",
+  "retained_caller_proof_command": "foundry capture -- python3 scripts/qualify_callers.py --bedrock /tmp/starter-c8-permissions/clean-bedrock --bedrock-revision 78767528c45c0d9412c4cbc90d395c724ed1c5ee --snapshot-parent /tmp/starter-c8-permissions",
+  "retained_caller_source": "Clean committed Bedrock tar archive; never read the integrated archive as a clean source."
+}

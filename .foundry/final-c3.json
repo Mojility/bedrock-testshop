@@ -1,0 +1,18 @@
+[
+  {
+    "command": [
+      "mix",
+      "test"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/13-1790883830351712624.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/13-1790883830351712624.stderr.log\n"
+  },
+  {
+    "command": [
+      "mix",
+      "precommit"
+    ],
+    "exit_code": 0,
+    "capture": "mix: exit 0\nstdout: /home/svetzal/.foundry/tool-logs/149-1790883837311676489.stdout.log\nstderr: /home/svetzal/.foundry/tool-logs/149-1790883837311676489.stderr.log\n"
+  }
+]

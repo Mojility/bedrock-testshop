@@ -1,0 +1,43 @@
+{
+  "environment": {
+    "MIX_ENV": "test",
+    "ERL_FLAGS": "+S 4:4",
+    "MIX_HOME": "/tmp/starter-c11-tools/mix",
+    "MIX_ARCHIVES": "/tmp/starter-c11-tools/mix/archives",
+    "HEX_HOME": "/tmp/starter-c11-tools/hex",
+    "MIX_TEST_PARTITION": "_postgres_final_c11_364189100313434fbbd023820ac8cbe1"
+  },
+  "checks": [
+    {
+      "command": "MIX_ENV=test mix docs --warnings-as-errors",
+      "exit_code": 0,
+      "required": true,
+      "logs": {
+        "stdout": "/home/svetzal/.foundry/tool-logs/52-1790905734788632163.stdout.log",
+        "stderr": "/home/svetzal/.foundry/tool-logs/52-1790905734788632163.stderr.log"
+      }
+    },
+    {
+      "command": "MIX_ENV=test mix test",
+      "exit_code": 0,
+      "required": true,
+      "logs": {
+        "stdout": "/home/svetzal/.foundry/tool-logs/150-1790905736751393763.stdout.log",
+        "stderr": "/home/svetzal/.foundry/tool-logs/150-1790905736751393763.stderr.log"
+      }
+    },
+    {
+      "command": "MIX_ENV=test mix precommit",
+      "exit_code": 0,
+      "required": true,
+      "logs": {
+        "stdout": "/home/svetzal/.foundry/tool-logs/286-1790905743136233486.stdout.log",
+        "stderr": "/home/svetzal/.foundry/tool-logs/286-1790905743136233486.stderr.log"
+      }
+    }
+  ],
+  "cleanup": {
+    "database": "business_test_postgres_final_c11_364189100313434fbbd023820ac8cbe1",
+    "exit_code": 0
+  }
+}

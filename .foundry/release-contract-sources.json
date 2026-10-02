@@ -1,0 +1,23 @@
+[
+  {
+    "repository": "roost",
+    "revision": "bb57e6d0bf2bff3af72d40ad9adb5fa7c34d81b8",
+    "archive_command": "git -C /home/svetzal/Work/Projects/Mojility/roost archive HEAD docs/contract-v1.md priv/cell/runner.py infra/cell/qualify_phoenix.py",
+    "archive_sha256": "6ea3213f6f81ce1224e60b9832c6281a1ebe077f9fbf5aafc4f5391603cd2d63",
+    "files": {
+      "docs/contract-v1.md": "69af5c917784a7257b957e8e8c9da3bb9bf58263c7a9cfe27b7fcbe648ff67d6",
+      "priv/cell/runner.py": "15cd443d9bdbb25b1129025af29e9a22e55091c61ffecc4837b56f35691ed13f",
+      "infra/cell/qualify_phoenix.py": "89326eda43cd0cab10ae486d451dbc586e168a18c1caf85e71afb93802b8be1f"
+    }
+  },
+  {
+    "repository": "bedrock",
+    "revision": "426ba1ba37c550a4fc793e598bb984d8b8a817b2",
+    "archive_command": "git -C /home/svetzal/Work/Projects/Mojility/bedrock archive HEAD infra/customer-release/rehearse.py apps/bedrock/lib/bedrock/explorations/bootstrap.ex",
+    "archive_sha256": "b6db207f176ab274f1227c9b2cb4bbe7cfa6ba26c1c25122155217f3b2b5c028",
+    "files": {
+      "infra/customer-release/rehearse.py": "4f78c44fff6b0b195930ccde458f0e470644f6315b0664240a88d79006df2691",
+      "apps/bedrock/lib/bedrock/explorations/bootstrap.ex": "24be9947207a50d9f108c68960351a715cc49fb6cbfeeffaee099f309306ae84"
+    }
+  }
+]

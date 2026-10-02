@@ -1,0 +1,63 @@
+{
+  "intent": {
+    "actor": "bedrock.actor.field_service_owner",
+    "goal": "bedrock.goal.own_business_system",
+    "interaction": "bedrock.interaction.publish_my_site",
+    "interactions": [
+      "bedrock.interaction.publish_my_site",
+      "bedrock.interaction.explore_before_adopting"
+    ]
+  },
+  "campaign": {
+    "1": "Generate and name the immutable unpublished starter",
+    "2": "Execute Bootstrap preparation, service readiness and customer smoke",
+    "3": "Export publication into the generated system and prove its real renderer/runtime",
+    "4": "Qualify release-route assumptions in unpublished and published systems",
+    "5": "Workshop iteration and acceptance (unimplemented)",
+    "6": "Front journey through real contexts (unimplemented)"
+  },
+  "stages": {
+    "1": {
+      "status": "failed",
+      "reason": "[Errno 11] Resource temporarily unavailable"
+    },
+    "2": {
+      "status": "failed",
+      "reason": "[Errno 11] Resource temporarily unavailable"
+    },
+    "3": {
+      "status": "failed",
+      "reason": "[Errno 11] Resource temporarily unavailable"
+    },
+    "4": {
+      "status": "failed",
+      "reason": "[Errno 11] Resource temporarily unavailable"
+    }
+  },
+  "publication": "not attempted",
+  "release_routes": true,
+  "sources": {
+    "bedrock": {
+      "repository": "Mojility/bedrock",
+      "revision": "69c7f88c796299f0a4c46a888dddb91c77cf70b3"
+    },
+    "roost": {
+      "repository": "Mojility/roost",
+      "revision": "bb57e6d0bf2bff3af72d40ad9adb5fa7c34d81b8"
+    },
+    "workshop": {
+      "repository": "Mojility/bedrock-workshop",
+      "revision": "adfcae0a96c291ddebfd28a086e5464bf97c9376"
+    },
+    "starter": {
+      "repository": "Mojility/bedrock-system-template",
+      "revision": "a5912b119a61e8c216e7118c60659ead02acce06"
+    }
+  },
+  "bedrock_working_tree_dirty": false,
+  "bedrock_checkout_kind": "resolved integration source archive",
+  "host": "mojility-ops-01",
+  "date_utc": "2026-10-01T22:23:28Z",
+  "commands": {},
+  "error": "[Errno 11] Resource temporarily unavailable"
+}

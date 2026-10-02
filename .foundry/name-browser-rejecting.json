@@ -1,0 +1,10 @@
+{
+  "command": "MIX_ENV=test mix test /tmp/name_browser_test.exs",
+  "exit_code": 2,
+  "logs": {
+    "stdout": "/home/svetzal/.foundry/tool-logs/13-1790900886318094402.stdout.log",
+    "stderr": "/home/svetzal/.foundry/tool-logs/13-1790900886318094402.stderr.log"
+  },
+  "database": "business_test_name_browser_b2539f0a24be",
+  "cleanup_exit_code": 0
+}

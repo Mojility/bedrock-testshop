@@ -1,0 +1,347 @@
+name: Integrate repository trunks
+on:
+  workflow_call:
+    inputs:
+      publish-image:
+        type: boolean
+        default: false
+        description: Publish the validated Bedrock image from an authorized Bedrock ref
+    outputs:
+      image-tag:
+        value: ${{ jobs.bedrock-image.outputs.image-tag }}
+      image-digest:
+        value: ${{ jobs.bedrock-image.outputs.image-digest }}
+    secrets:
+      BEDROCK_SOURCE_KEY:
+        required: true
+      ROOST_SOURCE_KEY:
+        required: true
+      WORKSHOP_SOURCE_KEY:
+        required: true
+      STARTER_SOURCE_KEY:
+        required: true
+permissions:
+  contents: read
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Mojility/bedrock
+          ref: ${{ github.repository == 'Mojility/bedrock' && github.sha || 'main' }}
+          path: sources/bedrock
+          ssh-key: ${{ secrets.BEDROCK_SOURCE_KEY }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Mojility/roost
+          ref: ${{ github.repository == 'Mojility/roost' && github.sha || 'main' }}
+          path: sources/roost
+          ssh-key: ${{ secrets.ROOST_SOURCE_KEY }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Mojility/bedrock-workshop
+          ref: ${{ github.repository == 'Mojility/bedrock-workshop' && github.sha || 'main' }}
+          path: sources/workshop
+          ssh-key: ${{ secrets.WORKSHOP_SOURCE_KEY }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Mojility/bedrock-system-template
+          ref: ${{ github.repository == 'Mojility/bedrock-system-template' && github.sha || 'main' }}
+          path: sources/starter
+          ssh-key: ${{ secrets.STARTER_SOURCE_KEY }}
+          persist-credentials: false
+      - name: Resolve sources and compose the build context
+        working-directory: sources/bedrock
+        run: |
+          python3 scripts/meta_model_guidance.py check
+          python3 scripts/integrate.py --roost ../roost --workshop ../workshop --starter ../starter
+          cat integration-notes.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve exactly the resolved sources for every job
+        run: tar --exclude=.git -czf integration-sources.tar.gz -C sources/bedrock .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: integration-sources
+          path: integration-sources.tar.gz
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: integration-record
+          path: |
+            sources/bedrock/integration.json
+            sources/bedrock/integration-notes.md
+          retention-days: 90
+  quality:
+    needs: resolve
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/bedrock
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bedrock_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: test
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: integration-sources
+      - run: tar -xzf integration-sources.tar.gz
+        working-directory: .
+
+      - run: python3 scripts/meta_model_guidance.py check
+        working-directory: .
+      - run: python3 scripts/roost_dependency.py check
+        working-directory: .
+      - run: python3 scripts/workshop_dependency.py check
+        working-directory: .
+      - run: python3 -m unittest discover -s scripts -p '*_test.py'
+        working-directory: .
+      - name: Verify customer release rehearsal isolation
+        run: python3 -m unittest discover -s infra/customer-release -p '*_test.py'
+        working-directory: .
+
+      - uses: erlef/setup-beam@v1
+        id: beam
+        with:
+          elixir-version: '1.20.2'
+          otp-version: '29.0'
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            apps/bedrock/deps
+            apps/bedrock/_build
+            vendor/roost/deps
+            vendor/roost/_build
+          key: ${{ runner.os }}-mix-${{ steps.beam.outputs.elixir-version }}-${{ steps.beam.outputs.otp-version }}-${{ hashFiles('apps/bedrock/mix.lock', 'vendor/roost/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-${{ steps.beam.outputs.elixir-version }}-${{ steps.beam.outputs.otp-version }}-
+
+      - uses: actions/cache/restore@v4
+        id: plt-cache
+        with:
+          path: |
+            apps/bedrock/priv/plts
+            vendor/roost/priv/plts
+          key: ${{ runner.os }}-plt-${{ steps.beam.outputs.elixir-version }}-${{ steps.beam.outputs.otp-version }}-${{ hashFiles('apps/bedrock/mix.lock', 'vendor/roost/mix.lock') }}
+          restore-keys: ${{ runner.os }}-plt-${{ steps.beam.outputs.elixir-version }}-${{ steps.beam.outputs.otp-version }}-
+
+      - run: mix deps.get
+        id: dependencies
+      - run: mix format --check-formatted
+      - run: mix compile --warnings-as-errors
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+      - run: mix test --cover
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+      - run: mix credo --strict
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+      - run: mix dialyzer
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+      - run: mix deps.audit
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+      - run: mix hex.audit
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+      - run: mix sobelow --config
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+      - run: mix docs --warnings-as-errors
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+      - name: Dependency update visibility
+        if: always()
+        continue-on-error: true
+        run: mix quality.outdated
+      - name: Install PostgreSQL tools for isolated Roost tests
+        run: sudo apt-get update && sudo apt-get install -y postgresql-16 bubblewrap
+        working-directory: .
+        if: ${{ !cancelled() }}
+      - name: Allow the owner-journey sandbox to create user namespaces
+        # Ubuntu 24.04 runners deny unprivileged user namespaces through AppArmor,
+        # so bubblewrap fails with "setting up uid map: Permission denied".
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+        if: ${{ !cancelled() }}
+      - name: Verify cold native dependency cache in the owner sandbox
+        run: python3 scripts/owner_journey_cache_proof.py
+        working-directory: .
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+      - name: Qualify owner preparation, publication and release routes
+        run: python3 scripts/qualify_owner_journey.py --stages 1,2,3,4
+        working-directory: .
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owner-journey-proof
+          include-hidden-files: true
+          path: .integration/owner-journey.json
+          retention-days: 90
+      - run: mix deps.get
+        working-directory: vendor/roost
+        if: ${{ !cancelled() }}
+      - run: mix precommit
+        working-directory: vendor/roost
+        if: ${{ !cancelled() }}
+
+      - run: python3 -m unittest discover -s vendor/roost/test -p '*_test.py'
+        working-directory: .
+        if: ${{ !cancelled() }}
+
+      - name: Save Dialyzer caches
+        uses: actions/cache/save@v4
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' && steps.plt-cache.outputs.cache-hit != 'true' }}
+        with:
+          path: |
+            apps/bedrock/priv/plts
+            vendor/roost/priv/plts
+          key: ${{ steps.plt-cache.outputs.cache-primary-key }}
+
+  workshop:
+    needs: resolve
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: integration-sources
+      - run: tar -xzf integration-sources.tar.gz
+      - name: Validate Workshop with the resolved Bedrock guidance
+        run: docker build --target validation -t workshop-validation .integration/workshop
+      - name: Assemble the validated Workshop
+        run: docker build --platform linux/arm64 --target artifact --output type=local,dest=dist .integration/workshop
+      - name: Record the archive and all source revisions
+        run: |
+          python3 - <<'PYTHON'
+          import hashlib, json
+          from pathlib import Path
+          record = json.loads(Path('integration.json').read_text())
+          record.update(repository='Mojility/bedrock-workshop',
+                        source_revision=record['sources']['workshop']['revision'],
+                        architecture='arm64', artifact='workshop-executive.tar.gz',
+                        contract_sha256=record['workshop_contract']['sha256'],
+                        sha256=hashlib.sha256(Path('dist/workshop-executive.tar.gz').read_bytes()).hexdigest())
+          Path('dist/release.json').write_text(json.dumps(record, indent=2) + '\n')
+          PYTHON
+          cp integration-notes.md dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workshop-executive-linux-arm64
+          path: dist/
+          retention-days: 1
+  bedrock-image:
+    needs: [resolve, quality, workshop]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ca-central-1
+      ECR_REPOSITORY: bedrock
+    outputs:
+      image-tag: ${{ steps.tags.outputs.image-tag }}
+      image-digest: ${{ steps.identity.outputs.image-digest }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: integration-sources
+      - run: tar -xzf integration-sources.tar.gz
+      - name: Check publication authority
+        if: inputs.publish-image
+        env:
+          REPOSITORY: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          test "$REPOSITORY" = Mojility/bedrock
+          [[ "$EVENT" == push || "$EVENT" == workflow_dispatch ]]
+          [[ "$GITHUB_REF" == refs/heads/main || "$GITHUB_REF" == refs/tags/v* ]]
+      - name: Build the production image from resolved sources
+        run: docker build -f apps/bedrock/Dockerfile -t bedrock .
+      - name: Validate the production release configuration
+        run: |
+          # Validate the actual production release config before publishing it.
+          # These are inert fixture values; eval does not connect to a database.
+          for console_enabled in false true; do
+            docker run --rm --entrypoint /app/bin/bedrock \
+              -e DATABASE_URL=ecto://bedrock:fixture@db.invalid/bedrock \
+              -e SECRET_KEY_BASE=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+              -e HOSTING_DATABASE_URL=ecto://hosting:fixture@db.invalid/hosting \
+              -e HOSTING_SECRET_KEY_BASE=hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh \
+              -e HOSTING_CONSOLE_ENABLED="$console_enabled" \
+              "$ECR_REPOSITORY" eval 'IO.puts("Production release configuration valid")'
+          done
+      - uses: aws-actions/configure-aws-credentials@v4
+        if: inputs.publish-image
+        with:
+          role-to-assume: arn:aws:iam::872061243621:role/bedrock-github-build
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        if: inputs.publish-image
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - id: tags
+        if: inputs.publish-image
+        env:
+          PUBLISH_LATEST: ${{ !contains(github.event.head_commit.message, '[no deploy]') }}
+        run: |
+          REGISTRY=${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "image-tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          TAGS="$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+            TAGS="$TAGS,$REGISTRY/$ECR_REPOSITORY:$VERSION,$REGISTRY/$ECR_REPOSITORY:stable"
+          elif [[ "$PUBLISH_LATEST" == "true" ]]; then
+            TAGS="$TAGS,$REGISTRY/$ECR_REPOSITORY:latest"
+          fi
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the validated image directly to ECR
+        if: inputs.publish-image
+        run: |
+          IFS=',' read -ra TAG_ARRAY <<< "${{ steps.tags.outputs.tags }}"
+          for tag in "${TAG_ARRAY[@]}"; do
+            docker tag "$ECR_REPOSITORY" "$tag"
+            docker push "$tag"
+            echo "Pushed $tag"
+          done
+          echo "Pushed: ${{ steps.tags.outputs.tags }}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Record the published image digest
+        id: identity
+        if: inputs.publish-image
+        env:
+          IMAGE_TAG: ${{ steps.tags.outputs.image-tag }}
+        run: |
+          DIGEST=$(aws ecr batch-get-image --repository-name "$ECR_REPOSITORY" \
+            --image-ids "imageTag=$IMAGE_TAG" --query 'images[0].imageId.imageDigest' --output text)
+          [[ "$DIGEST" == sha256:* ]]
+          echo "image-digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "Published image: $IMAGE_TAG ($DIGEST)" >> "$GITHUB_STEP_SUMMARY"
+  integrated:
+    if: always()
+    needs: [resolve, quality, workshop, bedrock-image]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report the integration result
+        env:
+          RESOLVE: ${{ needs.resolve.result }}
+          QUALITY: ${{ needs.quality.result }}
+          WORKSHOP: ${{ needs.workshop.result }}
+          IMAGE: ${{ needs.bedrock-image.result }}
+        run: |
+          printf 'Source resolution: %s\nBedrock and Roost checks: %s\nWorkshop validation and build: %s\n' "$RESOLVE" "$QUALITY" "$WORKSHOP" >> "$GITHUB_STEP_SUMMARY"
+          echo "Bedrock production image: $IMAGE" >> "$GITHUB_STEP_SUMMARY"
+          test "$IMAGE" = success
+          test "$RESOLVE" = success && test "$QUALITY" = success && test "$WORKSHOP" = success

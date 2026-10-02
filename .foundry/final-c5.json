@@ -1,0 +1,47 @@
+{
+  "results": [
+    {
+      "command": [
+        "python3",
+        "/home/svetzal/.foundry/tool-logs/starter-c5-audit-source.py"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/35-1790889070733504312.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/35-1790889070733504312.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "deps.audit"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/49-1790889071953068765.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/49-1790889071953068765.stderr.log"
+    },
+    {
+      "command": [
+        "python3",
+        "/home/svetzal/.foundry/tool-logs/starter-c5-audit-source.py"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/103-1790889072673433095.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/103-1790889072673433095.stderr.log"
+    },
+    {
+      "command": [
+        "mix",
+        "docs",
+        "--warnings-as-errors"
+      ],
+      "exit_code": 0,
+      "stdout_log": "/home/svetzal/.foundry/tool-logs/117-1790889073757881262.stdout.log",
+      "stderr_log": "/home/svetzal/.foundry/tool-logs/117-1790889073757881262.stderr.log"
+    }
+  ],
+  "hex_cache_removed": true,
+  "pinned_toolchain": {
+    "elixir": "1.20.2-otp-29",
+    "erlang": "29.0.2",
+    "postgres": "18"
+  }
+}

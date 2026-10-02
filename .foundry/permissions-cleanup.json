@@ -1,0 +1,23 @@
+{
+  "own_synthetic_databases_remaining": [],
+  "removed_databases": [
+    "business_test_c8",
+    "business_test_permissions_c8_795b43_9733faa9f487",
+    "bedrock_test_starter_c8_795b43_34d61a404f10",
+    "qualification_a193ca4dadbbf0cf7edf",
+    "business_test_permissions_c8_795b43_0582c0b7516e"
+  ],
+  "snapshots_absent": [
+    "/tmp/bedrock-owner-proof-hg9658ux",
+    "/tmp/starter-c8-permissions/qualification-hkcozaza",
+    "/tmp/starter-c8-permissions/qualification-j_72et5q"
+  ],
+  "generation_partition_marker_absent": true,
+  "listener_shutdown": "Both synchronous qualifiers stopped their entire service process groups before releasing the shared lock; owner qualifier also stopped its private PostgreSQL cluster before snapshot deletion.",
+  "limitation": "Independent shared-lock observation was contended after both own runs returned; no global port-availability claim.",
+  "lock_observation_log": "/home/svetzal/.foundry/tool-logs/3-1790899009187521325.stderr.log",
+  "temporary_archive_and_harness_root_removed": "/tmp/starter-c8-permissions",
+  "independent_cleanup_log": "/home/svetzal/.foundry/tool-logs/3-1790899048457543499.stdout.log",
+  "public_dependency_cache_retained": "/tmp/starter-c8-tools/hex",
+  "final_quality_database_absent": true
+}
