@@ -1,15 +1,36 @@
 {
-  "kind": "direct",
-  "reason": "Authorized correction is a named ownership finding. Committed caller provisioning records and the guest version check support PostgreSQL 18, while caller CI selects 16. No starter runtime behavior changes; hosted access is prohibited. Probe queries server version only in a new synthetic database and removes it.",
-  "source_change": [
-    "docs/owner-journey-findings.md",
-    "docs/postgres-contract-2026-10-01.md",
-    "SYSTEM.md"
-  ],
-  "corrected": {
-    "command": "foundry capture -- python3 .foundry/postgres-ownership-probe.py",
-    "exit_code": 0,
-    "log": "/home/svetzal/.foundry/tool-logs/2-1790905302613923857.stdout.log"
+  "kind": "behavioral",
+  "source_change": "Replace the private reusable workflow reference with load-safe starter-only ordinary integration jobs, manifest-guided removal and local gated starter publication; preserve customer quality and release acceptance.",
+  "rejecting": {
+    "command": "foundry capture -- env MIX_ENV=test ERL_FLAGS='+S 4:4' MIX_TEST_PARTITION=_workflow_85e3db7f mix test test/maintenance/build_workflow_test.exs (baseline plus new private-reference regression)",
+    "exit_code": 2,
+    "log": "/home/svetzal/.foundry/tool-logs/133681-1790931929149544767.stdout.log"
   },
-  "previous_behavioral_proof": ".foundry/caller-discovery-proof.json"
+  "corrected": {
+    "command": "foundry capture -- env MIX_ENV=test ERL_FLAGS='+S 4:4' MIX_TEST_PARTITION=_workflow_final_85e3db7f mix test test/maintenance/build_workflow_test.exs",
+    "exit_code": 0,
+    "log": "/home/svetzal/.foundry/tool-logs/149586-1790932735533776300.stdout.log"
+  },
+  "baseline": "8bc52f349496124d3230d59603bab9a0dc89cf4a",
+  "customer_copy": ".foundry/public-ci-customer.json",
+  "quality": ".foundry/public-ci-quality.json",
+  "limitations": [
+    "Workflow contracts verified locally; no hosted GitHub run or real platform integration executed.",
+    "Actionlint unavailable; no dependency added.",
+    "Bedrock generation/reset removal remains pending."
+  ],
+  "focused": ".foundry/public-ci-focused.json",
+  "candidate_sha256": {
+    ".github/workflows/build.yml": "44248d3fc48ab93a38f678049a4605286427d552c679853c29aa14613c63b90b",
+    ".github/workflows/starter-platform.yml": "6a3c671fef65eddd7288c4179360a7002de941273b6dddbd4262995f88b7a225",
+    ".bedrock/starter-only.json": "c91c47988b1ee9304ee30d213b43070c9a75caa91f06dca496ae610de81db444",
+    "test/maintenance/build_workflow_test.exs": "6391656b3671a9e94b3661994555d36b94ad843a18638dd2804fe02097d2c293",
+    "test/fixtures/customer-build-checks.yml": "be6a96ccae6192da59ed8287163ad72cb5c5d113934f47c6bdb0b24fc548ac21",
+    "test/fixtures/integration-producer.yml": "da1dac5fe25a61dbd0096f988269c58ab36d71458f7afb02f16258e34d8b4a06",
+    "AGENTS.md": "de7660c5c2591755580d927f89341e4f1b4375210184bb2f73bd422f8b4e914f",
+    "SYSTEM.md": "03a651b778631d86f209fbda29447c209a6d2dbd2c3ee4762a0f9e16d95c20df",
+    "CHANGELOG.md": "766eedda47ab9144543be9743e4327c2fca3c9ff8fbc78643bca5e33107429a6",
+    "docs/owner-journey-findings.md": "ea160d91cfbbacb3263e960757f5c8a9edcdb96a1159d66f98fba0ff12e11359",
+    "docs/public-customer-ci-2026-10-02.md": "24a38acfef4f4448a177688353ebf5cca544678b840f48b8374dfe6032925ef7"
+  }
 }

@@ -92,6 +92,19 @@ Do not fabricate gate evidence or replay an uncertain migration. Standalone
 CloudFormation uses ARM, an explicit image SHA, and exact main-branch OIDC
 trust.
 
+Customer CI must load in a public repository without private access. Never put
+private repository references in `uses:`; GitHub resolves reusable workflows
+before job guards. `build.yml` owns standalone quality, release acceptance and
+image publication. The starter's ordinary `starter-platform.yml` jobs execute
+the shared platform validation via guarded runtime checkouts, then call local
+`build.yml` with `starter-publication: true`; direct starter runs cannot build or publish an image.
+Keep its active checks aligned with the byte-identified integration producer
+fixture. Do not bypass integration or weaken customer quality/release gates.
+`.bedrock/starter-only.json` has format `{"version":1,"paths":["relative/file"]}`;
+Bedrock generation and any reset must remove every listed repository-relative
+file. Until that producer change lands, excluded workflows must still load and
+skip safely in public customer copies. See `SYSTEM.md` for the current graph.
+
 The first owner is created through trusted deployment access. Public account
 bootstrap and registration remain disabled. Bedrock users and customer staff
 have separate identities and sessions. Historical lead imports preserve source

@@ -226,3 +226,42 @@ for exact commands, identities, gates, limitations and cleanup. Demonstrated and
 verified locally does not imply accepted or deployed; no customer records or
 external delivery were used. Contacted status still does not prove a reply or
 achievement of the customer's service goal.
+
+
+## 2026-10-02 — Bedrock must remove starter-only workflow files
+
+Actor: a business owner. Goal: publish a website backed by a working customer
+system. Interaction: generate/reset the public repository, push its source and
+wait for CI to build the release.
+
+Owning repository: **Bedrock**. The supplied incident reports workflow-startup
+failure for run `36987302104` after starter `8bc52f349496124d3230d59603bab9a0dc89cf4a`
+was copied. No customer checkout, record or GitHub run was read during this task.
+Locally, the new maintenance regression against that starter exited 2:
+`.github/workflows/build.yml resolves a platform resource before job guards:
+Mojility/bedrock/.github/workflows/integration.yml`. See the dated
+[verification record](public-customer-ci-2026-10-02.md) and `.foundry/proof.json`.
+
+Producer contract: read **`.bedrock/starter-only.json`**, a JSON object with
+integer `version: 1` and `paths`, an array of repository-relative file paths.
+The exact current content is:
+
+```json
+{"version":1,"paths":[".github/workflows/starter-platform.yml"]}
+```
+
+The smallest Bedrock change is to remove all listed files when generating a
+customer system **and on every reset**, before committing/pushing the generated
+source. Validate paths as relative and within the repository. The listed paths
+must not exist in the final customer system; keep this metadata if useful.
+Generation does not implement this contract today; this task changes only the
+starter and leaves that producer work pending.
+
+The interim file is safe even when copied: ordinary GitHub jobs use public
+actions, guard private runtime checkouts to the starter repository, and skip in
+customer repositories. It contains no private reusable workflow/action reference.
+It mirrors all active checks of the existing committed shared integration
+producer, invoking its shared scripts against resolved platform trunks, then
+calls the local build workflow only on integration success. Moving the same
+private reusable `uses:` into an excluded file would still break GitHub loading
+before Bedrock implements deletion, so that structure was rejected.

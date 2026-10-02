@@ -130,17 +130,41 @@ selected source and copied schema without migrations.
 acceptance gate. `.github/workflows/build.yml` runs it in `release-acceptance`
 against its pinned PostgreSQL service and exact `.tool-versions` Elixir/OTP;
 image build/publication requires both this job and `quality`. Trusted pushes
-and manual runs in `Mojility/bedrock-system-template` also call
-`Mojility/bedrock/.github/workflows/integration.yml@main` with inherited secrets;
-the calling job grants `contents: read` and `id-token: write` to accommodate
-the producer's image job. Workflow defaults and the existing customer image
-job's explicit permissions remain unchanged.
-Starter image publication requires that integration to succeed. Generated
-customer repositories skip the platform integration and retain standalone
-quality and release acceptance without platform source keys. The workflow
-contract regression in `test/maintenance/build_workflow_test.exs` checks these
-event and dependency-result conditions and effective permission compatibility
-against a byte-identified committed producer fixture. The release acceptance gate assembles
+and manual runs also start `.github/workflows/starter-platform.yml` in this
+starter. It uses ordinary jobs and public actions: private platform sources are
+checked out at runtime only after the starter repository guard passes. The jobs
+run the shared Bedrock integration scripts on the resolved sources and preserve
+all active validation in the nonpublishing shared producer (Bedrock commit
+`78767528c45c0d9412c4cbc90d395c724ed1c5ee`, byte-identified by
+`test/fixtures/integration-producer.yml`). Only inactive Bedrock image publication
+steps/outputs are omitted; integration's exact OTP is aligned to this project's
+existing `29.0.2` pin. When changing the shared producer, deliberately review and
+port its validation changes here; the regression test detects local drift.
+
+The ordinary integration jobs resolve all four sources, check Bedrock/Roost,
+validate/build Workshop, build/validate the Bedrock image, and require every
+result to succeed. Only then does `publish-starter` call the **local** `build.yml`
+with `starter-publication: true`. That call runs the unchanged quality and
+release-acceptance gates before building/pushing the immutable ARM64 starter
+image. Direct starter runs leave that input false and cannot build an image.
+Quality/release checks therefore run both directly and in the gated call; this
+keeps one authored build/publish implementation and avoids cross-run receipts.
+Customer pushes/manual runs build/publish after their own quality and release
+checks, without platform keys. No private reusable workflow is resolved at load
+time, even if a customer still has the starter-only file: its root jobs skip,
+and dependency-bound jobs follow them. No platform repository is publicized.
+
+`.bedrock/starter-only.json` is a versioned JSON object:
+`{"version":1,"paths":[".github/workflows/starter-platform.yml"]}`.
+Paths are repository-relative files that **must not exist** in a generated
+customer system. Bedrock generation and every reset must remove the listed
+paths; the producer change remains pending in `docs/owner-journey-findings.md`.
+The manifest itself may remain as metadata. Tests check customer workflow load
+safety, producer validation parity, unchanged quality/release checks, and the
+publication graph over event, cancellation and dependency-result combinations.
+These local checks do not establish a successful hosted GitHub run.
+
+The release acceptance gate assembles
 deployed assets and `mix release` from an isolated baseline archive plus the
 identified candidate changes, then executes the artifact's `bin/migrate` and
 foreground `bin/server`. It verifies ordinary startup leaves an empty database
