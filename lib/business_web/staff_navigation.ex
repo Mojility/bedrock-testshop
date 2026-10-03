@@ -5,7 +5,7 @@ defmodule BusinessWeb.StaffNavigation do
     %{id: "leads", label: "Leads", path: "/app/leads", roles: ["owner", "staff"]},
     %{
       id: "enquiries",
-      label: "Job enquiries",
+      label: "Week view",
       path: "/app/enquiries",
       roles: ["owner", "staff"]
     },

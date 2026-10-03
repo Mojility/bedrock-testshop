@@ -1,41 +1,42 @@
 defmodule Business.Enquiries do
-  @moduledoc "Staff-recorded job enquiries, their requested dates, and status history."
+  @moduledoc "Staff-recorded leads, their requested dates, and status history."
   import Ecto.Query
 
   alias Business.Accounts.Staff
-  alias Business.Enquiries.{Enquiry, History}
+  alias Business.Enquiries.History
+  alias Business.Leads.Lead
   alias Business.Repo
 
-  def change(%Enquiry{} = enquiry, attrs \\ %{}), do: Enquiry.create_changeset(enquiry, attrs)
+  def change(%Lead{} = lead, attrs \\ %{}), do: Lead.enquiry_changeset(lead, attrs)
 
   def list_week(scope, %Date{} = week_start) do
     Staff.authorize!(scope)
     week_end = Date.add(week_start, 7)
 
     Repo.all(
-      from e in Enquiry,
-        where: e.requested_date >= ^week_start and e.requested_date < ^week_end,
-        order_by: [asc: e.requested_date, asc: e.inserted_at]
+      from lead in Lead,
+        where: lead.requested_date >= ^week_start and lead.requested_date < ^week_end,
+        order_by: [asc: lead.requested_date, asc: lead.inserted_at]
     )
   end
 
   def create(scope, attrs) do
     actor = Staff.authorize!(scope)
-    changeset = Enquiry.create_changeset(%Enquiry{created_by_id: actor.id}, attrs)
+    changeset = Lead.enquiry_changeset(%Lead{created_by_id: actor.id}, attrs)
 
     Repo.transaction(fn ->
-      enquiry = insert_or_rollback(changeset)
+      lead = insert_or_rollback(changeset)
 
       %History{}
       |> Ecto.Changeset.change(%{
-        job_enquiry_id: enquiry.id,
+        lead_id: lead.id,
         actor_id: actor.id,
         action: "recorded",
-        to_status: enquiry.status
+        to_status: lead.status
       })
       |> insert_or_rollback()
 
-      enquiry
+      lead
     end)
     |> tap_success(&broadcast/1)
   end
@@ -44,16 +45,16 @@ defmodule Business.Enquiries do
     actor = Staff.authorize!(scope)
 
     with {:ok, uuid} <- Ecto.UUID.cast(id),
-         %Enquiry{} = enquiry <- Repo.get(Enquiry, uuid) do
+         %Lead{} = lead <- Repo.get(Lead, uuid) do
       Repo.transaction(fn ->
-        updated = enquiry |> Enquiry.status_changeset(attrs) |> update_or_rollback()
+        updated = lead |> Lead.status_changeset(attrs) |> update_or_rollback()
 
         %History{}
         |> Ecto.Changeset.change(%{
-          job_enquiry_id: updated.id,
+          lead_id: updated.id,
           actor_id: actor.id,
           action: "status_changed",
-          from_status: enquiry.status,
+          from_status: lead.status,
           to_status: updated.status
         })
         |> insert_or_rollback()
@@ -71,7 +72,7 @@ defmodule Business.Enquiries do
 
   def subscribe(scope) do
     Staff.authorize!(scope)
-    Phoenix.PubSub.subscribe(Business.PubSub, "job_enquiries")
+    Phoenix.PubSub.subscribe(Business.PubSub, "leads")
   end
 
   defp insert_or_rollback(changeset) do
@@ -88,13 +89,12 @@ defmodule Business.Enquiries do
     end
   end
 
-  defp tap_success({:ok, enquiry} = result, callback) do
-    callback.(enquiry)
+  defp tap_success({:ok, lead} = result, callback) do
+    callback.(lead)
     result
   end
 
   defp tap_success(result, _callback), do: result
 
-  defp broadcast(_),
-    do: Phoenix.PubSub.broadcast(Business.PubSub, "job_enquiries", :enquiries_updated)
+  defp broadcast(_), do: Phoenix.PubSub.broadcast(Business.PubSub, "leads", :leads_updated)
 end

@@ -30,7 +30,7 @@ defmodule BusinessWeb.LeadsLive do
       <Operations.page
         id="leads"
         title="Leads"
-        description="Enquiries from your website. Contact the customer and keep your team up to date."
+        description="Customer enquiries from the website, phone and email, with the details your team needs to follow up."
       >
         <p class="text-sm text-base-content/80">Showing the latest 200 enquiries.</p>
         <ol id="leads-list" phx-update="stream" class="flex flex-col gap-6">
@@ -57,6 +57,13 @@ defmodule BusinessWeb.LeadsLive do
                         {Calendar.strftime(lead.inserted_at, "%b %-d, %Y · %H:%M UTC")}
                       </time>
                     </:item>
+                    <:item :if={lead.location} label="Location">{lead.location}</:item>
+                    <:item :if={lead.requested_date} label="Requested date">
+                      <time datetime={Date.to_iso8601(lead.requested_date)}>
+                        {Calendar.strftime(lead.requested_date, "%A, %b %-d, %Y")}
+                      </time>
+                    </:item>
+                    <:item label="Source">{String.capitalize(lead.source)}</:item>
                   </Operations.facts>
                   <div class="flex flex-wrap gap-4">
                     <.link
@@ -87,7 +94,14 @@ defmodule BusinessWeb.LeadsLive do
                     value={lead.status}
                     type="select"
                     label="Status"
-                    options={[{"New", "new"}, {"Contacted", "contacted"}, {"Closed", "closed"}]}
+                    options={[
+                      {"New", "new"},
+                      {"Contacted", "contacted"},
+                      {"Closed", "closed"},
+                      {"Waiting", "waiting"},
+                      {"Booked", "booked"},
+                      {"Declined", "declined"}
+                    ]}
                   />
                   <.input
                     name="lead[notes]"

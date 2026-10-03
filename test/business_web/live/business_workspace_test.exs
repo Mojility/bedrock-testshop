@@ -4,7 +4,8 @@ defmodule BusinessWeb.BusinessWorkspaceTest do
   import Business.AccountsFixtures
   alias Business.{Accounts, Leads, Repo}
   alias Business.Accounts.Staff
-  alias Business.Enquiries.{Enquiry, History}
+  alias Business.Enquiries.History
+  alias Business.Leads.Lead
 
   test "leads require local authentication", %{conn: conn} do
     assert {:error, {:redirect, %{to: "/users/log-in"}}} = live(conn, "/app/leads")
@@ -86,10 +87,10 @@ defmodule BusinessWeb.BusinessWorkspaceTest do
     assert has_element?(view, "nav a[aria-current='page'][href='/app/enquiries']")
 
     view
-    |> form("#enquiry-form",
-      enquiry: %{
-        customer_name: "Morgan",
-        request: "Panel upgrade",
+    |> form("#lead-form",
+      lead: %{
+        name: "Morgan",
+        message: "Panel upgrade",
         location: "Minden",
         requested_date: Date.to_iso8601(requested_date),
         source: "email",
@@ -98,17 +99,19 @@ defmodule BusinessWeb.BusinessWorkspaceTest do
     )
     |> render_submit()
 
-    enquiry = Repo.one!(Enquiry)
-    assert enquiry.status == "waiting"
-    assert has_element?(view, "#week-enquiries", "Panel upgrade")
+    lead = Repo.one!(Lead)
+    assert lead.status == "waiting"
+    assert has_element?(view, "#week-leads", "Panel upgrade")
 
     view
-    |> form("#status-#{enquiry.id}", enquiry: %{status: "booked"})
+    |> form("#status-#{lead.id}",
+      lead: %{status: "booked", lock_version: lead.lock_version}
+    )
     |> render_submit()
 
-    assert Repo.get!(Enquiry, enquiry.id).status == "booked"
+    assert Repo.get!(Lead, lead.id).status == "booked"
     assert Repo.aggregate(History, :count) == 2
-    assert has_element?(view, "#week-enquiries", "Booked")
+    assert has_element?(view, "#week-leads", "Booked")
   end
 
   test "job enquiries require local authentication", %{conn: conn} do

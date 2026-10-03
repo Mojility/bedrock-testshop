@@ -1,8 +1,7 @@
 defmodule Business.Leads.Lead do
   @moduledoc """
-  Someone who asked to be contacted through the business's website: who they are,
-  how to reach them, and what they need. Staff can update status and private
-  notes. `seen_at` records the first saved follow-up.
+  A customer enquiry, whether received through the website, by phone, or by email.
+  Staff-recorded enquiries include the requested work, location and requested date.
   """
   use Ecto.Schema
 
@@ -18,24 +17,24 @@ defmodule Business.Leads.Lead do
     field :phone, :string
     field :email, :string
     field :message, :string
+    field :location, :string
+    field :requested_date, :date
     field :source, :string, default: "site"
     field :notified_at, :utc_datetime_usec
     field :seen_at, :utc_datetime_usec
     field :status, :string, default: "new"
     field :notes, :string
     field :legacy_id, :binary_id
+    field :lock_version, :integer, default: 1
+    belongs_to :created_by, Business.Accounts.User
 
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
-  @doc false
   def changeset(lead, attrs) do
     lead
     |> cast(attrs, [:name, :phone, :email, :message])
-    |> update_change(:name, &trim/1)
-    |> update_change(:phone, &trim/1)
-    |> update_change(:email, &trim/1)
-    |> update_change(:message, &trim/1)
+    |> trim([:name, :phone, :email, :message])
     |> validate_required([:name], message: "tell us your name")
     |> validate_length(:name, max: 120)
     |> validate_length(:phone, max: 40)
@@ -47,16 +46,36 @@ defmodule Business.Leads.Lead do
     |> validate_a_way_to_reach_them()
   end
 
-  @doc "Validate staff follow-up without changing the original public enquiry."
+  def enquiry_changeset(lead, attrs) do
+    lead
+    |> cast(attrs, [:name, :message, :location, :requested_date, :source, :status])
+    |> trim([:name, :message, :location])
+    |> validate_required([:name, :message, :location, :requested_date, :source, :status])
+    |> validate_length(:name, max: 120)
+    |> validate_length(:message, max: 4_000)
+    |> validate_length(:location, max: 200)
+    |> validate_inclusion(:source, ~w(phone email))
+    |> validate_inclusion(:status, ~w(waiting booked declined))
+    |> check_constraint(:status, name: :valid_lead_status)
+  end
+
+  def status_changeset(lead, attrs) do
+    lead
+    |> cast(attrs, [:status, :lock_version])
+    |> validate_required([:status, :lock_version])
+    |> validate_inclusion(:status, ~w(waiting booked declined))
+    |> check_constraint(:status, name: :valid_lead_status)
+    |> optimistic_lock(:lock_version)
+  end
+
   def follow_up_changeset(lead, attrs) do
     lead
     |> cast(attrs, [:status, :notes])
     |> validate_required([:status])
-    |> validate_inclusion(:status, ["new", "contacted", "closed"])
+    |> validate_inclusion(:status, ~w(new contacted closed waiting booked declined))
     |> validate_length(:notes, max: 4000)
   end
 
-  @doc "Whether staff have saved follow-up for this lead yet."
   @spec seen?(t()) :: boolean()
   def seen?(%__MODULE__{seen_at: %DateTime{}}), do: true
   def seen?(%__MODULE__{}), do: false
@@ -69,8 +88,14 @@ defmodule Business.Leads.Lead do
     end
   end
 
-  defp blank?(value), do: value in [nil, ""]
+  defp trim(changeset, fields) do
+    Enum.reduce(fields, changeset, fn field, current ->
+      update_change(current, field, fn
+        value when is_binary(value) -> String.trim(value)
+        value -> value
+      end)
+    end)
+  end
 
-  defp trim(value) when is_binary(value), do: String.trim(value)
-  defp trim(value), do: value
+  defp blank?(value), do: value in [nil, ""]
 end

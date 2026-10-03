@@ -36,14 +36,13 @@ from the `Dockerfile` here, in front of one PostgreSQL database.
   assistive-technology walkthroughs remain outstanding.
   Publishing updates scene/assets; it never replaces component implementations.
 
-- **Leads** (`lib/business/leads/`): public enquiry submission and authenticated
-  follow-up at `/app/leads`. Pending email notifications retry independently.
-  `/app/team` lets the owner invite staff and revoke access. Tables: `leads`.
-
-- **Job enquiries** (`lib/business/enquiries/`): authenticated staff record phone
-  and email requests with the customer, work, location, requested calendar date
-  and waiting/booked/declined status. `/app/enquiries` presents the selected week
-  and records status history. Tables: `job_enquiries`, `job_enquiry_history`.
+- **Leads** (`lib/business/leads/`): one record represents a customer enquiry,
+  whether submitted publicly or recorded by staff from a phone call or email.
+  Authenticated staff follow up at `/app/leads`; staff-recorded leads capture the
+  needed work, location, requested date and waiting/booked/declined status, while
+  `/app/enquiries` provides the weekly workload view. Pending public-lead email
+  notifications retry independently. `/app/team` lets the owner invite staff and
+  revoke access. Tables: `leads`, `lead_history`.
 
 Private photographs are served from this application's Canadian S3 bucket.
 The runtime reads short-lived credentials from `AWS_CREDENTIALS_FILE` on each
