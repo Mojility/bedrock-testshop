@@ -40,6 +40,11 @@ from the `Dockerfile` here, in front of one PostgreSQL database.
   follow-up at `/app/leads`. Pending email notifications retry independently.
   `/app/team` lets the owner invite staff and revoke access. Tables: `leads`.
 
+- **Job enquiries** (`lib/business/enquiries/`): authenticated staff record phone
+  and email requests with the customer, work, location, requested calendar date
+  and waiting/booked/declined status. `/app/enquiries` presents the selected week
+  and records status history. Tables: `job_enquiries`, `job_enquiry_history`.
+
 Private photographs are served from this application's Canadian S3 bucket.
 The runtime reads short-lived credentials from `AWS_CREDENTIALS_FILE` on each
 request. The host renews that file. Only explicitly configured proxy addresses
@@ -314,8 +319,8 @@ behavior and from owner acceptance or deployment.
 
 `OPERATIONS.md` defines the shared staff-page patterns and quality standard.
 `BusinessWeb.Operations` provides typed presentation components; `StaffNavigation`
-owns the visible destinations. Leads and Team use the shared shell and components.
-Authorization, validation and business writes remain in the existing contexts.
+owns the visible destinations. Leads, Job enquiries and Team use the shared shell
+and components. Authorization, validation and business writes remain in contexts.
 
 ## Development component catalogue
 

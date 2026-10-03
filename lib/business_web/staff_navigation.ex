@@ -3,6 +3,12 @@ defmodule BusinessWeb.StaffNavigation do
 
   @destinations [
     %{id: "leads", label: "Leads", path: "/app/leads", roles: ["owner", "staff"]},
+    %{
+      id: "enquiries",
+      label: "Job enquiries",
+      path: "/app/enquiries",
+      roles: ["owner", "staff"]
+    },
     %{id: "team", label: "Team", path: "/app/team", roles: ["owner"]}
   ]
 

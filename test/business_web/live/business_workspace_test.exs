@@ -2,8 +2,9 @@ defmodule BusinessWeb.BusinessWorkspaceTest do
   use BusinessWeb.ConnCase, async: false
   import Phoenix.LiveViewTest
   import Business.AccountsFixtures
-  alias Business.{Accounts, Leads}
+  alias Business.{Accounts, Leads, Repo}
   alias Business.Accounts.Staff
+  alias Business.Enquiries.{Enquiry, History}
 
   test "leads require local authentication", %{conn: conn} do
     assert {:error, {:redirect, %{to: "/users/log-in"}}} = live(conn, "/app/leads")
@@ -65,5 +66,52 @@ defmodule BusinessWeb.BusinessWorkspaceTest do
     assert has_element?(view, "#leads-empty", "No enquiries yet")
     assert has_element?(view, "button[aria-label='Use light theme']")
     assert has_element?(view, "button[aria-label='Use dark theme']")
+  end
+
+  test "staff record and book an emailed enquiry in the week view", %{conn: conn} do
+    staff = user_fixture()
+
+    requested_date =
+      Date.utc_today()
+      |> then(&Date.add(&1, 1 - Date.day_of_week(&1) + 6))
+
+    {:ok, view, _} = live(log_in_user(conn, staff), "/app/leads")
+
+    {:ok, view, _} =
+      view
+      |> element("nav a[href='/app/enquiries']")
+      |> render_click()
+      |> follow_redirect(log_in_user(conn, staff))
+
+    assert has_element?(view, "nav a[aria-current='page'][href='/app/enquiries']")
+
+    view
+    |> form("#enquiry-form",
+      enquiry: %{
+        customer_name: "Morgan",
+        request: "Panel upgrade",
+        location: "Minden",
+        requested_date: Date.to_iso8601(requested_date),
+        source: "email",
+        status: "waiting"
+      }
+    )
+    |> render_submit()
+
+    enquiry = Repo.one!(Enquiry)
+    assert enquiry.status == "waiting"
+    assert has_element?(view, "#week-enquiries", "Panel upgrade")
+
+    view
+    |> form("#status-#{enquiry.id}", enquiry: %{status: "booked"})
+    |> render_submit()
+
+    assert Repo.get!(Enquiry, enquiry.id).status == "booked"
+    assert Repo.aggregate(History, :count) == 2
+    assert has_element?(view, "#week-enquiries", "Booked")
+  end
+
+  test "job enquiries require local authentication", %{conn: conn} do
+    assert {:error, {:redirect, %{to: "/users/log-in"}}} = live(conn, "/app/enquiries")
   end
 end
